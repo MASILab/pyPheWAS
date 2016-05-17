@@ -10,4 +10,10 @@ setup(
   download_url = 'https://github.com/bennettlandman/pyPheWAS/tarball/0.1', # I'll explain this in a second
   keywords = ['PheWAS', 'ICD-9', 'EMR'], # arbitrary keywords
   classifiers = [],
+  install_requires=['numpy',
+	'matplotlib',
+	'scipy',
+	'pandas',
+	'statsmodels',
+	],
 )
