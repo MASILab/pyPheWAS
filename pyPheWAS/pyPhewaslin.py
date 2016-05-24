@@ -1,11 +1,12 @@
-"""
-Shikha Chaganti
-Kunal Nabar
-Vanderbilt University
-Medical-image Analysis and Statistical Interpretation Lab
+# Shikha Chaganti
+# Kunal Nabar
+# Vanderbilt University
+# Medical-image Analysis and Statistical Interpretation Lab
 
-newphewas
-v2.0
+# newphewas
+# v2.0
+"""
+Python implemented code for running linear regressions on PheWAS inputs.
 
 """
 
@@ -17,14 +18,21 @@ import pandas as pd
 import statsmodels.formula.api as smf
 import statsmodels.api as sm
 from matplotlib import rcParams
-"""
-I/O Reading Input From Files
-"""
+
+
 def get_codes():
+	"""
+	Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.
+
+	"""
 	filename = 'codes.csv'	
 	return pd.read_csv(filename)
 
 def get_input(path, filename):
+	"""
+	Read all of the phenotype data from an origin file and load it into a pandas dataframe.
+	
+	"""
 	wholefname = path + filename
 	icdfile = pd.read_csv(wholefname)
 	g=icdfile.groupby(['id','icd9'])
@@ -34,6 +42,10 @@ def get_input(path, filename):
 	return phenotypes
 
 def get_group_file(path, filename):
+	"""
+	Read all of the genotype data from an origin file and load it into a pandas dataframe.
+	
+	"""
 	wholefname = path + filename
 	genotypes = pd.read_csv(wholefname)
 	return genotypes
@@ -42,6 +54,10 @@ def get_group_file(path, filename):
 Generates a feature matrix of (# of patients)x(icd9 counts)
 """
 def generate_feature_matrix(genotypes,phenotypes):
+	"""
+		
+
+	"""
 	feature_matrix = np.zeros((genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
 	count=0;
 	for i in genotypes['id']:
