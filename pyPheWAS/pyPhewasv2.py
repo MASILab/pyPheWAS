@@ -35,6 +35,14 @@ def get_input(path, filename):
 	phenotypes = pd.merge(icdfile,codes,on='icd9')
 	return phenotypes
 
+def get_phewas_info(p_index):
+	p_code = phewas_codes.loc[p_index].phewas_code	
+	corresponding = codes[codes.phewas_code == p_code]
+
+	p_name = corresponding.iloc[0].phewas_string
+	p_rollup = ','.join(codes[codes.phewas_code == p_code].icd9.tolist())
+	return [p_code, p_name, p_rollup]
+
 def get_group_file(path, filename):
 	wholefname = path + filename
 	genotypes = pd.read_csv(wholefname)
@@ -55,7 +63,7 @@ def generate_feature_matrix(genotypes,phenotypes):
 def get_bon_thresh(normalized,power):
 	return power/sum(np.isfinite(normalized))
 
-
+		
 
 def run_phewas(fm, genotypes,covariates):
 	m = len(fm[0,])
@@ -63,6 +71,7 @@ def run_phewas(fm, genotypes,covariates):
 	neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
 	print('running phewas')
 	icodes=[]
+	regressions = pd.DataFrame(columns=output_columns)
 	for index in range(m):
 
 		phen_vector = fm[:,index]
@@ -71,11 +80,14 @@ def run_phewas(fm, genotypes,covariates):
 		
 		print(index)
 		
-			
+		phewas_info = get_phewas_info(index)
+		stat_info = res[2]
+		info = phewas_info[0:2] + stat_info + [phewas_info[2]]
+		regressions.loc[index] = info
 		
 		p_values[index] = res[1]
 	normalized = neglogp(p_values)	
-	return (np.array(range(m)), normalized)
+	return (np.array(range(m)), normalized, regressions)
 
 
 """
@@ -86,7 +98,6 @@ def get_x_label_positions(categories):
 	s = 0
 	label_positions = []
 	for _,v in tt.items():
-		print(v//2)
 		label_positions.append(s + v//2)
 		s += v
 	return label_positions
@@ -98,37 +109,40 @@ def plot_data_points(x, y, thresh, save):
 	x_label_positions = get_x_label_positions(c['category'].tolist())
 	x_labels = c.sort_values('category').category_string.drop_duplicates().tolist()
 	e = 1
+	artists = []
 	for i in idx:
 		plt.plot(e,y[i],'o', color = plot_colors[c[i:i+1].category_string.values[0]],markersize=10, fillstyle='full', markeredgewidth=0.0)
 		if y[i] > thresh:
-			plt.text(e,y[i],c['phewas_string'][i], rotation=40, va='bottom')
+			artists.append(plt.text(e,y[i],c['phewas_string'][i], rotation=40, va='bottom'))
 		e += 1
 	plt.axhline(y=-math.log10(0.05), color='blue')
 	plt.axhline(y=thresh, color='red')
-	plt.xticks(x_label_positions, x_labels,rotation=70, fontsize=15)
+	plt.xticks(x_label_positions, x_labels,rotation=70, fontsize=10)
 	plt.ylim(ymin=0)
 	plt.xlim(xmin=0, xmax=len(c))
 	plt.ylabel('-log10(p)')
-	rcParams.update({'figure.autolayout': True})
-	#plt.tight_layout(pad=0.2,w_pad=1,h_pad=0)
-	if save != None:
-		plt.savefig(save)
-	plt.show()
+	if save:
+		plt.savefig(save,bbox_extra_artists=artists, bbox_inches='tight')
+	else:
+		plt.subplots_adjust(left=0.05,right=0.85)
+		plt.show()
+	plt.clf()
 
 def calculate_odds_ratio(genotypes, phen_vector,covariates):
-	
 	data = genotypes
 	data['y']=phen_vector
 	f='y~'+covariates
 	try:
 		logreg = smf.glm(f,data=data,family=sm.families.Binomial()).fit()
 		p=logreg.pvalues.genotype
-		odds=logreg.deviance
-	
+		odds=logreg.deviance	
+		conf = logreg.conf_int()
+		od = [-math.log10(p), logreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
 	except:
 		odds=0
 		p='nan'
-	return (odds,p)
+		od = ['nan','nan','nan']
+	return (odds,p,od)
 
 """
 Begin init code
@@ -137,6 +151,13 @@ Begin init code
 codes = get_codes()
 phewas_codes =  pd.DataFrame(codes['phewas_code'].drop_duplicates());
 phewas_codes = phewas_codes.reset_index()
+
+output_columns = ['PheWAS Code', 
+ 'PheWAS Name', 
+ '\"-log(p)\"', 
+ 'beta',
+ 'Conf-interval beta',
+ 'ICD-9']
 plot_colors = {'-' : 'gold',
  'circulatory system' : 'red',
  'congenital anomalies': 'mediumspringgreen',
@@ -156,7 +177,7 @@ plot_colors = {'-' : 'gold',
  'sense organs' : 'darkviolet',
  'symptoms' : 'darkviolet'}
 
-def phewas(path, filename, groupfile, covariates, save=''):
+def phewas(path, filename, groupfile, covariates, save='',output=''):
 	# the path and filename of the goal file 
 	# must hold the following format
 	# patient id, icd9 code, event count
@@ -169,9 +190,11 @@ def phewas(path, filename, groupfile, covariates, save=''):
 	genotypes = get_group_file(path, groupfile)
 	fm = generate_feature_matrix(genotypes,phenotypes)
 	print(len(fm))
-	results = run_phewas(fm, genotypes, covariates)
+	results = run_phewas(fm, genotypes,covariates)
+	if output:
+		results[2].to_csv(output, index=False)
 	thresh = get_bon_thresh(results[1],0.05)
 	plot_data_points(results[0],results[1],-math.log10(thresh), save)
-
+	return (results[0], results[1], -math.log10(thresh))
 
 
