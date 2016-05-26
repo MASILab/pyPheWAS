@@ -23,10 +23,18 @@ from matplotlib import rcParams
 I/O Reading Input From Files
 """
 def get_codes():
+	"""
+	Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.
+
+	"""
 	filename = 'codes.csv'	
 	return pd.read_csv(filename)
 
 def get_input(path, filename):
+	"""
+	Read all of the phenotype data from an origin file and load it into a pandas dataframe.
+	
+	"""
 	wholefname = path + filename
 	icdfile = pd.read_csv(wholefname)
 	g=icdfile.groupby(['id','icd9'])
@@ -44,6 +52,10 @@ def get_phewas_info(p_index):
 	return [p_code, p_name, p_rollup]
 
 def get_group_file(path, filename):
+	"""
+	Read all of the genotype data from an origin file and load it into a pandas dataframe.
+	
+	"""
 	wholefname = path + filename
 	genotypes = pd.read_csv(wholefname)
 	return genotypes
@@ -52,6 +64,15 @@ def get_group_file(path, filename):
 Generates a feature matrix of (# of patients)x(icd9 counts)
 """
 def generate_feature_matrix(genotypes,phenotypes):
+	"""
+	Generate the feature matrix from the genotype and phenotype matrix.
+
+	The feature matrix is used to calculate the regressions. 
+	The feature matrix has a vector for each ID, each vector has the
+	0/1 count as for whether or not rhat phewas code showed up for the given
+	patient ID.
+
+	"""
 	feature_matrix = np.zeros((genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
 	count=0;
 	for i in genotypes['id']:
@@ -61,11 +82,23 @@ def generate_feature_matrix(genotypes,phenotypes):
 	return feature_matrix
 
 def get_bon_thresh(normalized,power):
+	"""
+	Calculate the bonferroni correction.
+
+	Divide the power by the sum of all finite values.
+
+	"""
 	return power/sum(np.isfinite(normalized))
 
 		
 
 def run_phewas(fm, genotypes,covariates):
+	"""
+	Calculate an array of p-values.
+
+	Each p-value to the regression performed on each phewas code.
+	
+	"""
 	m = len(fm[0,])
 	p_values = np.zeros(m, dtype=float)
 	neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
@@ -94,6 +127,10 @@ def run_phewas(fm, genotypes,covariates):
 Plotting
 """
 def get_x_label_positions(categories):
+	"""
+	Get the location to place each label on the x-axis.
+
+	"""
 	tt = Counter(categories)
 	s = 0
 	label_positions = []
@@ -102,7 +139,13 @@ def get_x_label_positions(categories):
 		s += v
 	return label_positions
 
-def plot_data_points(x, y, thresh, save):
+def plot_data_points(x, y, thresh, save=''):
+	"""
+	Plots x,y, and the threshold line.
+
+	An option can also be made to save the plot in a file of your choosing.
+
+	"""
 	c = codes.loc[phewas_codes['index']]
 	c = c.reset_index()
 	idx = c.sort_values(by='category').index
@@ -129,6 +172,10 @@ def plot_data_points(x, y, thresh, save):
 	plt.clf()
 
 def calculate_odds_ratio(genotypes, phen_vector,covariates):
+	"""
+	Calculates the odds and p-value for using a logarithmic regression.
+
+	"""
 	data = genotypes
 	data['y']=phen_vector
 	f='y~'+covariates
@@ -178,10 +225,10 @@ plot_colors = {'-' : 'gold',
  'symptoms' : 'darkviolet'}
 
 def phewas(path, filename, groupfile, covariates, save='',output=''):
-	# the path and filename of the goal file 
-	# must hold the following format
-	# patient id, icd9 code, event count
-	# filename = 'testdata.csv'
+	"""
+	This method will execute a linear regression for phewas.
+	
+	"""
 	start_time = time.time()
 	global codes,phewas_codes
 	#path,filename,groupfile=('','phenotype.csv','Probable_AD.csv')

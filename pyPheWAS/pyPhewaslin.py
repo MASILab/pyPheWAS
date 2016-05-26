@@ -5,6 +5,7 @@
 
 # newphewas
 # v2.0
+
 """
 Python implemented code for running linear regressions on PheWAS inputs.
 
@@ -55,7 +56,12 @@ Generates a feature matrix of (# of patients)x(icd9 counts)
 """
 def generate_feature_matrix(genotypes,phenotypes):
 	"""
-		
+	Generate the feature matrix from the genotype and phenotype matrix.
+
+	The feature matrix is used to calculate the regressions. 
+	The feature matrix has a vector for each ID, each vector has the
+	count of how many times that phewas code showed up for the given
+	patient ID.
 
 	"""
 	feature_matrix = np.zeros((genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
@@ -69,11 +75,23 @@ def generate_feature_matrix(genotypes,phenotypes):
 	return feature_matrix
 
 def get_bon_thresh(normalized,power):
+	"""
+	Calculate the bonferroni correction.
+
+	Divide the power by the sum of all finite values.
+
+	"""
 	return power/sum(np.isfinite(normalized))
 
 
 
 def run_phewas(fm, genotypes,covariates):
+	"""
+	Calculate an array of p-values.
+
+	Each p-value to the regression performed on each phewas code.
+	
+	"""
 	m = len(fm[0,])
 	p_values = np.zeros(m, dtype=float)
 	neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
@@ -97,6 +115,10 @@ def run_phewas(fm, genotypes,covariates):
 Plotting
 """
 def get_x_label_positions(categories):
+	"""
+	Get the location to place each label on the x-axis.
+
+	"""
 	tt = Counter(categories)
 	s = 0
 	label_positions = []
@@ -106,7 +128,13 @@ def get_x_label_positions(categories):
 		s += v
 	return label_positions
 
-def plot_data_points(x, y, thresh, save):
+def plot_data_points(x, y, thresh, save=''):
+	"""
+	Plots x,y, and the threshold line.
+
+	An option can also be made to save the plot in a file of your choosing.
+
+	"""
 	c = codes.loc[phewas_codes['index']]
 	c = c.reset_index()
 	idx = c.sort_values(by='category').index
@@ -132,7 +160,10 @@ def plot_data_points(x, y, thresh, save):
 
 
 def calculate_odds_ratio(genotypes, phen_vector,covariates):
-	
+	"""
+	Calculates the odds and p-value for using a linear regression.
+
+	"""
 	data = genotypes
 	data['y']=phen_vector
 	f='y~'+covariates
@@ -173,21 +204,21 @@ plot_colors = {'-' : 'gold',
  'symptoms' : 'darkviolet'}
 
 def phewas(path, filename, groupfile,covariates,save=''):
-	# the path and filename of the goal file 
-	# must hold the following format
-	# patient id, icd9 code, event count
-	# filename = 'testdata.csv'
+	"""
+	This method will execute a linear regression for phewas.
+	
+	"""
 	start_time = time.time()
 	global codes,phewas_codes
 	#path,filename,groupfile=('','phenotype.csv','Probable_AD.csv')
 	print("reading in data")
 	phenotypes = get_input(path, filename)
 	genotypes = get_group_file(path, groupfile)
-	fm = generate_feature_matrix(genotypes,phenotypes)
+	fm = generate_feature_matrix(genotypes, phenotypes)
 	print(len(fm))
-	results = run_phewas(fm, genotypes,covariates)
+	results = run_phewas(fm, genotypes, covariates)
 	thresh = get_bon_thresh(results[1],0.05)
-	plot_data_points(results[0],results[1],-math.log10(thresh),save)
+	plot_data_points(results[0], results[1], -math.log10(thresh), save)
 
 
 
