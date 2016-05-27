@@ -3,12 +3,12 @@ pyPhewas
 
 pyPhewas module is used to execute a variety of different analyses on large sets of patient phenotype data.
 
-Getting started:
+Getting started::
 
-    from pyPhewas import Phewas
-   	# define phenotype file, genotype file, or any other desired options
-   	p = Phewas(phenotypes, genotypes)
-   	p.run_lin() # for a linear regression
+   from pyPhewas import Phewas
+   # define phenotype file, genotype file, or any other desired options
+   p = Phewas(phenotypes, genotypes)
+   p.run_lin() # for a linear regression
 
 Features
 --------
@@ -19,7 +19,7 @@ Features
 Installation
 ------------
 
-Install $project by running:
+Install pyPhewas by running::
 
     pip install pyPhewas
 
