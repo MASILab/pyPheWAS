@@ -27,7 +27,7 @@ def get_codes():
 	Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.
 
 	"""
-	filename = 'codes.csv'	
+	filename = '../resources/codes.csv'	
 	return pd.read_csv(filename)
 
 def get_input(path, filename):
