@@ -1,0 +1,309 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pyPheWAS.pyPhewaslin &mdash; pyPheWAS 0.0.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pyPheWAS 0.0.2 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pyPheWAS.pyPhewaslin</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Shikha Chaganti</span>
+<span class="c1"># Kunal Nabar</span>
+<span class="c1"># Vanderbilt University</span>
+<span class="c1"># Medical-image Analysis and Statistical Interpretation Lab</span>
+
+<span class="c1"># newphewas</span>
+<span class="c1"># v2.0</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Python implemented code for running linear regressions on PheWAS inputs.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">import</span> <span class="nn">time</span><span class="o">,</span><span class="nn">math</span><span class="o">,</span> <span class="nn">scipy.stats</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">statsmodels.formula.api</span> <span class="kn">as</span> <span class="nn">smf</span>
+<span class="kn">import</span> <span class="nn">statsmodels.api</span> <span class="kn">as</span> <span class="nn">sm</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">rcParams</span>
+
+
+<div class="viewcode-block" id="get_codes"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslin.get_codes">[docs]</a><span class="k">def</span> <span class="nf">get_codes</span><span class="p">():</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;../resources/codes.csv&#39;</span>	
+	<span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="get_input"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslin.get_input">[docs]</a><span class="k">def</span> <span class="nf">get_input</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Read all of the phenotype data from an origin file and load it into a pandas dataframe.</span>
+<span class="sd">	</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">wholefname</span> <span class="o">=</span> <span class="n">path</span> <span class="o">+</span> <span class="n">filename</span>
+	<span class="n">icdfile</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">wholefname</span><span class="p">)</span>
+	<span class="n">g</span><span class="o">=</span><span class="n">icdfile</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="s1">&#39;icd9&#39;</span><span class="p">])</span>
+	<span class="n">phenotypes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">icdfile</span><span class="p">,</span><span class="n">codes</span><span class="p">,</span><span class="n">on</span><span class="o">=</span><span class="s1">&#39;icd9&#39;</span><span class="p">)</span>	
+	<span class="n">phenotypes</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">0</span>
+	<span class="n">phenotypes</span><span class="p">[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">phenotypes</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="s1">&#39;phewas_code&#39;</span><span class="p">])[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="s1">&#39;count&#39;</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">phenotypes</span></div>
+
+<div class="viewcode-block" id="get_group_file"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslin.get_group_file">[docs]</a><span class="k">def</span> <span class="nf">get_group_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Read all of the genotype data from an origin file and load it into a pandas dataframe.</span>
+<span class="sd">	</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">wholefname</span> <span class="o">=</span> <span class="n">path</span> <span class="o">+</span> <span class="n">filename</span>
+	<span class="n">genotypes</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">wholefname</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">genotypes</span></div>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Generates a feature matrix of (# of patients)x(icd9 counts)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="generate_feature_matrix"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslin.generate_feature_matrix">[docs]</a><span class="k">def</span> <span class="nf">generate_feature_matrix</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span><span class="n">phenotypes</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Generate the feature matrix from the genotype and phenotype matrix.</span>
+
+<span class="sd">	The feature matrix is used to calculate the regressions. </span>
+<span class="sd">	The feature matrix has a vector for each ID, each vector has the</span>
+<span class="sd">	count of how many times that phewas code showed up for the given</span>
+<span class="sd">	patient ID.</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">feature_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">genotypes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">phewas_codes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+	<span class="n">count</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span>
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">genotypes</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]:</span>
+		<span class="n">temp</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">phenotypes</span><span class="p">[</span><span class="n">phenotypes</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">i</span><span class="p">][[</span><span class="s1">&#39;phewas_code&#39;</span><span class="p">,</span><span class="s1">&#39;count&#39;</span><span class="p">]])</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+		<span class="n">cts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">phewas_codes</span><span class="p">,</span><span class="n">temp</span><span class="p">,</span><span class="n">on</span><span class="o">=</span><span class="s1">&#39;phewas_code&#39;</span><span class="p">,</span><span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)[</span><span class="s1">&#39;count&#39;</span><span class="p">]</span>
+		<span class="n">cts</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">cts</span><span class="p">)]</span><span class="o">=</span><span class="mi">0</span>
+		<span class="n">feature_matrix</span><span class="p">[</span><span class="n">count</span><span class="p">,:]</span><span class="o">=</span><span class="n">cts</span>
+		<span class="n">count</span><span class="o">+=</span><span class="mi">1</span>
+	<span class="k">return</span> <span class="n">feature_matrix</span></div>
+
+<div class="viewcode-block" id="get_bon_thresh"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslin.get_bon_thresh">[docs]</a><span class="k">def</span> <span class="nf">get_bon_thresh</span><span class="p">(</span><span class="n">normalized</span><span class="p">,</span><span class="n">power</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Calculate the bonferroni correction.</span>
+
+<span class="sd">	Divide the power by the sum of all finite values.</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="k">return</span> <span class="n">power</span><span class="o">/</span><span class="nb">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">normalized</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="run_phewas"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslin.run_phewas">[docs]</a><span class="k">def</span> <span class="nf">run_phewas</span><span class="p">(</span><span class="n">fm</span><span class="p">,</span> <span class="n">genotypes</span><span class="p">,</span><span class="n">covariates</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Calculate an array of p-values.</span>
+
+<span class="sd">	Each p-value to the regression performed on each phewas code.</span>
+<span class="sd">	</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">m</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fm</span><span class="p">[</span><span class="mi">0</span><span class="p">,])</span>
+	<span class="n">p_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+	<span class="n">neglogp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vectorize</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+	<span class="k">print</span><span class="p">(</span><span class="s1">&#39;running phewas&#39;</span><span class="p">)</span>
+	<span class="n">icodes</span><span class="o">=</span><span class="p">[]</span>
+	<span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+
+		<span class="n">phen_vector</span> <span class="o">=</span> <span class="n">fm</span><span class="p">[:,</span><span class="n">index</span><span class="p">]</span>
+		
+		<span class="n">res</span><span class="o">=</span><span class="n">calculate_odds_ratio</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">phen_vector</span><span class="p">,</span><span class="n">covariates</span><span class="p">)</span>
+		
+		<span class="k">print</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+		
+			
+		
+		<span class="n">p_values</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+	<span class="n">normalized</span> <span class="o">=</span> <span class="n">neglogp</span><span class="p">(</span><span class="n">p_values</span><span class="p">)</span>	
+	<span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">m</span><span class="p">)),</span> <span class="n">normalized</span><span class="p">)</span></div>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Plotting</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="get_x_label_positions"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslin.get_x_label_positions">[docs]</a><span class="k">def</span> <span class="nf">get_x_label_positions</span><span class="p">(</span><span class="n">categories</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Get the location to place each label on the x-axis.</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">tt</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">categories</span><span class="p">)</span>
+	<span class="n">s</span> <span class="o">=</span> <span class="mi">0</span>
+	<span class="n">label_positions</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="k">for</span> <span class="n">_</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">tt</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+		<span class="k">print</span><span class="p">(</span><span class="n">v</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
+		<span class="n">label_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span> <span class="o">+</span> <span class="n">v</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
+		<span class="n">s</span> <span class="o">+=</span> <span class="n">v</span>
+	<span class="k">return</span> <span class="n">label_positions</span></div>
+
+<div class="viewcode-block" id="plot_data_points"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslin.plot_data_points">[docs]</a><span class="k">def</span> <span class="nf">plot_data_points</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">thresh</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Plots x,y, and the threshold line.</span>
+
+<span class="sd">	An option can also be made to save the plot in a file of your choosing.</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">c</span> <span class="o">=</span> <span class="n">codes</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">phewas_codes</span><span class="p">[</span><span class="s1">&#39;index&#39;</span><span class="p">]]</span>
+	<span class="n">c</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+	<span class="n">idx</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;category&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+	<span class="n">x_label_positions</span> <span class="o">=</span> <span class="n">get_x_label_positions</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;category&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+	<span class="n">x_labels</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">category_string</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+	<span class="n">e</span> <span class="o">=</span> <span class="mi">1</span>
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">:</span>
+		<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">color</span> <span class="o">=</span> <span class="n">plot_colors</span><span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">category_string</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span><span class="n">markersize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">fillstyle</span><span class="o">=</span><span class="s1">&#39;full&#39;</span><span class="p">,</span> <span class="n">markeredgewidth</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thresh</span><span class="p">:</span>
+			<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;phewas_string&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s1">&#39;bottom&#39;</span><span class="p">)</span>
+		<span class="n">e</span> <span class="o">+=</span> <span class="mi">1</span>
+	<span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=-</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">0.05</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+	<span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">thresh</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+	<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">x_label_positions</span><span class="p">,</span> <span class="n">x_labels</span><span class="p">,</span><span class="n">rotation</span><span class="o">=</span><span class="mi">70</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+	<span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="n">ymin</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+	<span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">xmin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">))</span>
+	<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;-log10(p)&#39;</span><span class="p">)</span>
+	<span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;figure.autolayout&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">})</span>
+	<span class="c1">#plt.tight_layout(pad=0.2,w_pad=1,h_pad=0)</span>
+	<span class="k">if</span> <span class="n">save</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+		<span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">save</span><span class="p">)</span>
+	<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="calculate_odds_ratio"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslin.calculate_odds_ratio">[docs]</a><span class="k">def</span> <span class="nf">calculate_odds_ratio</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">phen_vector</span><span class="p">,</span><span class="n">covariates</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Calculates the odds and p-value for using a linear regression.</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">data</span> <span class="o">=</span> <span class="n">genotypes</span>
+	<span class="n">data</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">phen_vector</span>
+	<span class="n">f</span><span class="o">=</span><span class="s1">&#39;y~&#39;</span><span class="o">+</span><span class="n">covariates</span>
+	<span class="k">try</span><span class="p">:</span>
+		<span class="n">linreg</span> <span class="o">=</span> <span class="n">smf</span><span class="o">.</span><span class="n">ols</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+		<span class="n">p</span><span class="o">=</span><span class="n">linreg</span><span class="o">.</span><span class="n">pvalues</span><span class="o">.</span><span class="n">genotype</span>
+		<span class="n">odds</span><span class="o">=</span><span class="mi">0</span>
+	
+	<span class="k">except</span><span class="p">:</span>
+		<span class="n">odds</span><span class="o">=</span><span class="mi">0</span>
+		<span class="n">p</span><span class="o">=</span><span class="s1">&#39;nan&#39;</span>
+	<span class="k">return</span> <span class="p">(</span><span class="n">odds</span><span class="p">,</span><span class="n">p</span><span class="p">)</span></div>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Begin init code</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">codes</span> <span class="o">=</span> <span class="n">get_codes</span><span class="p">()</span>
+<span class="n">phewas_codes</span> <span class="o">=</span>  <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">codes</span><span class="p">[</span><span class="s1">&#39;phewas_code&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">());</span>
+<span class="n">phewas_codes</span> <span class="o">=</span> <span class="n">phewas_codes</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+<span class="n">plot_colors</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;-&#39;</span> <span class="p">:</span> <span class="s1">&#39;gold&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;circulatory system&#39;</span> <span class="p">:</span> <span class="s1">&#39;red&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;congenital anomalies&#39;</span><span class="p">:</span> <span class="s1">&#39;mediumspringgreen&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;dermatologic&#39;</span> <span class="p">:</span> <span class="s1">&#39;maroon&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;digestive&#39;</span> <span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;endocrine/metabolic&#39;</span> <span class="p">:</span> <span class="s1">&#39;darkred&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;genitourinary&#39;</span> <span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;hematopoietic&#39;</span> <span class="p">:</span> <span class="s1">&#39;orange&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;infectious diseases&#39;</span> <span class="p">:</span> <span class="s1">&#39;blue&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;injuries &amp; poisonings&#39;</span> <span class="p">:</span> <span class="s1">&#39;slategray&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;mental disorders&#39;</span> <span class="p">:</span> <span class="s1">&#39;fuchsia&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;musculoskeletal&#39;</span> <span class="p">:</span> <span class="s1">&#39;darkgreen&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;neoplasms&#39;</span> <span class="p">:</span> <span class="s1">&#39;teal&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;neurological&#39;</span> <span class="p">:</span> <span class="s1">&#39;midnightblue&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;pregnancy complications&#39;</span> <span class="p">:</span> <span class="s1">&#39;gold&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;respiratory&#39;</span> <span class="p">:</span> <span class="s1">&#39;brown&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;sense organs&#39;</span> <span class="p">:</span> <span class="s1">&#39;darkviolet&#39;</span><span class="p">,</span>
+ <span class="s1">&#39;symptoms&#39;</span> <span class="p">:</span> <span class="s1">&#39;darkviolet&#39;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="phewas"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslin.phewas">[docs]</a><span class="k">def</span> <span class="nf">phewas</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">groupfile</span><span class="p">,</span><span class="n">covariates</span><span class="p">,</span><span class="n">save</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	This method will execute a linear regression for phewas.</span>
+<span class="sd">	</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+	<span class="k">global</span> <span class="n">codes</span><span class="p">,</span><span class="n">phewas_codes</span>
+	<span class="c1">#path,filename,groupfile=(&#39;&#39;,&#39;phenotype.csv&#39;,&#39;Probable_AD.csv&#39;)</span>
+	<span class="k">print</span><span class="p">(</span><span class="s2">&quot;reading in data&quot;</span><span class="p">)</span>
+	<span class="n">phenotypes</span> <span class="o">=</span> <span class="n">get_input</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+	<span class="n">genotypes</span> <span class="o">=</span> <span class="n">get_group_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">groupfile</span><span class="p">)</span>
+	<span class="n">fm</span> <span class="o">=</span> <span class="n">generate_feature_matrix</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">phenotypes</span><span class="p">)</span>
+	<span class="k">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fm</span><span class="p">))</span>
+	<span class="n">results</span> <span class="o">=</span> <span class="n">run_phewas</span><span class="p">(</span><span class="n">fm</span><span class="p">,</span> <span class="n">genotypes</span><span class="p">,</span> <span class="n">covariates</span><span class="p">)</span>
+	<span class="n">thresh</span> <span class="o">=</span> <span class="n">get_bon_thresh</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="mf">0.05</span><span class="p">)</span>
+	<span class="n">plot_data_points</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">math</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">thresh</span><span class="p">),</span> <span class="n">save</span><span class="p">)</span></div>
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, MASI Lab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
