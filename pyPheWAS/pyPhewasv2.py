@@ -3,10 +3,8 @@ Shikha Chaganti
 Kunal Nabar
 Vanderbilt University
 Medical-image Analysis and Statistical Interpretation Lab
-
 newphewas
 v2.0
-
 """
 
 import numpy as np
@@ -22,20 +20,33 @@ from matplotlib import rcParams
 """
 I/O Reading Input From Files
 """
-def get_codes():
+def get_codes(): #same
+	"""
+	Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.
+	"""
 	filename = 'codes.csv'	
 	return pd.read_csv(filename)
 
-def get_input(path, filename):
+
+def get_input(path, filename): #diff -done
+	"""
+	Read all of the phenotype data from an origin file and load it into a pandas dataframe.
+	
+	"""
 	wholefname = path + filename
 	icdfile = pd.read_csv(wholefname)
 	g=icdfile.groupby(['id','icd9'])
-	idx=g.filter(lambda x: len(x)==1).index
-	#icdfile.ix[idx,'icd9']='zzz'
-	phenotypes = pd.merge(icdfile,codes,on='icd9')
+	if  gen_ftype==0:
+		idx=g.filter(lambda x: len(x)==1).index
+		phenotypes = pd.merge(icdfile,codes,on='icd9')
+	else:
+		phenotypes = pd.merge(icdfile,codes,on='icd9')	
+		phenotypes['count']=0
+		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')	
 	return phenotypes
 
-def get_phewas_info(p_index):
+def get_phewas_info(p_index): #same
+	
 	p_code = phewas_codes.loc[p_index].phewas_code	
 	corresponding = codes[codes.phewas_code == p_code]
 
@@ -43,7 +54,7 @@ def get_phewas_info(p_index):
 	p_rollup = ','.join(codes[codes.phewas_code == p_code].icd9.tolist())
 	return [p_code, p_name, p_rollup]
 
-def get_group_file(path, filename):
+def get_group_file(path, filename): #same
 	wholefname = path + filename
 	genotypes = pd.read_csv(wholefname)
 	return genotypes
@@ -51,21 +62,27 @@ def get_group_file(path, filename):
 """
 Generates a feature matrix of (# of patients)x(icd9 counts)
 """
-def generate_feature_matrix(genotypes,phenotypes):
+def generate_feature_matrix(genotypes,phenotypes): #diff - done
 	feature_matrix = np.zeros((genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
 	count=0;
 	for i in genotypes['id']:
-		match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
-		feature_matrix[count,match[match==True].index]=1
+		if gen_ftype==0:
+			match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
+			feature_matrix[count,match[match==True].index]=1
+			
+		else:
+			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count']]).drop_duplicates()
+			cts = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['count']
+			cts[np.isnan(cts)]=0
+			feature_matrix[count,:]=cts
 		count+=1
 	return feature_matrix
 
-def get_bon_thresh(normalized,power):
+def get_bon_thresh(normalized,power): #same
 	return power/sum(np.isfinite(normalized))
-
 		
 
-def run_phewas(fm, genotypes,covariates):
+def run_phewas(fm, genotypes,covariates): #same
 	m = len(fm[0,])
 	p_values = np.zeros(m, dtype=float)
 	neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
@@ -93,7 +110,7 @@ def run_phewas(fm, genotypes,covariates):
 """
 Plotting
 """
-def get_x_label_positions(categories):
+def get_x_label_positions(categories): #same
 	tt = Counter(categories)
 	s = 0
 	label_positions = []
@@ -102,7 +119,7 @@ def get_x_label_positions(categories):
 		s += v
 	return label_positions
 
-def plot_data_points(x, y, thresh, save):
+def plot_data_points(x, y, thresh, save): #same
 	c = codes.loc[phewas_codes['index']]
 	c = c.reset_index()
 	idx = c.sort_values(by='category').index
@@ -128,16 +145,24 @@ def plot_data_points(x, y, thresh, save):
 		plt.show()
 	plt.clf()
 
-def calculate_odds_ratio(genotypes, phen_vector,covariates):
+def calculate_odds_ratio(genotypes, phen_vector,covariates): #diff - done
 	data = genotypes
 	data['y']=phen_vector
 	f='y~'+covariates
 	try:
-		logreg = smf.glm(f,data=data,family=sm.families.Binomial()).fit()
-		p=logreg.pvalues.genotype
-		odds=logreg.deviance	
-		conf = logreg.conf_int()
-		od = [-math.log10(p), logreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+		if gen_ftype==0:
+			logreg = smf.glm(f,data=data,family=sm.families.Binomial()).fit()
+			p=logreg.pvalues.genotype
+			odds=logreg.deviance	
+			conf = logreg.conf_int()
+			od = [-math.log10(p), logreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+		else:
+			linreg = smf.ols(f,data=data).fit()
+			p=linreg.pvalues.genotype
+			odds=0
+			conf = linreg.conf_int()
+			od = [-math.log10(p), linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+	
 	except:
 		odds=0
 		p='nan'
@@ -177,15 +202,20 @@ plot_colors = {'-' : 'gold',
  'sense organs' : 'darkviolet',
  'symptoms' : 'darkviolet'}
 
-def phewas(path, filename, groupfile, covariates, save='',output=''):
+gen_ftype = 0
+
+
+def phewas(path, filename, groupfile, covariates, reg_type=0, save='',output=''): #same
 	# the path and filename of the goal file 
 	# must hold the following format
 	# patient id, icd9 code, event count
 	# filename = 'testdata.csv'
 	start_time = time.time()
-	global codes,phewas_codes
-	#path,filename,groupfile=('','phenotype.csv','Probable_AD.csv')
+	global codes,phewas_codes, gen_ftype
+	
 	print("reading in data")
+
+	gen_ftype = = reg_type
 	phenotypes = get_input(path, filename)
 	genotypes = get_group_file(path, groupfile)
 	fm = generate_feature_matrix(genotypes,phenotypes)

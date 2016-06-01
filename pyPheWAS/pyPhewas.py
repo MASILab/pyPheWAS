@@ -12,7 +12,7 @@ This module is used to execute a variety of different analyses on large sets of 
 import pyPhewaslog, pyPhewaslin
 
 class Phewas:
-	def __init__(self, inputfile, groupfile, path='', covariates='genotype',save='', output=''):
+	def __init__(self, inputfile, groupfile, path='', covariates='genotype’, reg_type=0, save='', output=''):
 		self.pargs = [path, inputfile, groupfile, covariates, save, output]
 		self.results = None
 	def run_lin(self):
