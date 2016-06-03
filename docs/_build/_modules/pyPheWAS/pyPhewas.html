@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pyPheWAS.pyPhewas &mdash; pyPheWAS 0.0.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pyPheWAS 0.0.2 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pyPheWAS.pyPhewas</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Phewas object used to run different phenotype statistical anaylses.</span>
+
+<span class="sd">This module is used to execute a variety of different analyses on large sets of patient phenotype data.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pyPhewaslog</span><span class="o">,</span> <span class="nn">pyPhewaslin</span>
+
+<div class="viewcode-block" id="Phewas"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewas.Phewas">[docs]</a><span class="k">class</span> <span class="nc">Phewas</span><span class="p">:</span>
+
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	The Phewas object is used to run different types of Phewas regressions and plots.</span>
+
+<span class="sd">	&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Phewas.__init__"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewas.Phewas.__init__">[docs]</a>	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputfile</span><span class="p">,</span> <span class="n">groupfile</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">covariates</span><span class="o">=</span><span class="s1">&#39;genotype&#39;</span><span class="p">,</span><span class="n">save</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Creates a Phewas object with the given parameters.</span>
+
+<span class="sd">		:param inputfile: the name of the phenotype file (no path)</span>
+<span class="sd">		:param groupfile: the name of the genotype file (no path)</span>
+<span class="sd">		:param path: the path to the inputfile and groupfile, this path will be used for all outputs as well. Defaults to empty path (i.e. current directory)</span>
+<span class="sd">		:param covariates: the covariates that want to be run by pyPhewas, each additional covariate must be delimited by a *+* sign (i.e &#39;genotype+age&#39;)</span>
+<span class="sd">		:param save: the filename to save the generated plot. The default is an empty string. This will result in the plot being displayed.</span>
+<span class="sd">		:param output: the filename to save the regression data. The default is an empty string.</span>
+
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">pargs</span> <span class="o">=</span> <span class="p">[</span><span class="n">path</span><span class="p">,</span> <span class="n">inputfile</span><span class="p">,</span> <span class="n">groupfile</span><span class="p">,</span> <span class="n">covariates</span><span class="p">,</span> <span class="n">save</span><span class="p">,</span> <span class="n">output</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">results</span> <span class="o">=</span> <span class="bp">None</span></div>
+<div class="viewcode-block" id="Phewas.run_lin"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewas.Phewas.run_lin">[docs]</a>	<span class="k">def</span> <span class="nf">run_lin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Runs a linear regression on the current arguments.</span>
+
+<span class="sd">		Upon completion, the results of the regression are saved by the object so that they can be used without creating a new regression.</span>
+
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">pyPhewaslin</span><span class="o">.</span><span class="n">phewas</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pargs</span><span class="p">))</span></div>
+<div class="viewcode-block" id="Phewas.run_log"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewas.Phewas.run_log">[docs]</a>	<span class="k">def</span> <span class="nf">run_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Runs a logarithmic regression on the current arguments.</span>
+
+<span class="sd">		Upon completion, the results of the regression are saved by the object so that they can be used without creating a new regression.</span>
+
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">pyPhewaslog</span><span class="o">.</span><span class="n">phewas</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pargs</span><span class="p">))</span></div>
+<div class="viewcode-block" id="Phewas.replot"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewas.Phewas.replot">[docs]</a>	<span class="k">def</span> <span class="nf">replot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">		Replots the regression that was executed.</span>
+
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Please run Phewas before viewing results&quot;</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">pyPhewaslog</span><span class="o">.</span><span class="n">plot_data_points</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, MASI Lab.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

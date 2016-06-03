@@ -19,8 +19,13 @@ Source Documentation
 .. automodule:: pyPheWAS.pyPhewaslin
    :members:
 
+<<<<<<< HEAD
 :mod:`pyPheWAS.pyPhewaslog` -- pyPhewasv2 file
 *********************************************
+=======
+:mod:`pyPheWAS.pyPhewaslog` -- pyPhewaslog file
+***********************************************
+>>>>>>> origin
 
-.. automodule:: pyPheWAS.pyPhewasv2
+.. automodule:: pyPheWAS.pyPhewaslog
    :members:
