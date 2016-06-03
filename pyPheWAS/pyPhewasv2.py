@@ -24,25 +24,27 @@ def get_codes(): #same
 	"""
 	Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.
 	"""
-	filename = 'codes.csv'	
+	filename = '../resources/codes.csv'	
 	return pd.read_csv(filename)
 
 
-def get_input(path, filename): #diff -done
+def get_input(path, filename): #diff -done - add duration
 	"""
 	Read all of the phenotype data from an origin file and load it into a pandas dataframe.
 	
 	"""
 	wholefname = path + filename
 	icdfile = pd.read_csv(wholefname)
-	g=icdfile.groupby(['id','icd9'])
+	
 	if  gen_ftype==0:
+		g=icdfile.groupby(['id','icd9'])
 		idx=g.filter(lambda x: len(x)==1).index
 		phenotypes = pd.merge(icdfile,codes,on='icd9')
 	else:
 		phenotypes = pd.merge(icdfile,codes,on='icd9')	
 		phenotypes['count']=0
-		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')	
+		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')					
+		phenotypes['duration']=phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('max')-phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('min')+1
 	return phenotypes
 
 def get_phewas_info(p_index): #same
@@ -72,20 +74,35 @@ def generate_feature_matrix(genotypes,phenotypes): #diff - done
 			
 		else:
 			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count']]).drop_duplicates()
-			cts = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['count']
-			cts[np.isnan(cts)]=0
-			feature_matrix[count,:]=cts
+			if gen_ftype==1:
+				cts = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['count']
+				cts[np.isnan(cts)]=0
+				feature_matrix[count,:]=cts
+			elif gen_ftype==2:
+				dura = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['duration']
+				dura[np.isnan(dura)]=0
+				feature_matrix[count,:]=dura
 		count+=1
 	return feature_matrix
 
 def get_bon_thresh(normalized,power): #same
 	return power/sum(np.isfinite(normalized))
+
+
+def get_fdr_thresh(p_values, power):
+	sn = np.sort(p_values)
+	sn = sn[np.isfinite(sn)]
+	sn=sn[::-1]
+	for i in range(len(sn)):
+	     thresh=0.05*i/len(sn)
+ 	     if sn[i]<=power:
+      	         break
+	return sn[i]
 		
 
 def run_phewas(fm, genotypes,covariates): #same
 	m = len(fm[0,])
 	p_values = np.zeros(m, dtype=float)
-	neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
 	print('running phewas')
 	icodes=[]
 	regressions = pd.DataFrame(columns=output_columns)
@@ -95,16 +112,16 @@ def run_phewas(fm, genotypes,covariates): #same
 		
 		res=calculate_odds_ratio(genotypes, phen_vector,covariates)
 		
-		print(index)
-		
 		phewas_info = get_phewas_info(index)
 		stat_info = res[2]
 		info = phewas_info[0:2] + stat_info + [phewas_info[2]]
 		regressions.loc[index] = info
 		
 		p_values[index] = res[1]
-	normalized = neglogp(p_values)	
-	return (np.array(range(m)), normalized, regressions)
+	
+	return (np.array(range(m)), p_values, regressions)
+
+
 
 
 """
@@ -203,19 +220,20 @@ plot_colors = {'-' : 'gold',
  'symptoms' : 'darkviolet'}
 
 gen_ftype = 0
+neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
 
 
-def phewas(path, filename, groupfile, covariates, reg_type=0, save='',output=''): #same
+def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, save='',output=''): #same
 	# the path and filename of the goal file 
 	# must hold the following format
 	# patient id, icd9 code, event count
 	# filename = 'testdata.csv'
 	start_time = time.time()
-	global codes,phewas_codes, gen_ftype
+	global codes,phewas_codes, gen_ftype, neglogp
 	
 	print("reading in data")
 
-	gen_ftype = = reg_type
+	gen_ftype = reg_type
 	phenotypes = get_input(path, filename)
 	genotypes = get_group_file(path, groupfile)
 	fm = generate_feature_matrix(genotypes,phenotypes)
@@ -223,8 +241,12 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, save='',output='')
 	results = run_phewas(fm, genotypes,covariates)
 	if output:
 		results[2].to_csv(output, index=False)
-	thresh = get_bon_thresh(results[1],0.05)
-	plot_data_points(results[0],results[1],-math.log10(thresh), save)
+	normalized = neglogp(results[1])	
+	if thresh_type==0:
+		thresh = get_bon_thresh(normalized,0.05)
+	elif thresh_type==1:
+		thresh = get_fdr_thresh(results[1],0.05)
+	plot_data_points(results[0],normalized,thresh, save)
 	return (results[0], results[1], -math.log10(thresh))
 
 
