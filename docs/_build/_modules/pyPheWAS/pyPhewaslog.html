@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pyPheWAS.pyPhewasv2 &mdash; pyPheWAS 0.0.2 documentation</title>
+    <title>pyPheWAS.pyPhewaslog &mdash; pyPheWAS 0.0.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -39,7 +39,7 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <h1>Source code for pyPheWAS.pyPhewasv2</h1><div class="highlight"><pre>
+  <h1>Source code for pyPheWAS.pyPhewaslog</h1><div class="highlight"><pre>
 <span></span><span class="c1"># Shikha Chaganti</span>
 <span class="c1"># Kunal Nabar</span>
 <span class="c1"># Vanderbilt University</span>
@@ -66,7 +66,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">I/O Reading Input From Files</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="get_codes"><a class="viewcode-back" href="../../test.html#pyPheWAS.pyPhewasv2.get_codes">[docs]</a><span class="k">def</span> <span class="nf">get_codes</span><span class="p">():</span>
+<div class="viewcode-block" id="get_codes"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslog.get_codes">[docs]</a><span class="k">def</span> <span class="nf">get_codes</span><span class="p">():</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.</span>
 
@@ -74,7 +74,7 @@
 	<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;../resources/codes.csv&#39;</span>	
 	<span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="get_input"><a class="viewcode-back" href="../../test.html#pyPheWAS.pyPhewasv2.get_input">[docs]</a><span class="k">def</span> <span class="nf">get_input</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<div class="viewcode-block" id="get_input"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslog.get_input">[docs]</a><span class="k">def</span> <span class="nf">get_input</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Read all of the phenotype data from an origin file and load it into a pandas dataframe.</span>
 <span class="sd">	</span>
@@ -95,7 +95,7 @@
 	<span class="n">p_rollup</span> <span class="o">=</span> <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">codes</span><span class="p">[</span><span class="n">codes</span><span class="o">.</span><span class="n">phewas_code</span> <span class="o">==</span> <span class="n">p_code</span><span class="p">]</span><span class="o">.</span><span class="n">icd9</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
 	<span class="k">return</span> <span class="p">[</span><span class="n">p_code</span><span class="p">,</span> <span class="n">p_name</span><span class="p">,</span> <span class="n">p_rollup</span><span class="p">]</span>
 
-<div class="viewcode-block" id="get_group_file"><a class="viewcode-back" href="../../test.html#pyPheWAS.pyPhewasv2.get_group_file">[docs]</a><span class="k">def</span> <span class="nf">get_group_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+<div class="viewcode-block" id="get_group_file"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslog.get_group_file">[docs]</a><span class="k">def</span> <span class="nf">get_group_file</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Read all of the genotype data from an origin file and load it into a pandas dataframe.</span>
 <span class="sd">	</span>
@@ -107,7 +107,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Generates a feature matrix of (# of patients)x(icd9 counts)</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="generate_feature_matrix"><a class="viewcode-back" href="../../test.html#pyPheWAS.pyPhewasv2.generate_feature_matrix">[docs]</a><span class="k">def</span> <span class="nf">generate_feature_matrix</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span><span class="n">phenotypes</span><span class="p">):</span>
+<div class="viewcode-block" id="generate_feature_matrix"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslog.generate_feature_matrix">[docs]</a><span class="k">def</span> <span class="nf">generate_feature_matrix</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span><span class="n">phenotypes</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Generate the feature matrix from the genotype and phenotype matrix.</span>
 
@@ -125,7 +125,7 @@
 		<span class="n">count</span><span class="o">+=</span><span class="mi">1</span>
 	<span class="k">return</span> <span class="n">feature_matrix</span></div>
 
-<div class="viewcode-block" id="get_bon_thresh"><a class="viewcode-back" href="../../test.html#pyPheWAS.pyPhewasv2.get_bon_thresh">[docs]</a><span class="k">def</span> <span class="nf">get_bon_thresh</span><span class="p">(</span><span class="n">normalized</span><span class="p">,</span><span class="n">power</span><span class="p">):</span>
+<div class="viewcode-block" id="get_bon_thresh"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslog.get_bon_thresh">[docs]</a><span class="k">def</span> <span class="nf">get_bon_thresh</span><span class="p">(</span><span class="n">normalized</span><span class="p">,</span><span class="n">power</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Calculate the bonferroni correction.</span>
 
@@ -136,7 +136,7 @@
 
 		
 
-<div class="viewcode-block" id="run_phewas"><a class="viewcode-back" href="../../test.html#pyPheWAS.pyPhewasv2.run_phewas">[docs]</a><span class="k">def</span> <span class="nf">run_phewas</span><span class="p">(</span><span class="n">fm</span><span class="p">,</span> <span class="n">genotypes</span><span class="p">,</span><span class="n">covariates</span><span class="p">):</span>
+<div class="viewcode-block" id="run_phewas"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslog.run_phewas">[docs]</a><span class="k">def</span> <span class="nf">run_phewas</span><span class="p">(</span><span class="n">fm</span><span class="p">,</span> <span class="n">genotypes</span><span class="p">,</span><span class="n">covariates</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Calculate an array of p-values.</span>
 
@@ -170,7 +170,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Plotting</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="get_x_label_positions"><a class="viewcode-back" href="../../test.html#pyPheWAS.pyPhewasv2.get_x_label_positions">[docs]</a><span class="k">def</span> <span class="nf">get_x_label_positions</span><span class="p">(</span><span class="n">categories</span><span class="p">):</span>
+<div class="viewcode-block" id="get_x_label_positions"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslog.get_x_label_positions">[docs]</a><span class="k">def</span> <span class="nf">get_x_label_positions</span><span class="p">(</span><span class="n">categories</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Get the location to place each label on the x-axis.</span>
 
@@ -183,7 +183,7 @@
 		<span class="n">s</span> <span class="o">+=</span> <span class="n">v</span>
 	<span class="k">return</span> <span class="n">label_positions</span></div>
 
-<div class="viewcode-block" id="plot_data_points"><a class="viewcode-back" href="../../test.html#pyPheWAS.pyPhewasv2.plot_data_points">[docs]</a><span class="k">def</span> <span class="nf">plot_data_points</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">thresh</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="plot_data_points"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslog.plot_data_points">[docs]</a><span class="k">def</span> <span class="nf">plot_data_points</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">thresh</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Plots x,y, and the threshold line.</span>
 
@@ -215,7 +215,7 @@
 		<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 	<span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="calculate_odds_ratio"><a class="viewcode-back" href="../../test.html#pyPheWAS.pyPhewasv2.calculate_odds_ratio">[docs]</a><span class="k">def</span> <span class="nf">calculate_odds_ratio</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">phen_vector</span><span class="p">,</span><span class="n">covariates</span><span class="p">):</span>
+<div class="viewcode-block" id="calculate_odds_ratio"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslog.calculate_odds_ratio">[docs]</a><span class="k">def</span> <span class="nf">calculate_odds_ratio</span><span class="p">(</span><span class="n">genotypes</span><span class="p">,</span> <span class="n">phen_vector</span><span class="p">,</span><span class="n">covariates</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Calculates the odds and p-value for using a logarithmic regression.</span>
 
@@ -268,7 +268,7 @@
  <span class="s1">&#39;sense organs&#39;</span> <span class="p">:</span> <span class="s1">&#39;darkviolet&#39;</span><span class="p">,</span>
  <span class="s1">&#39;symptoms&#39;</span> <span class="p">:</span> <span class="s1">&#39;darkviolet&#39;</span><span class="p">}</span>
 
-<div class="viewcode-block" id="phewas"><a class="viewcode-back" href="../../test.html#pyPheWAS.pyPhewasv2.phewas">[docs]</a><span class="k">def</span> <span class="nf">phewas</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">groupfile</span><span class="p">,</span> <span class="n">covariates</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">output</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="phewas"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewaslog.phewas">[docs]</a><span class="k">def</span> <span class="nf">phewas</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">groupfile</span><span class="p">,</span> <span class="n">covariates</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">output</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	This method will execute a linear regression for phewas.</span>
 <span class="sd">	</span>

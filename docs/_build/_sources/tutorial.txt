@@ -4,7 +4,7 @@ Tutorial
 .. toctree::
 	:maxdepth: 2
 
-	basic
-	analysis
-	agematch
-	other
+	tutorial/basic
+	tutorial/analysis
+	tutorial/agematch
+	tutorial/other
