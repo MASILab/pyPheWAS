@@ -25,89 +25,19 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="pyPheWAS 0.0.2 documentation" href="index.html" />
    
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
-  <body role="document">
-  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="module-pyPheWAS.pyPhewasv2">
-<span id="auto-generated-documentation"></span><h1>Auto Generated Documentation<a class="headerlink" href="#module-pyPheWAS.pyPhewasv2" title="Permalink to this headline">¶</a></h1>
-<p>Python implemented code for running logarithmic regressions on PheWAS inputs.</p>
-<dl class="function">
-<dt id="pyPheWAS.pyPhewasv2.calculate_odds_ratio">
-<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">calculate_odds_ratio</code><span class="sig-paren">(</span><em>genotypes</em>, <em>phen_vector</em>, <em>covariates</em><span class="sig-paren">)</span><a class="headerlink" href="#pyPheWAS.pyPhewasv2.calculate_odds_ratio" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the odds and p-value for using a logarithmic regression.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewasv2.generate_feature_matrix">
-<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">generate_feature_matrix</code><span class="sig-paren">(</span><em>genotypes</em>, <em>phenotypes</em><span class="sig-paren">)</span><a class="headerlink" href="#pyPheWAS.pyPhewasv2.generate_feature_matrix" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate the feature matrix from the genotype and phenotype matrix.</p>
-<p>The feature matrix is used to calculate the regressions. 
-The feature matrix has a vector for each ID, each vector has the
-0/1 count as for whether or not rhat phewas code showed up for the given
-patient ID.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewasv2.get_bon_thresh">
-<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_bon_thresh</code><span class="sig-paren">(</span><em>normalized</em>, <em>power</em><span class="sig-paren">)</span><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_bon_thresh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the bonferroni correction.</p>
-<p>Divide the power by the sum of all finite values.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewasv2.get_codes">
-<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_codes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_codes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewasv2.get_group_file">
-<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_group_file</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_group_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read all of the genotype data from an origin file and load it into a pandas dataframe.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewasv2.get_input">
-<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_input</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_input" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read all of the phenotype data from an origin file and load it into a pandas dataframe.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewasv2.get_x_label_positions">
-<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_x_label_positions</code><span class="sig-paren">(</span><em>categories</em><span class="sig-paren">)</span><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_x_label_positions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the location to place each label on the x-axis.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewasv2.phewas">
-<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">phewas</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em>, <em>groupfile</em>, <em>covariates</em>, <em>save=''</em>, <em>output=''</em><span class="sig-paren">)</span><a class="headerlink" href="#pyPheWAS.pyPhewasv2.phewas" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method will execute a linear regression for phewas.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewasv2.plot_data_points">
-<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">plot_data_points</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>thresh</em>, <em>save=''</em><span class="sig-paren">)</span><a class="headerlink" href="#pyPheWAS.pyPhewasv2.plot_data_points" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots x,y, and the threshold line.</p>
-<p>An option can also be made to save the plot in a file of your choosing.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewasv2.run_phewas">
-<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">run_phewas</code><span class="sig-paren">(</span><em>fm</em>, <em>genotypes</em>, <em>covariates</em><span class="sig-paren">)</span><a class="headerlink" href="#pyPheWAS.pyPhewasv2.run_phewas" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate an array of p-values.</p>
-<p>Each p-value to the regression performed on each phewas code.</p>
-</dd></dl>
-
+  <div class="section" id="auto-generated-documentation">
+<h1>Auto Generated Documentation<a class="headerlink" href="#auto-generated-documentation" title="Permalink to this headline">¶</a></h1>
 </div>
 
 
@@ -132,11 +62,14 @@ patient ID.</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -147,8 +80,8 @@ patient ID.</p>
       &copy;2016, MASI Lab.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
       |
       <a href="_sources/code.txt"

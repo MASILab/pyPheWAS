@@ -1,13 +1,11 @@
-"""
-Shikha Chaganti
-Kunal Nabar
-Vanderbilt University
-Medical-image Analysis and Statistical Interpretation Lab
+# Shikha Chaganti
+# Kunal Nabar
+# Vanderbilt University
+# Medical-image Analysis and Statistical Interpretation Lab
 
-newphewas
-v2.0
+# newphewas
+# v2.0
 
-"""
 
 import numpy as np
 import matplotlib.pyplot as plt
