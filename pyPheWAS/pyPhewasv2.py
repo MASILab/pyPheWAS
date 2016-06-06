@@ -94,9 +94,9 @@ def get_fdr_thresh(p_values, power):
 	sn = sn[np.isfinite(sn)]
 	sn=sn[::-1]
 	for i in range(len(sn)):
-	     thresh=0.05*i/len(sn)
- 	     if sn[i]<=power:
-      	         break
+		thresh=0.05*i/len(sn)
+		if sn[i]<=power:
+			break
 	return sn[i]
 		
 
