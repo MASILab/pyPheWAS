@@ -61,6 +61,25 @@ def get_group_file(path, filename): #same
 	genotypes = pd.read_csv(wholefname)
 	return genotypes
 
+def get_imbalances(regressions):
+	"""
+	Generates a numpy array of the imbalances.
+	
+	The mapping from the beta of the regressions to the imbalance is as follows
+	For any given value *x*
+	*x* == nan -> 0
+	*x* < 0 -> -1
+	*x* > 0 -> +1
+	
+	These are then used in conjunction with imbalance_colors in the plotting method to show imbalance via colors.
+	"""
+
+	imbalance = np.array(regressions['beta'])
+	imbalance[np.isnan(imbalance)] = 0
+	imbalance[imbalance > 0] = 1
+	imbalance[imbalance < 0] = -1
+	return imbalance
+
 """
 Generates a feature matrix of (# of patients)x(icd9 counts)
 """
@@ -92,11 +111,11 @@ def get_bon_thresh(normalized,power): #same
 def get_fdr_thresh(p_values, power):
 	sn = np.sort(p_values)
 	sn = sn[np.isfinite(sn)]
-	sn=sn[::-1]
+	sn = sn[::-1]
 	for i in range(len(sn)):
-	     thresh=0.05*i/len(sn)
- 	     if sn[i]<=power:
-      	         break
+		thresh=0.05*i/len(sn)
+		if sn[i]<=power:
+			break
 	return sn[i]
 		
 
@@ -127,25 +146,32 @@ def run_phewas(fm, genotypes,covariates): #same
 """
 Plotting
 """
-def get_x_label_positions(categories): #same
+def get_x_label_positions(categories, lines=True): #same
 	tt = Counter(categories)
 	s = 0
 	label_positions = []
 	for _,v in tt.items():
-		label_positions.append(s + v//2)
+		if lines:
+			inc = v//2
+		else:
+			inc = v
+		label_positions.append(s + inc)
 		s += v
 	return label_positions
 
-def plot_data_points(x, y, thresh, save): #same
+def plot_data_points(x, y, thresh, save, imbalances=[]): #same
 	c = codes.loc[phewas_codes['index']]
 	c = c.reset_index()
 	idx = c.sort_values(by='category').index
-	x_label_positions = get_x_label_positions(c['category'].tolist())
+	x_label_positions = get_x_label_positions(c['category'].tolist(), imbalances.size == 0)
 	x_labels = c.sort_values('category').category_string.drop_duplicates().tolist()
 	e = 1
 	artists = []
 	for i in idx:
-		plt.plot(e,y[i],'o', color = plot_colors[c[i:i+1].category_string.values[0]],markersize=10, fillstyle='full', markeredgewidth=0.0)
+		if imbalances.size == 0:
+			plt.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]],markersize=10, fillstyle='full', markeredgewidth=0.0)
+		else:
+			plt.plot(e,y[i], 'o', color=imbalance_colors[imbalances[i]], fillstyle='full', markeredgewidth=0.0)
 		if y[i] > thresh:
 			artists.append(plt.text(e,y[i],c['phewas_string'][i], rotation=40, va='bottom'))
 		e += 1
@@ -182,8 +208,8 @@ def calculate_odds_ratio(genotypes, phen_vector,covariates): #diff - done
 	
 	except:
 		odds=0
-		p='nan'
-		od = ['nan','nan','nan']
+		p=np.nan
+		od = [np.nan,np.nan,np.nan]
 	return (odds,p,od)
 
 """
@@ -218,12 +244,17 @@ plot_colors = {'-' : 'gold',
  'respiratory' : 'brown',
  'sense organs' : 'darkviolet',
  'symptoms' : 'darkviolet'}
+imbalance_colors = {
+	0: 'white',
+	1: 'mediumspringgreen',
+	-1: 'red'
+}
 
 gen_ftype = 0
 neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
 
 
-def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, save='',output=''): #same
+def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, save='',output='', show_imbalance=False): #same
 	# the path and filename of the goal file 
 	# must hold the following format
 	# patient id, icd9 code, event count
@@ -246,7 +277,9 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, sav
 		thresh = get_bon_thresh(normalized,0.05)
 	elif thresh_type==1:
 		thresh = get_fdr_thresh(results[1],0.05)
-	plot_data_points(results[0],normalized,thresh, save)
+	if show_imbalance:
+		imbalances = get_imbalances(results[2])
+	plot_data_points(results[0],normalized,thresh, save, imbalances)
 	return (results[0], results[1], -math.log10(thresh))
 
 
