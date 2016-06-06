@@ -137,7 +137,6 @@ def run_phewas(fm, genotypes,covariates): #same
 		regressions.loc[index] = info
 		
 		p_values[index] = res[1]
-	
 	return (np.array(range(m)), p_values, regressions)
 
 
@@ -279,7 +278,7 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, sav
 		thresh = get_fdr_thresh(results[1],0.05)
 	if show_imbalance:
 		imbalances = get_imbalances(results[2])
-	plot_data_points(results[0],normalized,thresh, save, imbalances)
+	plot_data_points(results[0],normalized,-math.log10(thresh), save)
 	return (results[0], results[1], -math.log10(thresh))
 
 
