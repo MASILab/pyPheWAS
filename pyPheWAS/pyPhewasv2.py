@@ -158,11 +158,13 @@ def get_x_label_positions(categories, lines=True): #same
 		s += v
 	return label_positions
 
-def plot_data_points(x, y, thresh, save, imbalances=[]): #same
+def plot_data_points(x, y, thresh, save, imbalances=np.array([])): #same
+	show_imbalance = imbalances.size != 0
 	c = codes.loc[phewas_codes['index']]
 	c = c.reset_index()
 	idx = c.sort_values(by='category').index
-	x_label_positions = get_x_label_positions(c['category'].tolist(), imbalances.size == 0)
+	linepos = get_x_label_positions(c['category'].tolist(), True)
+	x_label_positions = get_x_label_positions(c['category'].tolist(), False)
 	x_labels = c.sort_values('category').category_string.drop_duplicates().tolist()
 	e = 1
 	artists = []
@@ -174,10 +176,12 @@ def plot_data_points(x, y, thresh, save, imbalances=[]): #same
 		if y[i] > thresh:
 			artists.append(plt.text(e,y[i],c['phewas_string'][i], rotation=40, va='bottom'))
 		e += 1
+	if show_imbalance:
+		for pos in linepos:
+			plt.axvline(x=pos, color='black', ls='dotted')
 	plt.axhline(y=-math.log10(0.05), color='blue')
 	plt.axhline(y=thresh, color='red')
 	plt.xticks(x_label_positions, x_labels,rotation=70, fontsize=10)
-	plt.ylim(ymin=0)
 	plt.xlim(xmin=0, xmax=len(c))
 	plt.ylabel('-log10(p)')
 	if save:
@@ -276,9 +280,10 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, sav
 		thresh = get_bon_thresh(normalized,0.05)
 	elif thresh_type==1:
 		thresh = get_fdr_thresh(results[1],0.05)
+	imbalances = np.array([])
 	if show_imbalance:
 		imbalances = get_imbalances(results[2])
-	plot_data_points(results[0],normalized,-math.log10(thresh), save)
+	plot_data_points(results[0],normalized,-math.log10(thresh), save, imbalances)
 	return (results[0], results[1], -math.log10(thresh))
 
 
