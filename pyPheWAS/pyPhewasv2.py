@@ -159,36 +159,54 @@ def get_x_label_positions(categories, lines=True): #same
 	return label_positions
 
 def plot_data_points(x, y, thresh, save, imbalances=np.array([])): #same
+	# Determine whether or not to show the imbalance.
 	show_imbalance = imbalances.size != 0
+	
+	# Sort the phewas codes by category.
 	c = codes.loc[phewas_codes['index']]
 	c = c.reset_index()
 	idx = c.sort_values(by='category').index
+
+	# Get the position of the lines and of the labels
 	linepos = get_x_label_positions(c['category'].tolist(), True)
 	x_label_positions = get_x_label_positions(c['category'].tolist(), False)
 	x_labels = c.sort_values('category').category_string.drop_duplicates().tolist()
+	
+	# Plot each of the points, if necessary, label the points.
 	e = 1
 	artists = []
 	for i in idx:
-		if imbalances.size == 0:
-			plt.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]],markersize=10, fillstyle='full', markeredgewidth=0.0)
-		else:
+		if show_imbalance:
 			plt.plot(e,y[i], 'o', color=imbalance_colors[imbalances[i]], fillstyle='full', markeredgewidth=0.0)
+		else:
+			plt.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]],markersize=10, fillstyle='full', markeredgewidth=0.0)
 		if y[i] > thresh:
 			artists.append(plt.text(e,y[i],c['phewas_string'][i], rotation=40, va='bottom'))
 		e += 1
+
+	# If the imbalance is to be shown, draw lines to show the categories.
 	if show_imbalance:
 		for pos in linepos:
 			plt.axvline(x=pos, color='black', ls='dotted')
+
+	# Plot a blue line at p=0.05 and plot a red line at the line for the threshold type.
 	plt.axhline(y=-math.log10(0.05), color='blue')
 	plt.axhline(y=thresh, color='red')
+
+	# Set windows and labels
 	plt.xticks(x_label_positions, x_labels,rotation=70, fontsize=10)
+	plt.ylim(ymin=0)
 	plt.xlim(xmin=0, xmax=len(c))
 	plt.ylabel('-log10(p)')
+
+	# Determine the type of output desired (saved to a plot or displayed on the screen)
 	if save:
 		plt.savefig(save,bbox_extra_artists=artists, bbox_inches='tight')
 	else:
 		plt.subplots_adjust(left=0.05,right=0.85)
 		plt.show()
+
+	# Clear the plot in case another plot is to be made.
 	plt.clf()
 
 def calculate_odds_ratio(genotypes, phen_vector,covariates): #diff - done
@@ -273,8 +291,9 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, sav
 	fm = generate_feature_matrix(genotypes,phenotypes)
 	print(len(fm))
 	results = run_phewas(fm, genotypes,covariates)
+	regressions = results[2]
 	if output:
-		results[2].to_csv(output, index=False)
+		regressions.to_csv(output, index=False)
 	normalized = neglogp(results[1])	
 	if thresh_type==0:
 		thresh = get_bon_thresh(normalized,0.05)
@@ -282,8 +301,8 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, sav
 		thresh = get_fdr_thresh(results[1],0.05)
 	imbalances = np.array([])
 	if show_imbalance:
-		imbalances = get_imbalances(results[2])
+		imbalances = get_imbalances(regressions)
 	plot_data_points(results[0],normalized,-math.log10(thresh), save, imbalances)
-	return (results[0], results[1], -math.log10(thresh))
+	return (results[0], results[1], -math.log10(thresh), imbalances)
 
 
