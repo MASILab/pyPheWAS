@@ -1,11 +1,10 @@
-"""
-Shikha Chaganti
-Kunal Nabar
-Vanderbilt University
-Medical-image Analysis and Statistical Interpretation Lab
-newphewas
-v2.0
-"""
+
+# Shikha Chaganti
+# Kunal Nabar
+# Vanderbilt University
+# Medical-image Analysis and Statistical Interpretation Lab
+# newphewas
+# v2.0
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,7 +21,11 @@ I/O Reading Input From Files
 """
 def get_codes(): #same
 	"""
-	Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.
+	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
+
+	:returns: All of the codes from the resource file.
+	:rtype: pandas DataFrame
+
 	"""
 	filename = '../resources/codes.csv'	
 	return pd.read_csv(filename)
@@ -30,8 +33,15 @@ def get_codes(): #same
 
 def get_input(path, filename): #diff -done - add duration
 	"""
-	Read all of the phenotype data from an origin file and load it into a pandas dataframe.
+	Read all of the phenotype data from the given file and load it into a pandas DataFrame.
 	
+	:param path: The path to the file that contains the phenotype data
+	:param filename: The name of the file that contains the phenotype data.
+	:type path: string
+	:type filename: string
+
+	:returns: The data from the phenotype file.
+	:rtype: pandas DataFrame
 	"""
 	wholefname = path + filename
 	icdfile = pd.read_csv(wholefname)
@@ -41,6 +51,12 @@ def get_input(path, filename): #diff -done - add duration
 		idx=g.filter(lambda x: len(x)==1).index
 		phenotypes = pd.merge(icdfile,codes,on='icd9')
 	else:
+		"""
+		This needs to be changed, need to adjust for a variety of different naming conventions
+		in the phenotype file, not simply 'AgeAtICD', 'id', 'icd9', etc. 
+		Either we need to adjust for different names in the code, or state explicitly in the 
+		documentation that we cannot do things like this.
+		"""
 		phenotypes = pd.merge(icdfile,codes,on='icd9')	
 		phenotypes['count']=0
 		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')					
@@ -48,7 +64,15 @@ def get_input(path, filename): #diff -done - add duration
 	return phenotypes
 
 def get_phewas_info(p_index): #same
-	
+	"""
+	Returns all of the info of the phewas code at the given index.
+
+	:param p_index: The index of the desired phewas code
+	:type p_index: int
+
+	:returns: A list including the code, the name, and the rollup of the phewas code. The rollup is a list of all of the ICD-9 codes that are grouped into this phewas code.
+	:rtype: list of strings
+	"""
 	p_code = phewas_codes.loc[p_index].phewas_code	
 	corresponding = codes[codes.phewas_code == p_code]
 
@@ -57,6 +81,17 @@ def get_phewas_info(p_index): #same
 	return [p_code, p_name, p_rollup]
 
 def get_group_file(path, filename): #same
+	"""
+	Read all of the genotype data from the given file and load it into a pandas DataFrame.
+	
+	:param path: The path to the file that contains the phenotype data
+	:param filename: The name of the file that contains the phenotype data.
+	:type path: string
+	:type filename: string
+
+	:returns: The data from the genotype file.
+	:rtype: pandas DataFrame
+	"""
 	wholefname = path + filename
 	genotypes = pd.read_csv(wholefname)
 	return genotypes
@@ -64,14 +99,22 @@ def get_group_file(path, filename): #same
 def get_imbalances(regressions):
 	"""
 	Generates a numpy array of the imbalances.
-	
-	The mapping from the beta of the regressions to the imbalance is as follows
-	For any given value *x*
-	*x* == nan -> 0
-	*x* < 0 -> -1
-	*x* > 0 -> +1
-	
-	These are then used in conjunction with imbalance_colors in the plotting method to show imbalance via colors.
+
+	For a value *x* where *x* is the beta of a regression:
+
+	========= ====== =======================================================
+	*x* < 0   **-1** The regression had a negative beta value
+	*x* = nan **0**  The regression had a nan beta value (and a nan p-value) 
+	*x* > 0   **+1** The regression had a positive beta value
+	========= ====== =======================================================
+
+	These values are then used to get the correct colors using the imbalance_colors.
+
+	:param regressions: DataFrame containing a variety of different output values from the regression performed. The only one used for this function are the 'beta' values.
+	:type regressions: pandas DataFrame
+
+	:returns: A list that is the length of the number of regressions performed. Each element in the list is either a -1, 0, or +1. These are used as explained above.
+	:rtype: numpy array
 	"""
 
 	imbalance = np.array(regressions['beta'])
@@ -80,10 +123,19 @@ def get_imbalances(regressions):
 	imbalance[imbalance < 0] = -1
 	return imbalance
 
-"""
-Generates a feature matrix of (# of patients)x(icd9 counts)
-"""
 def generate_feature_matrix(genotypes,phenotypes): #diff - done
+	"""
+	Generates the feature matrix that will be used to run the regressions.
+
+	:param genotypes:
+	:param phenotypes:
+	:type genotypes:
+	:type phenotypes:
+
+	:returns: 
+	:rtype:
+
+	"""
 	feature_matrix = np.zeros((genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
 	count=0;
 	for i in genotypes['id']:
@@ -105,10 +157,20 @@ def generate_feature_matrix(genotypes,phenotypes): #diff - done
 	return feature_matrix
 
 def get_bon_thresh(normalized,power): #same
+	"""
+	Calculate the bonferroni correction threshold.
+
+	Divide the power by the sum of all finite values (all non-nan values).
+
+	"""
 	return power/sum(np.isfinite(normalized))
 
 
 def get_fdr_thresh(p_values, power):
+	"""
+	Calculate the false discovery rate threshold.
+
+	"""
 	sn = np.sort(p_values)
 	sn = sn[np.isfinite(sn)]
 	sn = sn[::-1]
@@ -119,7 +181,16 @@ def get_fdr_thresh(p_values, power):
 	return sn[i]
 		
 
-def run_phewas(fm, genotypes,covariates): #same
+def run_phewas(fm, genotypes ,covariates): #same
+	"""
+	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p_values.
+	
+	:param fm: The phewas feature matrix.
+	:param genotypes: A pandas DataFrame of the genotype file.
+	:param covariates: The covariates that the function is to be run on.
+
+	:returns: A tuple containing indices, p_values, and all the regression data.
+	"""
 	m = len(fm[0,])
 	p_values = np.zeros(m, dtype=float)
 	print('running phewas')
@@ -146,6 +217,10 @@ def run_phewas(fm, genotypes,covariates): #same
 Plotting
 """
 def get_x_label_positions(categories, lines=True): #same
+	"""
+	This method is used 
+
+	"""
 	tt = Counter(categories)
 	s = 0
 	label_positions = []

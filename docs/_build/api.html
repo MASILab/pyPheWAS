@@ -42,208 +42,196 @@
 <div class="section" id="module-pyPheWAS">
 <span id="pyphewas-root-package"></span><h2><a class="reference internal" href="#module-pyPheWAS" title="pyPheWAS"><code class="xref py py-mod docutils literal"><span class="pre">pyPheWAS</span></code></a> &#8211; Root package<a class="headerlink" href="#module-pyPheWAS" title="Permalink to this headline">¶</a></h2>
 </div>
-<<<<<<< HEAD
-<div class="section" id="pyphewas-pyphewas-pyphewas-file">
-<h2><code class="xref py py-mod docutils literal"><span class="pre">pyPheWAS.pyPhewas</span></code> &#8211; pyPhewas file<a class="headerlink" href="#pyphewas-pyphewas-pyphewas-file" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="module-pyPheWAS.pyPhewaslin">
-<span id="pyphewas-pyphewaslin-pyphewaslin-file"></span><h2><a class="reference internal" href="#module-pyPheWAS.pyPhewaslin" title="pyPheWAS.pyPhewaslin"><code class="xref py py-mod docutils literal"><span class="pre">pyPheWAS.pyPhewaslin</span></code></a> &#8211; pyPhewaslin file<a class="headerlink" href="#module-pyPheWAS.pyPhewaslin" title="Permalink to this headline">¶</a></h2>
-=======
-<div class="section" id="module-pyPheWAS.pyPhewas">
-<span id="pyphewas-pyphewas-pyphewas-file"></span><h2><a class="reference internal" href="#module-pyPheWAS.pyPhewas" title="pyPheWAS.pyPhewas"><code class="xref py py-mod docutils literal"><span class="pre">pyPheWAS.pyPhewas</span></code></a> &#8211; pyPhewas file<a class="headerlink" href="#module-pyPheWAS.pyPhewas" title="Permalink to this headline">¶</a></h2>
-<p>Phewas object used to run different phenotype statistical anaylses.</p>
-<p>This module is used to execute a variety of different analyses on large sets of patient phenotype data.</p>
-<dl class="class">
-<dt id="pyPheWAS.pyPhewas.Phewas">
-<em class="property">class </em><code class="descclassname">pyPheWAS.pyPhewas.</code><code class="descname">Phewas</code><span class="sig-paren">(</span><em>inputfile</em>, <em>groupfile</em>, <em>path=''</em>, <em>covariates='genotype'</em>, <em>save=''</em>, <em>output=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewas.html#Phewas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewas.Phewas" title="Permalink to this definition">¶</a></dt>
-<dd><p>The Phewas object is used to run different types of Phewas regressions and plots.</p>
-<dl class="method">
-<dt id="pyPheWAS.pyPhewas.Phewas.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>inputfile</em>, <em>groupfile</em>, <em>path=''</em>, <em>covariates='genotype'</em>, <em>save=''</em>, <em>output=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewas.html#Phewas.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewas.Phewas.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a Phewas object with the given parameters.</p>
+<div class="section" id="module-pyPheWAS.pyPhewasv2">
+<span id="pyphewas-pyphewasv2-pyphewas-methods-file"></span><h2><a class="reference internal" href="#module-pyPheWAS.pyPhewasv2" title="pyPheWAS.pyPhewasv2"><code class="xref py py-mod docutils literal"><span class="pre">pyPheWAS.pyPhewasv2</span></code></a> &#8211; pyPhewas methods file<a class="headerlink" href="#module-pyPheWAS.pyPhewasv2" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pyPheWAS.pyPhewasv2.generate_feature_matrix">
+<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">generate_feature_matrix</code><span class="sig-paren">(</span><em>genotypes</em>, <em>phenotypes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewasv2.html#generate_feature_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewasv2.generate_feature_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the feature matrix that will be used to run the regressions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>inputfile</strong> &#8211; the name of the phenotype file (no path)</li>
-<li><strong>groupfile</strong> &#8211; the name of the genotype file (no path)</li>
-<li><strong>path</strong> &#8211; the path to the inputfile and groupfile, this path will be used for all outputs as well. Defaults to empty path (i.e. current directory)</li>
-<li><strong>covariates</strong> &#8211; the covariates that want to be run by pyPhewas, each additional covariate must be delimited by a <em>+</em> sign (i.e &#8216;genotype+age&#8217;)</li>
-<li><strong>save</strong> &#8211; the filename to save the generated plot. The default is an empty string. This will result in the plot being displayed.</li>
-<li><strong>output</strong> &#8211; the filename to save the regression data. The default is an empty string.</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>genotypes</strong> &#8211; </li>
+<li><strong>phenotypes</strong> &#8211; </li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"></p>
 </td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
-<dl class="method">
-<dt id="pyPheWAS.pyPhewas.Phewas.replot">
-<code class="descname">replot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewas.html#Phewas.replot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewas.Phewas.replot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Replots the regression that was executed.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyPheWAS.pyPhewas.Phewas.run_lin">
-<code class="descname">run_lin</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewas.html#Phewas.run_lin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewas.Phewas.run_lin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Runs a linear regression on the current arguments.</p>
-<p>Upon completion, the results of the regression are saved by the object so that they can be used without creating a new regression.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pyPheWAS.pyPhewas.Phewas.run_log">
-<code class="descname">run_log</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewas.html#Phewas.run_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewas.Phewas.run_log" title="Permalink to this definition">¶</a></dt>
-<dd><p>Runs a logarithmic regression on the current arguments.</p>
-<p>Upon completion, the results of the regression are saved by the object so that they can be used without creating a new regression.</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-pyPheWAS.pyPhewaslin">
-<span id="pyphewas-pyphewaslin-pyphewaslin-file"></span><h2><a class="reference internal" href="#module-pyPheWAS.pyPhewaslin" title="pyPheWAS.pyPhewaslin"><code class="xref py py-mod docutils literal"><span class="pre">pyPheWAS.pyPhewaslin</span></code></a> &#8211; pyPhewaslin file<a class="headerlink" href="#module-pyPheWAS.pyPhewaslin" title="Permalink to this headline">¶</a></h2>
-<p>Shikha Chaganti
-Kunal Nabar
-Vanderbilt University
-Medical-image Analysis and Statistical Interpretation Lab</p>
-<p>newphewas
-v2.0</p>
->>>>>>> origin
 <dl class="function">
-<dt id="pyPheWAS.pyPhewaslin.calculate_odds_ratio">
-<code class="descclassname">pyPheWAS.pyPhewaslin.</code><code class="descname">calculate_odds_ratio</code><span class="sig-paren">(</span><em>genotypes</em>, <em>phen_vector</em>, <em>covariates</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslin.html#calculate_odds_ratio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslin.calculate_odds_ratio" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the odds and p-value for using a linear regression.</p>
+<dt id="pyPheWAS.pyPhewasv2.get_bon_thresh">
+<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_bon_thresh</code><span class="sig-paren">(</span><em>normalized</em>, <em>power</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewasv2.html#get_bon_thresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_bon_thresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the bonferroni correction threshold.</p>
+<p>Divide the power by the sum of all finite values (all non-nan values).</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pyPheWAS.pyPhewaslin.get_bon_thresh">
-<code class="descclassname">pyPheWAS.pyPhewaslin.</code><code class="descname">get_bon_thresh</code><span class="sig-paren">(</span><em>normalized</em>, <em>power</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslin.html#get_bon_thresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslin.get_bon_thresh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the bonferroni correction.</p>
-<p>Divide the power by the sum of all finite values.</p>
+<dt id="pyPheWAS.pyPhewasv2.get_codes">
+<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_codes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewasv2.html#get_codes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_codes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">All of the codes from the resource file.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">pandas DataFrame</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
-<dt id="pyPheWAS.pyPhewaslin.get_codes">
-<code class="descclassname">pyPheWAS.pyPhewaslin.</code><code class="descname">get_codes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslin.html#get_codes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslin.get_codes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.</p>
+<dt id="pyPheWAS.pyPhewasv2.get_fdr_thresh">
+<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_fdr_thresh</code><span class="sig-paren">(</span><em>p_values</em>, <em>power</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewasv2.html#get_fdr_thresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_fdr_thresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the false discovery rate threshold.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pyPheWAS.pyPhewaslin.get_group_file">
-<code class="descclassname">pyPheWAS.pyPhewaslin.</code><code class="descname">get_group_file</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslin.html#get_group_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslin.get_group_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read all of the genotype data from an origin file and load it into a pandas dataframe.</p>
+<dt id="pyPheWAS.pyPhewasv2.get_group_file">
+<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_group_file</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewasv2.html#get_group_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_group_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read all of the genotype data from the given file and load it into a pandas DataFrame.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path</strong> (<em>string</em>) &#8211; The path to the file that contains the phenotype data</li>
+<li><strong>filename</strong> (<em>string</em>) &#8211; The name of the file that contains the phenotype data.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The data from the genotype file.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
-<dt id="pyPheWAS.pyPhewaslin.get_input">
-<code class="descclassname">pyPheWAS.pyPhewaslin.</code><code class="descname">get_input</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslin.html#get_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslin.get_input" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read all of the phenotype data from an origin file and load it into a pandas dataframe.</p>
+<dt id="pyPheWAS.pyPhewasv2.get_imbalances">
+<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_imbalances</code><span class="sig-paren">(</span><em>regressions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewasv2.html#get_imbalances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_imbalances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a numpy array of the imbalances.</p>
+<p>For a value <em>x</em> where <em>x</em> is the beta of a regression:</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="13%" />
+<col width="9%" />
+<col width="79%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><em>x</em> &lt; 0</td>
+<td><strong>-1</strong></td>
+<td>The regression had a negative beta value</td>
+</tr>
+<tr class="row-even"><td><em>x</em> = nan</td>
+<td><strong>0</strong></td>
+<td>The regression had a nan beta value (and a nan p-value)</td>
+</tr>
+<tr class="row-odd"><td><em>x</em> &gt; 0</td>
+<td><strong>+1</strong></td>
+<td>The regression had a positive beta value</td>
+</tr>
+</tbody>
+</table>
+<p>These values are then used to get the correct colors using the imbalance_colors.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>regressions</strong> (<em>pandas DataFrame</em>) &#8211; DataFrame containing a variety of different output values from the regression performed. The only one used for this function are the &#8216;beta&#8217; values.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A list that is the length of the number of regressions performed. Each element in the list is either a -1, 0, or +1. These are used as explained above.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">numpy array</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
-<dt id="pyPheWAS.pyPhewaslin.get_x_label_positions">
-<code class="descclassname">pyPheWAS.pyPhewaslin.</code><code class="descname">get_x_label_positions</code><span class="sig-paren">(</span><em>categories</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslin.html#get_x_label_positions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslin.get_x_label_positions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the location to place each label on the x-axis.</p>
+<dt id="pyPheWAS.pyPhewasv2.get_input">
+<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_input</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewasv2.html#get_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read all of the phenotype data from the given file and load it into a pandas DataFrame.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path</strong> (<em>string</em>) &#8211; The path to the file that contains the phenotype data</li>
+<li><strong>filename</strong> (<em>string</em>) &#8211; The name of the file that contains the phenotype data.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The data from the phenotype file.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pandas DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
-<dt id="pyPheWAS.pyPhewaslin.phewas">
-<code class="descclassname">pyPheWAS.pyPhewaslin.</code><code class="descname">phewas</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em>, <em>groupfile</em>, <em>covariates</em>, <em>save=''</em>, <em>output=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslin.html#phewas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslin.phewas" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method will execute a linear regression for phewas.</p>
+<dt id="pyPheWAS.pyPhewasv2.get_phewas_info">
+<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_phewas_info</code><span class="sig-paren">(</span><em>p_index</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewasv2.html#get_phewas_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_phewas_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all of the info of the phewas code at the given index.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>p_index</strong> (<em>int</em>) &#8211; The index of the desired phewas code</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A list including the code, the name, and the rollup of the phewas code. The rollup is a list of all of the ICD-9 codes that are grouped into this phewas code.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list of strings</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
-<dt id="pyPheWAS.pyPhewaslin.plot_data_points">
-<code class="descclassname">pyPheWAS.pyPhewaslin.</code><code class="descname">plot_data_points</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>thresh</em>, <em>dstring</em>, <em>save</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslin.html#plot_data_points"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslin.plot_data_points" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots x,y, and the threshold line.</p>
-<p>An option can also be made to save the plot in a file of your choosing.</p>
+<dt id="pyPheWAS.pyPhewasv2.get_x_label_positions">
+<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">get_x_label_positions</code><span class="sig-paren">(</span><em>categories</em>, <em>lines=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewasv2.html#get_x_label_positions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewasv2.get_x_label_positions" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method is used</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pyPheWAS.pyPhewaslin.run_phewas">
-<code class="descclassname">pyPheWAS.pyPhewaslin.</code><code class="descname">run_phewas</code><span class="sig-paren">(</span><em>fm</em>, <em>genotypes</em>, <em>covariates</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslin.html#run_phewas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslin.run_phewas" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate an array of p-values.</p>
-<p>Each p-value to the regression performed on each phewas code.</p>
+<dt id="pyPheWAS.pyPhewasv2.run_phewas">
+<code class="descclassname">pyPheWAS.pyPhewasv2.</code><code class="descname">run_phewas</code><span class="sig-paren">(</span><em>fm</em>, <em>genotypes</em>, <em>covariates</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewasv2.html#run_phewas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewasv2.run_phewas" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p_values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fm</strong> &#8211; The phewas feature matrix.</li>
+<li><strong>genotypes</strong> &#8211; A pandas DataFrame of the genotype file.</li>
+<li><strong>covariates</strong> &#8211; The covariates that the function is to be run on.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple containing indices, p_values, and all the regression data.</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
-</div>
-<<<<<<< HEAD
-<div class="section" id="pyphewas-pyphewaslog-pyphewasv2-file">
-<h2><code class="xref py py-mod docutils literal"><span class="pre">pyPheWAS.pyPhewaslog</span></code> &#8211; pyPhewasv2 file<a class="headerlink" href="#pyphewas-pyphewaslog-pyphewasv2-file" title="Permalink to this headline">¶</a></h2>
-=======
-<div class="section" id="module-pyPheWAS.pyPhewaslog">
-<span id="pyphewas-pyphewaslog-pyphewaslog-file"></span><h2><a class="reference internal" href="#module-pyPheWAS.pyPhewaslog" title="pyPheWAS.pyPhewaslog"><code class="xref py py-mod docutils literal"><span class="pre">pyPheWAS.pyPhewaslog</span></code></a> &#8211; pyPhewaslog file<a class="headerlink" href="#module-pyPheWAS.pyPhewaslog" title="Permalink to this headline">¶</a></h2>
-<p>Python implemented code for running logarithmic regressions on PheWAS inputs.</p>
-<dl class="function">
-<dt id="pyPheWAS.pyPhewaslog.calculate_odds_ratio">
-<code class="descclassname">pyPheWAS.pyPhewaslog.</code><code class="descname">calculate_odds_ratio</code><span class="sig-paren">(</span><em>genotypes</em>, <em>phen_vector</em>, <em>covariates</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslog.html#calculate_odds_ratio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslog.calculate_odds_ratio" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates the odds and p-value for using a logarithmic regression.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewaslog.generate_feature_matrix">
-<code class="descclassname">pyPheWAS.pyPhewaslog.</code><code class="descname">generate_feature_matrix</code><span class="sig-paren">(</span><em>genotypes</em>, <em>phenotypes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslog.html#generate_feature_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslog.generate_feature_matrix" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate the feature matrix from the genotype and phenotype matrix.</p>
-<p>The feature matrix is used to calculate the regressions. 
-The feature matrix has a vector for each ID, each vector has the
-0/1 count as for whether or not rhat phewas code showed up for the given
-patient ID.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewaslog.get_bon_thresh">
-<code class="descclassname">pyPheWAS.pyPhewaslog.</code><code class="descname">get_bon_thresh</code><span class="sig-paren">(</span><em>normalized</em>, <em>power</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslog.html#get_bon_thresh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslog.get_bon_thresh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the bonferroni correction.</p>
-<p>Divide the power by the sum of all finite values.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewaslog.get_codes">
-<code class="descclassname">pyPheWAS.pyPhewaslog.</code><code class="descname">get_codes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslog.html#get_codes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslog.get_codes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets the PheWAS codes from a local csv file and load it into a pandas dataframe.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewaslog.get_group_file">
-<code class="descclassname">pyPheWAS.pyPhewaslog.</code><code class="descname">get_group_file</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslog.html#get_group_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslog.get_group_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read all of the genotype data from an origin file and load it into a pandas dataframe.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewaslog.get_input">
-<code class="descclassname">pyPheWAS.pyPhewaslog.</code><code class="descname">get_input</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslog.html#get_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslog.get_input" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read all of the phenotype data from an origin file and load it into a pandas dataframe.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewaslog.get_x_label_positions">
-<code class="descclassname">pyPheWAS.pyPhewaslog.</code><code class="descname">get_x_label_positions</code><span class="sig-paren">(</span><em>categories</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslog.html#get_x_label_positions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslog.get_x_label_positions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the location to place each label on the x-axis.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewaslog.phewas">
-<code class="descclassname">pyPheWAS.pyPhewaslog.</code><code class="descname">phewas</code><span class="sig-paren">(</span><em>path</em>, <em>filename</em>, <em>groupfile</em>, <em>covariates</em>, <em>save=''</em>, <em>output=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslog.html#phewas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslog.phewas" title="Permalink to this definition">¶</a></dt>
-<dd><p>This method will execute a linear regression for phewas.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewaslog.plot_data_points">
-<code class="descclassname">pyPheWAS.pyPhewaslog.</code><code class="descname">plot_data_points</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>thresh</em>, <em>save=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslog.html#plot_data_points"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslog.plot_data_points" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plots x,y, and the threshold line.</p>
-<p>An option can also be made to save the plot in a file of your choosing.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pyPheWAS.pyPhewaslog.run_phewas">
-<code class="descclassname">pyPheWAS.pyPhewaslog.</code><code class="descname">run_phewas</code><span class="sig-paren">(</span><em>fm</em>, <em>genotypes</em>, <em>covariates</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pyPheWAS/pyPhewaslog.html#run_phewas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyPheWAS.pyPhewaslog.run_phewas" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate an array of p-values.</p>
-<p>Each p-value to the regression performed on each phewas code.</p>
-</dd></dl>
-
->>>>>>> origin
 </div>
 </div>
 
@@ -257,15 +245,7 @@ patient ID.</p>
   <ul>
 <li><a class="reference internal" href="#">Source Documentation</a><ul>
 <li><a class="reference internal" href="#module-pyPheWAS"><code class="docutils literal"><span class="pre">pyPheWAS</span></code> &#8211; Root package</a></li>
-<<<<<<< HEAD
-<li><a class="reference internal" href="#pyphewas-pyphewas-pyphewas-file"><code class="docutils literal"><span class="pre">pyPheWAS.pyPhewas</span></code> &#8211; pyPhewas file</a></li>
-<li><a class="reference internal" href="#module-pyPheWAS.pyPhewaslin"><code class="docutils literal"><span class="pre">pyPheWAS.pyPhewaslin</span></code> &#8211; pyPhewaslin file</a></li>
-<li><a class="reference internal" href="#pyphewas-pyphewaslog-pyphewasv2-file"><code class="docutils literal"><span class="pre">pyPheWAS.pyPhewaslog</span></code> &#8211; pyPhewasv2 file</a></li>
-=======
-<li><a class="reference internal" href="#module-pyPheWAS.pyPhewas"><code class="docutils literal"><span class="pre">pyPheWAS.pyPhewas</span></code> &#8211; pyPhewas file</a></li>
-<li><a class="reference internal" href="#module-pyPheWAS.pyPhewaslin"><code class="docutils literal"><span class="pre">pyPheWAS.pyPhewaslin</span></code> &#8211; pyPhewaslin file</a></li>
-<li><a class="reference internal" href="#module-pyPheWAS.pyPhewaslog"><code class="docutils literal"><span class="pre">pyPheWAS.pyPhewaslog</span></code> &#8211; pyPhewaslog file</a></li>
->>>>>>> origin
+<li><a class="reference internal" href="#module-pyPheWAS.pyPhewasv2"><code class="docutils literal"><span class="pre">pyPheWAS.pyPhewasv2</span></code> &#8211; pyPhewas methods file</a></li>
 </ul>
 </li>
 </ul>
