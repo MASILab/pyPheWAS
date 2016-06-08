@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 import mock
  
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'stats', 'scipy.stats', 'statsmodels', 'pandas', 'statsmodels.formula.api', 'statsmodels.api']
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot', 'scipy.interpolate', 'stats', 'scipy.stats', 'statsmodels', 'pandas', 'statsmodels.formula.api', 'statsmodels.api', 'statsmodels.formula.api', 'formula.api']
 for mod_name in MOCK_MODULES:
  sys.modules[mod_name] = mock.Mock()
 
