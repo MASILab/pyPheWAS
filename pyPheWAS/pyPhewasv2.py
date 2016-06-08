@@ -27,9 +27,9 @@ def get_codes(): #same
 	:rtype: pandas DataFrame
 
 	"""
-	filename = os.path.realpath('.') + '/../resources/codes.csv'	
-	return pd.read_csv(filename)
-
+	#filename = os.path.realpath('../resources/codes.csv')	
+	#return pd.read_csv(filename)
+	return None
 
 def get_input(path, filename): #diff -done - add duration
 	"""
