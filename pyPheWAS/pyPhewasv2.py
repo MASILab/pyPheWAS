@@ -406,7 +406,7 @@ plot_colors = {'-' : 'gold',
  'symptoms' : 'darkviolet'}
 imbalance_colors = {
 	0: 'white',
-	1: 'mediumspringgreen',
+	1: 'deepskyblue',
 	-1: 'red'
 }
 
