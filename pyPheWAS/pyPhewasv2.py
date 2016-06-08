@@ -161,6 +161,14 @@ def get_bon_thresh(normalized,power): #same
 	Calculate the bonferroni correction threshold.
 
 	Divide the power by the sum of all finite values (all non-nan values).
+	
+	:param normalized: an array of all normalized p-values. Normalized p-values are -log10(p) where p is the p-value.
+	:param power: the threshold power being used (usually 0.05)
+	:type normalized: numpy array
+	:type power: float
+
+	:returns: The bonferroni correction
+	:rtype: float
 
 	"""
 	return power/sum(np.isfinite(normalized))
@@ -169,7 +177,14 @@ def get_bon_thresh(normalized,power): #same
 def get_fdr_thresh(p_values, power):
 	"""
 	Calculate the false discovery rate threshold.
+	
+	:param p_values: a list of p-values obtained by executing the regression
+	:param power: the thershold power being used (usually 0.05)
+	:type p_values: numpy array
+	:type power: float
 
+	:returns: the false discovery rate
+	:rtype: float
 	"""
 	sn = np.sort(p_values)
 	sn = sn[np.isfinite(sn)]
@@ -183,18 +198,19 @@ def get_fdr_thresh(p_values, power):
 
 def run_phewas(fm, genotypes ,covariates): #same
 	"""
-	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p_values.
+	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
 	
 	:param fm: The phewas feature matrix.
 	:param genotypes: A pandas DataFrame of the genotype file.
 	:param covariates: The covariates that the function is to be run on.
 
-	:returns: A tuple containing indices, p_values, and all the regression data.
+	:returns: A tuple containing indices, p-values, and all the regression data.
 	"""
 	m = len(fm[0,])
 	p_values = np.zeros(m, dtype=float)
 	print('running phewas')
 	icodes=[]
+	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
 	for index in range(m):
 
@@ -202,6 +218,7 @@ def run_phewas(fm, genotypes ,covariates): #same
 		
 		res=calculate_odds_ratio(genotypes, phen_vector,covariates)
 		
+		# save all of the regression data
 		phewas_info = get_phewas_info(index)
 		stat_info = res[2]
 		info = phewas_info[0:2] + stat_info + [phewas_info[2]]
@@ -218,7 +235,15 @@ Plotting
 """
 def get_x_label_positions(categories, lines=True): #same
 	"""
-	This method is used 
+	This method is used get the position of the x-labels and the lines between the columns
+
+	:param categories: list of the categories
+	:param lines: a boolean which determines the locations returned (either the center of each category or the end)
+	:type categories:
+	:type lines: bool
+
+	:returns: A list of positions
+	:rtype: list of ints
 
 	"""
 	tt = Counter(categories)
@@ -233,7 +258,25 @@ def get_x_label_positions(categories, lines=True): #same
 		s += v
 	return label_positions
 
-def plot_data_points(x, y, thresh, save, imbalances=np.array([])): #same
+def plot_data_points(x, y, thresh, save='', imbalances=np.array([])): #same
+	"""
+	Plots the data with a variety of different options.
+
+	This function is the primary plotting function for pyPhewas.
+	
+	:param x: an array of indices
+	:param y: an array of p-values
+	:param thresh: the threshold power
+	:param save: the output file to save to (if empty, display the plot)
+	:param imbalances: a list of imbalances
+	:type x: numpy array
+	:type y: numpy array
+	:type thresh: float
+	:type save: str
+	:type imbalances: numpy array
+
+	"""
+	
 	# Determine whether or not to show the imbalance.
 	show_imbalance = imbalances.size != 0
 	
@@ -285,6 +328,26 @@ def plot_data_points(x, y, thresh, save, imbalances=np.array([])): #same
 	plt.clf()
 
 def calculate_odds_ratio(genotypes, phen_vector,covariates): #diff - done
+	"""
+	Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
+
+	:param genotypes: a DataFrame containing the genotype information
+	:param phen_vector: a array containing the phenotype vector
+	:param covariates: a string containing all desired covariates
+	:type genotypes: pandas DataFrame
+	:type phen_vector: numpy array
+	:type covariates: string
+
+	.. note::
+		The covariates must be a string that is delimited by '+', not a list.
+		If you are using a list of covariates and would like to convert it to the pyPhewas format, use the following::
+
+			l = ['genotype', 'age'] # a list of your covariates
+			covariates = '+'.join(l) # pyPhewas format
+
+		The covariates that are listed here *must* be headers to your genotype CSV file. 
+	"""
+
 	data = genotypes
 	data['y']=phen_vector
 	f='y~'+covariates
@@ -351,10 +414,28 @@ neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
 
 
 def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, save='',output='', show_imbalance=False): #same
-	# the path and filename of the goal file 
-	# must hold the following format
-	# patient id, icd9 code, event count
-	# filename = 'testdata.csv'
+	"""
+	The main phewas method. Takes a path, filename, groupfile, and a variety of different options.
+
+	:param path: the path to the file that contains the phenotype data
+	:param filename: the name of the phenotype file.
+	:param groupfile: the name of the genotype file.
+	:param covariates: a list of covariates.
+	:param reg_type: the type of regression to be used
+	:param thresh_type: the type of threshold to be used
+	:param save: the desired filename to save the phewas plot
+	:param output: the desired filename to save the regression output
+	:param show_imbalance: determines whether or not to show the imbalance
+	:type path: str
+	:type filename: str
+	:type groupfile: str
+	:type covariates: str
+	:type reg_type: int
+	:type thresh_type: int
+	:type save: str
+	:type output: str
+	:type show_imbalance: bool
+	"""
 	start_time = time.time()
 	global codes,phewas_codes, gen_ftype, neglogp
 	
