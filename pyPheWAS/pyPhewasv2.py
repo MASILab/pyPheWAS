@@ -27,7 +27,7 @@ def get_codes(): #same
 	:rtype: pandas DataFrame
 
 	"""
-	filename = '../resources/codes.csv'	
+	filename = '/pyPheWAS/resources/codes.csv'	
 	return pd.read_csv(filename)
 
 

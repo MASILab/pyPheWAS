@@ -8,7 +8,7 @@ Source Documentation
    :members:
 
 :mod:`pyPheWAS.pyPhewasv2` -- pyPhewas Functions file
-***************************************************
+*****************************************************
 
 .. automodule:: pyPheWAS.pyPhewasv2
    :members:
