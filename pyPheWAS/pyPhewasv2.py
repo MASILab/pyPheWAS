@@ -14,22 +14,23 @@ import pandas as pd
 import statsmodels.formula.api as smf
 import statsmodels.api as sm
 from matplotlib import rcParams
-
+import os
 
 """
 I/O Reading Input From Files
 """
 def get_codes(): #same
-	"""
-	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
+	# """
+	# Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
 
-	:returns: All of the codes from the resource file.
-	:rtype: pandas DataFrame
+	# :returns: All of the codes from the resource file.
+	# :rtype: pandas DataFrame
 
-	"""
-	filename = '../resources/codes.csv'	
+	# """
+	sep = os.sep
+	path = os.path.dirname(os.path.abspath(__file__))
+	filename = os.sep.join([path,'..','resources','codes.csv'])
 	return pd.read_csv(filename)
-
 
 def get_input(path, filename): #diff -done - add duration
 	"""
