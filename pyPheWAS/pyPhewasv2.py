@@ -27,9 +27,9 @@ def get_codes(): #same
 	:rtype: pandas DataFrame
 
 	"""
+	sep = os.sep
 	path = os.path.abspath(os.curdir)
-	path = path[:path.index('pyPheWAS')]
-	filename = os.path.realpath(path + 'pyPheWAS/resources/codes.csv')	
+	filename = path[:path.index('pyPheWAS')] + os.sep.join(['pyPheWAS','resources','codes.csv'])
 	return pd.read_csv(filename)
 
 def get_input(path, filename): #diff -done - add duration
