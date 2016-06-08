@@ -19,10 +19,7 @@ import os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 # sys.path.insert(0, os.path.abspath('../'))
-sep = os.sep
-path = os.path.abspath(os.curdir)
-path = path[:path.index('pyPheWAS')] + 'pyPheWAS' + os.sep + 'pyPheWAS' + os.sep
-sys.path.insert(0, os.path.abspath(path))
+sys.path.insert(0, os.path.abspath('..' + os.sep + 'pyPheWAS' + os.sep))
 
 # -- General configuration ------------------------------------------------
 
