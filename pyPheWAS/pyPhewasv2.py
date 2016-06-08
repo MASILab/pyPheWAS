@@ -20,13 +20,13 @@ import os
 I/O Reading Input From Files
 """
 def get_codes(): #same
-	# """
-	# Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
+	"""
+	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
 
-	# :returns: All of the codes from the resource file.
-	# :rtype: pandas DataFrame
+	:returns: All of the codes from the resource file.
+	:rtype: pandas DataFrame
 
-	# """
+	"""
 	sep = os.sep
 	path = os.path.dirname(os.path.abspath(__file__))
 	filename = os.sep.join([path,'..','resources','codes.csv'])
