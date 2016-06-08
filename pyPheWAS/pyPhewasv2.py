@@ -14,7 +14,7 @@ import pandas as pd
 import statsmodels.formula.api as smf
 import statsmodels.api as sm
 from matplotlib import rcParams
-
+import os
 
 """
 I/O Reading Input From Files
@@ -27,7 +27,7 @@ def get_codes(): #same
 	:rtype: pandas DataFrame
 
 	"""
-	filename = '../resources/codes.csv'	
+	filename = os.path.realpath('.') + '/../resources/codes.csv'	
 	return pd.read_csv(filename)
 
 
