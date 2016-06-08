@@ -21,7 +21,7 @@ import os
 # sys.path.insert(0, os.path.abspath('../'))
 sep = os.sep
 path = os.path.abspath(os.curdir)
-path = path[:path.index('pyPheWAS')] + os.sep + 'pyPheWAS' + os.sep + 'pyPheWAS'
+path = path[:path.index('pyPheWAS')] + 'pyPheWAS' + os.sep + 'pyPheWAS' + os.sep
 sys.path.insert(0, os.path.abspath(path))
 
 # -- General configuration ------------------------------------------------
