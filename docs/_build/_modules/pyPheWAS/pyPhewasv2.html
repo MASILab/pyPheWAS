@@ -61,18 +61,18 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">I/O Reading Input From Files</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="get_codes"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewasv2.get_codes">[docs]</a><span class="k">def</span> <span class="nf">get_codes</span><span class="p">():</span> <span class="c1">#same</span>
-	<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.</span>
+<span class="k">def</span> <span class="nf">get_codes</span><span class="p">():</span> <span class="c1">#same</span>
+	<span class="c1"># &quot;&quot;&quot;</span>
+	<span class="c1"># Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.</span>
 
-<span class="sd">	:returns: All of the codes from the resource file.</span>
-<span class="sd">	:rtype: pandas DataFrame</span>
+	<span class="c1"># :returns: All of the codes from the resource file.</span>
+	<span class="c1"># :rtype: pandas DataFrame</span>
 
-<span class="sd">	&quot;&quot;&quot;</span>
+	<span class="c1"># &quot;&quot;&quot;</span>
 	<span class="n">sep</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span>
 	<span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">curdir</span><span class="p">)</span>
 	<span class="n">filename</span> <span class="o">=</span> <span class="n">path</span><span class="p">[:</span><span class="n">path</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;pyPheWAS&#39;</span><span class="p">)]</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;pyPheWAS&#39;</span><span class="p">,</span><span class="s1">&#39;resources&#39;</span><span class="p">,</span><span class="s1">&#39;codes.csv&#39;</span><span class="p">])</span>
-	<span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span></div>
+	<span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
 
 <div class="viewcode-block" id="get_input"><a class="viewcode-back" href="../../api.html#pyPheWAS.pyPhewasv2.get_input">[docs]</a><span class="k">def</span> <span class="nf">get_input</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span> <span class="c1">#diff -done - add duration</span>
 	<span class="sd">&quot;&quot;&quot;</span>
