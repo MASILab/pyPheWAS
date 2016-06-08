@@ -28,8 +28,8 @@ def get_codes(): #same
 
 	# """
 	sep = os.sep
-	path = os.path.abspath(os.curdir)
-	filename = path[:path.index('pyPheWAS')] + os.sep.join(['pyPheWAS','resources','codes.csv'])
+	path = os.path.dirname(os.path.abspath(__file__))
+	filename = os.sep.join([path,'..','resources','codes.csv'])
 	return pd.read_csv(filename)
 
 def get_input(path, filename): #diff -done - add duration
