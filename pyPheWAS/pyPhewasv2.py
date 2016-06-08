@@ -27,9 +27,10 @@ def get_codes(): #same
 	:rtype: pandas DataFrame
 
 	"""
-	#filename = os.path.realpath('../resources/codes.csv')	
-	#return pd.read_csv(filename)
-	return None
+	path = os.path.abspath(os.curdir)
+	path = path[:path.index('pyPheWAS')]
+	filename = os.path.realpath(path + 'pyPheWAS/resources/codes.csv')	
+	return pd.read_csv(filename)
 
 def get_input(path, filename): #diff -done - add duration
 	"""
