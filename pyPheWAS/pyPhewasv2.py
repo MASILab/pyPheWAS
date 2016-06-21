@@ -259,7 +259,7 @@ def get_x_label_positions(categories, lines=True): #same
 		s += v
 	return label_positions
 
-def plot_data_points(x, y, thresh, save='', imbalances=np.array([])): #same
+def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.array([])): #same
 	"""
 	Plots the data with a variety of different options.
 
@@ -290,10 +290,24 @@ def plot_data_points(x, y, thresh, save='', imbalances=np.array([])): #same
 	linepos = get_x_label_positions(c['category'].tolist(), True)
 	x_label_positions = get_x_label_positions(c['category'].tolist(), False)
 	x_labels = c.sort_values('category').category_string.drop_duplicates().tolist()
-	
+
 	# Plot each of the points, if necessary, label the points.
 	e = 1
 	artists = []
+	plt.axhline(y=-math.log10(0.05), color='black')
+	plt.axhline(y=thresh0, color='red')
+	plt.axhline(y=thresh1, color='blue')
+	plt.xticks(x_label_positions, x_labels, rotation=70, fontsize=10)
+	y_label_positions = [-math.log10(0.05), thresh0, thresh1]
+	plt.yticks(y_label_positions, ['p=0.05', 'Bonferroni Threshold','Benjamini-Hochberg threshold'], rotation=10,fontsize=10)
+	plt.ylim(ymin=0)
+	plt.xlim(xmin=0, xmax=len(c))
+	plt.ylabel('-log10(p)')
+
+	if thresh_type==0:
+		thresh=thresh0
+	else:
+		thresh=thresh1
 	for i in idx:
 		if show_imbalance:
 			plt.plot(e,y[i], 'o', color=imbalance_colors[imbalances[i]], fillstyle='full', markeredgewidth=0.0)
@@ -307,17 +321,6 @@ def plot_data_points(x, y, thresh, save='', imbalances=np.array([])): #same
 	if show_imbalance:
 		for pos in linepos:
 			plt.axvline(x=pos, color='black', ls='dotted')
-
-	# Plot a blue line at p=0.05 and plot a red line at the line for the threshold type.
-	plt.axhline(y=-math.log10(0.05), color='blue')
-	plt.axhline(y=thresh, color='red')
-
-	# Set windows and labels
-	plt.xticks(x_label_positions, x_labels,rotation=70, fontsize=10)
-	plt.ylim(ymin=0)
-	plt.xlim(xmin=0, xmax=len(c))
-	plt.ylabel('-log10(p)')
-
 	# Determine the type of output desired (saved to a plot or displayed on the screen)
 	if save:
 		plt.savefig(save,bbox_extra_artists=artists, bbox_inches='tight')
@@ -365,7 +368,7 @@ def calculate_odds_ratio(genotypes, phen_vector,covariates): #diff - done
 			odds=0
 			conf = linreg.conf_int()
 			od = [-math.log10(p), linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
-	
+		print("1")
 	except:
 		odds=0
 		p=np.nan
@@ -452,14 +455,14 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, sav
 	if output:
 		regressions.to_csv(output, index=False)
 	normalized = neglogp(results[1])	
-	if thresh_type==0:
-		thresh = get_bon_thresh(normalized,0.05)
-	elif thresh_type==1:
-		thresh = get_fdr_thresh(results[1],0.05)
+	#if thresh_type==0:
+	thresh0 = get_bon_thresh(normalized,0.05)
+	#elif thresh_type==1:
+	thresh1 = get_fdr_thresh(results[1],0.05)
 	imbalances = np.array([])
 	if show_imbalance:
 		imbalances = get_imbalances(regressions)
-	plot_data_points(results[0],normalized,-math.log10(thresh), save, imbalances)
+	plot_data_points(results[0],normalized,-math.log10(thresh0),-math.log10(thresh1),thresh_type, save, imbalances)
 	return (results[0], results[1], -math.log10(thresh), imbalances)
 
 
