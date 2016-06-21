@@ -35,7 +35,7 @@ def get_codes(): #same
 def get_input(path, filename): #diff -done - add duration
 	"""
 	Read all of the phenotype data from the given file and load it into a pandas DataFrame.
-	
+
 	:param path: The path to the file that contains the phenotype data
 	:param filename: The name of the file that contains the phenotype data.
 	:type path: string
@@ -46,7 +46,7 @@ def get_input(path, filename): #diff -done - add duration
 	"""
 	wholefname = path + filename
 	icdfile = pd.read_csv(wholefname)
-	
+
 	if  gen_ftype==0:
 		g=icdfile.groupby(['id','icd9'])
 		idx=g.filter(lambda x: len(x)==1).index
@@ -54,13 +54,13 @@ def get_input(path, filename): #diff -done - add duration
 	else:
 		"""
 		This needs to be changed, need to adjust for a variety of different naming conventions
-		in the phenotype file, not simply 'AgeAtICD', 'id', 'icd9', etc. 
-		Either we need to adjust for different names in the code, or state explicitly in the 
+		in the phenotype file, not simply 'AgeAtICD', 'id', 'icd9', etc.
+		Either we need to adjust for different names in the code, or state explicitly in the
 		documentation that we cannot do things like this.
 		"""
-		phenotypes = pd.merge(icdfile,codes,on='icd9')	
+		phenotypes = pd.merge(icdfile,codes,on='icd9')
 		phenotypes['count']=0
-		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')					
+		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')
 		phenotypes['duration']=phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('max')-phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('min')+1
 	return phenotypes
 
@@ -74,7 +74,7 @@ def get_phewas_info(p_index): #same
 	:returns: A list including the code, the name, and the rollup of the phewas code. The rollup is a list of all of the ICD-9 codes that are grouped into this phewas code.
 	:rtype: list of strings
 	"""
-	p_code = phewas_codes.loc[p_index].phewas_code	
+	p_code = phewas_codes.loc[p_index].phewas_code
 	corresponding = codes[codes.phewas_code == p_code]
 
 	p_name = corresponding.iloc[0].phewas_string
@@ -84,7 +84,7 @@ def get_phewas_info(p_index): #same
 def get_group_file(path, filename): #same
 	"""
 	Read all of the genotype data from the given file and load it into a pandas DataFrame.
-	
+
 	:param path: The path to the file that contains the phenotype data
 	:param filename: The name of the file that contains the phenotype data.
 	:type path: string
@@ -105,7 +105,7 @@ def get_imbalances(regressions):
 
 	========= ====== =======================================================
 	*x* < 0   **-1** The regression had a negative beta value
-	*x* = nan **0**  The regression had a nan beta value (and a nan p-value) 
+	*x* = nan **0**  The regression had a nan beta value (and a nan p-value)
 	*x* > 0   **+1** The regression had a positive beta value
 	========= ====== =======================================================
 
@@ -124,7 +124,7 @@ def get_imbalances(regressions):
 	imbalance[imbalance < 0] = -1
 	return imbalance
 
-def generate_feature_matrix(genotypes,phenotypes): #diff - done
+def generate_feature_matrix(genotypes,phenotypes,control_age): #diff - done
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -133,17 +133,17 @@ def generate_feature_matrix(genotypes,phenotypes): #diff - done
 	:type genotypes:
 	:type phenotypes:
 
-	:returns: 
+	:returns:
 	:rtype:
 
 	"""
 	feature_matrix = np.zeros((genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
-	count=0;
+	count=0
 	for i in genotypes['id']:
 		if gen_ftype==0:
 			match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
 			feature_matrix[count,match[match==True].index]=1
-			
+
 		else:
 			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count']]).drop_duplicates()
 			if gen_ftype==1:
@@ -154,6 +154,7 @@ def generate_feature_matrix(genotypes,phenotypes): #diff - done
 				dura = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['duration']
 				dura[np.isnan(dura)]=0
 				feature_matrix[count,:]=dura
+
 		count+=1
 	return feature_matrix
 
@@ -162,7 +163,7 @@ def get_bon_thresh(normalized,power): #same
 	Calculate the bonferroni correction threshold.
 
 	Divide the power by the sum of all finite values (all non-nan values).
-	
+
 	:param normalized: an array of all normalized p-values. Normalized p-values are -log10(p) where p is the p-value.
 	:param power: the threshold power being used (usually 0.05)
 	:type normalized: numpy array
@@ -178,7 +179,7 @@ def get_bon_thresh(normalized,power): #same
 def get_fdr_thresh(p_values, power):
 	"""
 	Calculate the false discovery rate threshold.
-	
+
 	:param p_values: a list of p-values obtained by executing the regression
 	:param power: the thershold power being used (usually 0.05)
 	:type p_values: numpy array
@@ -195,12 +196,12 @@ def get_fdr_thresh(p_values, power):
 		if sn[i]<=power:
 			break
 	return sn[i]
-		
+
 
 def run_phewas(fm, genotypes ,covariates): #same
 	"""
 	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
-	
+
 	:param fm: The phewas feature matrix.
 	:param genotypes: A pandas DataFrame of the genotype file.
 	:param covariates: The covariates that the function is to be run on.
@@ -216,15 +217,15 @@ def run_phewas(fm, genotypes ,covariates): #same
 	for index in range(m):
 
 		phen_vector = fm[:,index]
-		
+
 		res=calculate_odds_ratio(genotypes, phen_vector,covariates)
-		
+
 		# save all of the regression data
 		phewas_info = get_phewas_info(index)
 		stat_info = res[2]
 		info = phewas_info[0:2] + stat_info + [phewas_info[2]]
 		regressions.loc[index] = info
-		
+
 		p_values[index] = res[1]
 	return (np.array(range(m)), p_values, regressions)
 
@@ -264,7 +265,7 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 	Plots the data with a variety of different options.
 
 	This function is the primary plotting function for pyPhewas.
-	
+
 	:param x: an array of indices
 	:param y: an array of p-values
 	:param thresh: the threshold power
@@ -277,10 +278,10 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 	:type imbalances: numpy array
 
 	"""
-	
+
 	# Determine whether or not to show the imbalance.
 	show_imbalance = imbalances.size != 0
-	
+
 	# Sort the phewas codes by category.
 	c = codes.loc[phewas_codes['index']]
 	c = c.reset_index()
@@ -349,7 +350,7 @@ def calculate_odds_ratio(genotypes, phen_vector,covariates): #diff - done
 			l = ['genotype', 'age'] # a list of your covariates
 			covariates = '+'.join(l) # pyPhewas format
 
-		The covariates that are listed here *must* be headers to your genotype CSV file. 
+		The covariates that are listed here *must* be headers to your genotype CSV file.
 	"""
 
 	data = genotypes
@@ -359,7 +360,7 @@ def calculate_odds_ratio(genotypes, phen_vector,covariates): #diff - done
 		if gen_ftype==0:
 			logreg = smf.glm(f,data=data,family=sm.families.Binomial()).fit()
 			p=logreg.pvalues.genotype
-			odds=logreg.deviance	
+			odds=logreg.deviance
 			conf = logreg.conf_int()
 			od = [-math.log10(p), logreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
 		else:
@@ -417,7 +418,7 @@ gen_ftype = 0
 neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
 
 
-def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, save='',output='', show_imbalance=False): #same
+def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, control_age=0, save='',output='', show_imbalance=False): #same
 	"""
 	The main phewas method. Takes a path, filename, groupfile, and a variety of different options.
 
@@ -442,19 +443,19 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, sav
 	"""
 	start_time = time.time()
 	global codes,phewas_codes, gen_ftype, neglogp
-	
+
 	print("reading in data")
 
 	gen_ftype = reg_type
 	phenotypes = get_input(path, filename)
 	genotypes = get_group_file(path, groupfile)
-	fm = generate_feature_matrix(genotypes,phenotypes)
+	fm = generate_feature_matrix(genotypes,phenotypes,control_age)
 	print(len(fm))
 	results = run_phewas(fm, genotypes,covariates)
 	regressions = results[2]
 	if output:
 		regressions.to_csv(output, index=False)
-	normalized = neglogp(results[1])	
+	normalized = neglogp(results[1])
 	#if thresh_type==0:
 	thresh0 = get_bon_thresh(normalized,0.05)
 	#elif thresh_type==1:
@@ -463,6 +464,4 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, sav
 	if show_imbalance:
 		imbalances = get_imbalances(regressions)
 	plot_data_points(results[0],normalized,-math.log10(thresh0),-math.log10(thresh1),thresh_type, save, imbalances)
-	return (results[0], results[1], -math.log10(thresh), imbalances)
-
-
+	return (results[0], results[1], imbalances)
