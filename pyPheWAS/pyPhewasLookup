@@ -26,8 +26,6 @@ kwargs = process_args(kwargs, optargs, *args)
 kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
 
 print(kwargs)
-input()
-
 
 # Assert that a valid regression type was used
 assert kwargs['reg_type'] in regression_map.keys(), "%s is not a valid regression type" % (kwargs['reg_type'])
