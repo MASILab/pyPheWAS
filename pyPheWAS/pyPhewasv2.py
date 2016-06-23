@@ -301,7 +301,6 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 	plt.xticks(x_label_positions, x_labels, rotation=70, fontsize=10)
 	y_label_positions = [-math.log10(0.05), thresh0, thresh1]
 	plt.yticks(y_label_positions, ['p=0.05', 'Bonferroni Threshold','Benjamini-Hochberg threshold'], rotation=10,fontsize=10)
-	plt.ylim(ymin=0)
 	plt.xlim(xmin=0, xmax=len(c))
 	plt.ylabel('-log10(p)')
 
