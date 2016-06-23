@@ -12,3 +12,9 @@ Source Documentation
 
 .. automodule:: pyPheWAS.pyPhewasv2
    :members:
+
+:mod:`pyPheWAS.pyPhewasCore` -- pyPhewas Research Tools file
+************************************************************
+
+.. automodule:: pyPheWAS.pyPhewasCore
+   :members:
