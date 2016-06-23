@@ -369,7 +369,7 @@ def calculate_odds_ratio(genotypes, phen_vector,covariates): #diff - done
 			odds=0
 			conf = linreg.conf_int()
 			od = [-math.log10(p), linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
-		print("1")
+
 	except:
 		odds=0
 		p=np.nan

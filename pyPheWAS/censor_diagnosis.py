@@ -18,11 +18,11 @@ def censor_diagnosis(genotype_file,phenotype_file,final_pfile, final_gfile, fiel
         else:
                 mg['diff']=mg[field]-mg['AgeAtICD']
                 if np.isfinite(start_time) and np.isnan(end_time):
-                        final = mg[mg['diff']>start_time]
+                        final = mg[(mg['diff']>start_time)|(np.isnan(mg['diff']))]
                 elif np.isnan(start_time) and np.isfinite(end_time):
-                        final = mg[mg['diff']<end_time]
+                        final = mg[(mg['diff']<end_time)|(np.isnan(mg['diff']))]
                 else:
-                        final = mg[(mg['diff']>start_time)&(mg['diff']<end_time)]
+                        final = mg[(mg['diff']>start_time)&(mg['diff']<end_time)|(np.isnan(mg['diff']))]
         final[['id','icd9','AgeAtICD']].to_csv(final_pfile)
         final[['id', 'MaxAgeAtVisit', 'genotype']].drop_duplicates().to_csv(final_gfile)
 
