@@ -15,5 +15,12 @@ setup(
 	'scipy',
 	'pandas',
 	'statsmodels',
+  'numexpr',
+  'bottleneck'
 	],
+  scripts=['bin/maximize_controls',
+  'bin/pyPhewasLookup',
+  'bin/pyPhewasModel',
+  'bin/pyPhewasPlot',
+  ],
 )
