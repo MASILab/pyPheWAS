@@ -3,3 +3,5 @@ matplotlib
 scipy
 pandas
 statsmodels
+numexpr
+bottleneck
