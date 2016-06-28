@@ -145,7 +145,7 @@ def generate_feature_matrix(genotypes,phenotypes,control_age): #diff - done
 			feature_matrix[count,match[match==True].index]=1
 
 		else:
-			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count']]).drop_duplicates()
+			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count','duration']]).drop_duplicates()
 			if gen_ftype==1:
 				cts = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['count']
 				cts[np.isnan(cts)]=0
