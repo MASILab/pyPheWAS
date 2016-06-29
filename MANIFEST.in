@@ -1,1 +1,1 @@
-include *.csv
+include resources/*.csv
