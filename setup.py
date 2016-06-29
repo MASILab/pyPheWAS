@@ -23,5 +23,7 @@ setup(
   'bin/pyPhewasModel',
   'bin/pyPhewasPlot',
   ],
-  package_data={'pyPheWAS' : ['resources/*.csv']}
+  package_data={
+    '' : ['resources/*.csv']
+    }
 )
