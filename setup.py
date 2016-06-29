@@ -24,6 +24,6 @@ setup(
   'bin/pyPhewasPlot',
   ],
   package_data={
-    '':['resources/*.csv']
+    '':['resources/','resources/*.csv']
   },
 )
