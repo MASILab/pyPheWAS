@@ -21,7 +21,7 @@ def get_codes(): #same
 	"""
 	sep = os.sep
 	path = os.path.dirname(os.path.abspath(__file__))
-	filename = os.sep.join([path,'..','resources','codes.csv'])
+	filename = os.sep.join([path,'resources','codes.csv'])
 	return pd.read_csv(filename)
 
 def get_group_file(path, filename): #same
