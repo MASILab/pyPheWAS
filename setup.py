@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
   name = 'pyPheWAS',
   packages = ['pyPheWAS'], # this must be the same as the name above
-  version = '0.1.6',
+  version = '0.1.7',
   description = 'MASI Lab Port of PheWAS into Python',
   author = 'MASI Lab',
   author_email = 'bennett.landman@vanderbilt.edu',
@@ -18,12 +18,12 @@ setup(
   'numexpr',
   'bottleneck'
 	],
+  package_data={
+    '':['resources/*.csv']
+  },
   scripts=['bin/maximize_controls',
   'bin/pyPhewasLookup',
   'bin/pyPhewasModel',
   'bin/pyPhewasPlot',
   ],
-  package_data={
-    '':['resources/','resources/*.csv']
-  },
 )
