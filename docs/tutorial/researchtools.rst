@@ -44,7 +44,7 @@ The valid options for reg_type:
  * lin: linear regression
  * dur: linear regression on the duration of diseases
 
-A sample execution of pyPhewasLookup::
+A sample execution of *pyPhewasLookup*::
 
 		pyPhewasLookup --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --reg_type="log" --outfile="feature_matrix_group.csv"
 
@@ -72,7 +72,9 @@ The valid regression types are listed above under *pyPhewasLookup*
 
 .. note:: the outfile parameter is not required. If it is left off, the default output file will be "regressions_[group file name]" So if "group.csv" is entered as the group file and the outfile parameter is not specified, the feature matrix will be placed in "regressions_group.csv"
 
-A sample execution of pyPhewasModel::
+.. note:: If multiple covariates are to be used, it is necessary to specify them in one string with a *+* in between them. For example, if you would like to use "genotype" and "age" as covariates, the argument would be ``--covariates="genotype+age"``
+
+A sample execution of *pyPhewasModel*::
 
 		pyPhewasModel --path="/Users/me/Documents/EMRdata/" --feature_matrix="feature_matrix_group.csv" --group="group.csv" --covariates="genotype" --reg_type="log" --outfile="regressions_group.csv"
 
@@ -104,7 +106,7 @@ The valid options for thresh_type:
  * *bon*:	Use the Bonferroni correction threshold
  * *fdr*:	Use the False Discovery Rate threshold
 
-A sample execution of pyPhewasPlot::
+A sample execution of *pyPhewasPlot*::
 
 		pyPhewasPlot --path="/Users/me/Documents/EMRdata/" --statfile="regressions_group.csv" --imbalance="False" --thresh_type="bon" --outfile="pyPheWAS_plot.png"
 
@@ -120,6 +122,24 @@ After the command:
 Additional Research Tools
 =========================
 
-Grouping Tool
+Grouping Tool (generateGroups)
 -------------
-hello world
+
+The grouping tool allows you to take two or more icd9 files, and two or more group files. And merge them together, while removing any double counted groups, so that the resulting data files are ready to be run through the pyPheWAS Research Tools.
+
+The options:
+ * ``--path``:			the path to all input files and destination of output files
+ * ``--phenotypefiles``:		a list of phenotype file names, each separated by a *+*
+ * ``--groupfile``:				a list of group file names, each separated by a *+*
+ * ``--phenotypeout``:			the output file name for the merged phenotype files
+ * ``--groupout``:				the output file name for the merged group files
+
+A sample execution of *generateGroups*::
+
+		generateGroups --path="/Users/me/Documents/EMRdata" --phenotypefiles="icd9_one.csv+icd9_two.csv" --groupfiles="group_one.csv+group_two.csv" --phenotypeout="new_icd9.csv" --groupout="new_group.csv"
+
+Age Matching
+------------
+
+Censoring
+---------
