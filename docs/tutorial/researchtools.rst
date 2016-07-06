@@ -10,6 +10,10 @@ The pyPheWAS Research Tools have 3 primary phases. However, age matching and cen
 * pyPhewasModel: runs the regressions from the feature matrix and outputs a large set of statistical data.
 * pyPhewasPlot: this step plots the data from the regressions file.
 
+This is a basic outline of the pyPheWAS research tools structure:
+
+.. figure:: pyPheWAS_Research_Tools.png
+
 Getting Started
 ---------------
 
@@ -27,22 +31,22 @@ pyPhewasLookup
 pyPhewasLookup takes the phenotype file and the group file and will generate the feature matrix.
 
 The options:
- * --path:		the path to all input files and destination of output files
- * --phenotype:	the name of the phenotype file (e.g. "icd9_data.csv")
- * --group:		the name of the group file (e.g. "groups.csv")
- * --outfile:	the name of the output file that contains the feature matrix
- * --reg_type: the type of regression that you would like to use. (See the key below for more information)
+ * ``--path``:		the path to all input files and destination of output files
+ * ``--phenotype``:	the name of the phenotype file (e.g. "icd9_data.csv")
+ * ``--group``:		the name of the group file (e.g. "groups.csv")
+ * ``--outfile``:	the name of the output file that contains the feature matrix
+ * ``--reg_type``: the type of regression that you would like to use. (See the key below for more information)
 
 .. note:: the outfile parameter is not required. If it is left off, the default output file will be "feature_matrix_[group file name]" So if "group.csv" is entered as the group file and the outfile parameter is not specified, the feature matrix will be placed in "feature_matrix_group.csv"
 
-The valid options for reg_type are as follows:
+The valid options for reg_type:
  * log: logarithmic regression
  * lin: linear regression
  * dur: linear regression on the duration of diseases
 
-A sample execution of pyPhewasLookup:
+A sample execution of pyPhewasLookup::
 
-pyPhewasLookup --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --reg_type="log"
+pyPhewasLookup --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --reg_type="log" --outfile="feature_matrix_group.csv"
 
 The "EMRdata" folder before the command:
 
@@ -54,19 +58,19 @@ pyPhewasModel
 pyPhewasModel takes the feature matrix, group file, covariate information, and regression type and runs regressions on each PheWAS code to test for association.
 
 The options:
- * --path:			the path to all input files and destination of output files
- * --feature_matrix:the name of the feature matrix file (e.g. "feature_matrix_group.csv")
- * --group:			the name of the group file (e.g. " group.csv")
- * --covariates:	the variables to be used as covariates
- * --reg_type:		the regression type to be used (e.g. "log")
- * --outfile:		the name of the output file that contains the regression data
+ * ``--path``:			the path to all input files and destination of output files
+ * ``--feature_matrix``:the name of the feature matrix file (e.g. "feature_matrix_group.csv")
+ * ``--group``:			the name of the group file (e.g. " group.csv")
+ * ``--covariates``:	the variables to be used as covariates
+ * ``--reg_type``:		the regression type to be used (e.g. "log")
+ * ``--outfile``:		the name of the output file that contains the regression data
 The valid regression types are listed above under *pyPhewasLookup*
 
 .. note:: the outfile parameter is not required. If it is left off, the default output file will be "regressions_[group file name]" So if "group.csv" is entered as the group file and the outfile parameter is not specified, the feature matrix will be placed in "regressions_group.csv"
 
-A sample execution of pyPhewasModel:
+A sample execution of pyPhewasModel::
 
-pyPhewasModel --path="/Users/me/Documents/EMRdata/" --feature_matrix="feature_matrix_group.csv" --group="group.csv" --covariates="genotype" --reg_type="log"
+pyPhewasModel --path="/Users/me/Documents/EMRdata/" --feature_matrix="feature_matrix_group.csv" --group="group.csv" --covariates="genotype" --reg_type="log" --outfile="regressions_group.csv"
 
 The "EMRdata" folder before the command:
 
@@ -79,12 +83,22 @@ pyPhewasPlot takes the statistics file and threshold type and generates a plot b
 
 The options:
  * ``--path``:			the path to all input files and destination of output files
- * --statfile:		the name of the statistics file
- * --imbalance:		the option of whether or not to show the direction of imbalance in the plot
- * --thresh_type:	the type of threshold to be used in the plot (See the key below for more information)
- * --outfile:		the name of the output file for the plot
+ * ``--statfile``:		the name of the statistics file
+ * ``--imbalance``:		the option of whether or not to show the direction of imbalance in the plot
+ * ``--thresh_type``:	the type of threshold to be used in the plot (See the key below for more information)
+ * ``--outfile``:		the name of the output file for the plot
 
 .. note:: the outfile is not required. If it is left off, an output file will not be saved to the target directory. Instead, a plot will be displayed on the screen by the matplotlib module. It is possible to save the plot with any desired file name in this display.
+
+.. note:: the ``--imbalance`` option must be either *True* or *False*
+
+The valid options for thresh_type:
+ * *bon*:	Use the Bonferroni correction threshold
+ * *fdr*:	Use the False Discovery Rate threshold
+
+A sample execution of pyPhewasPlot::
+
+pyPhewasPlot --path="/Users/me/Documents/EMRdata/" --statfile="regressions_group.csv" --imbalance="False" --thresh_type
 
 The "EMRdata" folder before the command
 
