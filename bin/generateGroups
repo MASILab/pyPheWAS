@@ -43,12 +43,12 @@ display_kwargs(kwargs)
 # Make all arguments local variables
 locals().update(kwargs)
 
-icd9sDF = [pd.read_csv(element) for element in phenotypes.split('+')]
-groupsDF = [pd.read_csv(element) for element in groups.split('+')]
+icd9sDF = [pd.read_csv(path + element) for element in phenotypes.split('+')]
+groupsDF = [pd.read_csv(path + element) for element in groups.split('+')]
 
 ng = pd.concat(groupsDF)
 ng = ng.drop_duplicates('id')
 ni = pd.concat(icd9sDF)
 
-ni.to_csv(phenout)
-ng.to_csv(groupout)
+ni.to_csv(path + phenout)
+ng.to_csv(path + groupout)
