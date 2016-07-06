@@ -46,11 +46,15 @@ The valid options for reg_type:
 
 A sample execution of pyPhewasLookup::
 
-pyPhewasLookup --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --reg_type="log" --outfile="feature_matrix_group.csv"
+		pyPhewasLookup --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --reg_type="log" --outfile="feature_matrix_group.csv"
 
 The "EMRdata" folder before the command:
 
+.. figure:: pyPhewasLookupBefore.png
+
 After the command:
+
+.. figure:: pyPhewasLookupAfter.png
 
 pyPhewasModel
 -------------
@@ -70,11 +74,15 @@ The valid regression types are listed above under *pyPhewasLookup*
 
 A sample execution of pyPhewasModel::
 
-pyPhewasModel --path="/Users/me/Documents/EMRdata/" --feature_matrix="feature_matrix_group.csv" --group="group.csv" --covariates="genotype" --reg_type="log" --outfile="regressions_group.csv"
+		pyPhewasModel --path="/Users/me/Documents/EMRdata/" --feature_matrix="feature_matrix_group.csv" --group="group.csv" --covariates="genotype" --reg_type="log" --outfile="regressions_group.csv"
 
 The "EMRdata" folder before the command:
 
+.. figure:: pyPhewasModelBefore.png
+
 After the command:
+
+.. figure:: pyPhewasLookupAfter.png
 
 pyPhewasPlot
 ------------
@@ -98,8 +106,19 @@ The valid options for thresh_type:
 
 A sample execution of pyPhewasPlot::
 
-pyPhewasPlot --path="/Users/me/Documents/EMRdata/" --statfile="regressions_group.csv" --imbalance="False" --thresh_type
+		pyPhewasPlot --path="/Users/me/Documents/EMRdata/" --statfile="regressions_group.csv" --imbalance="False" --thresh_type="bon" --outfile="pyPheWAS_plot.png"
 
-The "EMRdata" folder before the command
+The "EMRdata" folder before the command:
+
+.. figure:: pyPhewasPlotBefore.png
 
 After the command:
+
+.. figure:: pyPhewasPlotAfter.png
+
+
+Additional Research Tools
+=========================
+
+Grouping Tool
+-------------
