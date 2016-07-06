@@ -78,7 +78,7 @@ pyPhewasPlot
 pyPhewasPlot takes the statistics file and threshold type and generates a plot based on the regression data.
 
 The options:
- * --path:			the path to all input files and destination of output files
+ * ``--path``:			the path to all input files and destination of output files
  * --statfile:		the name of the statistics file
  * --imbalance:		the option of whether or not to show the direction of imbalance in the plot
  * --thresh_type:	the type of threshold to be used in the plot (See the key below for more information)
