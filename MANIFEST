@@ -2,6 +2,7 @@
 README.txt
 setup.cfg
 setup.py
+bin/generateGroups
 bin/maximize_controls
 bin/pyPhewasLookup
 bin/pyPhewasModel
