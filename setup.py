@@ -25,5 +25,6 @@ setup(
   'bin/pyPhewasLookup',
   'bin/pyPhewasModel',
   'bin/pyPhewasPlot',
+  'bin/generateGroups',
   ],
 )
