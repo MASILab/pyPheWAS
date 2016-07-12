@@ -2,6 +2,7 @@ from collections import Counter
 import getopt
 import math
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import os
 import pandas as pd
@@ -353,7 +354,9 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])): #same
 
 	# Determine the type of output desired (saved to a plot or displayed on the screen)
 	if save:
-		plt.savefig(save,bbox_extra_artists=artists, bbox_inches='tight')
+		pdf = PdfPages(save)
+		pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
+		pdf.close()
 	else:
 		plt.subplots_adjust(left=0.05,right=0.85)
 		plt.show()

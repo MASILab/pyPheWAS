@@ -8,6 +8,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 from collections import Counter
 import time,math, scipy.stats
 import pandas as pd
@@ -323,7 +324,9 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 			plt.axvline(x=pos, color='black', ls='dotted')
 	# Determine the type of output desired (saved to a plot or displayed on the screen)
 	if save:
-		plt.savefig(save,bbox_extra_artists=artists, bbox_inches='tight')
+		pdf = PdfPages(save)
+		pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
+		pdf.close()
 	else:
 		plt.subplots_adjust(left=0.05,right=0.85)
 		plt.show()
