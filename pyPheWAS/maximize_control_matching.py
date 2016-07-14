@@ -28,11 +28,18 @@ def get_options(targets, controls, keys, deltas):
 	tt = targets[keys]
 	c = controls[keys]
 	matching = {}
-	for i in tt.index:
-		tr = tt.loc[i]
-		control_query = generate_row_query(keys, deltas, tr)
-		matches = c.query(control_query).index
-		matching[i] = matches.drop_duplicates().tolist()
+	if len(c) > len(tt):
+		for i in tt.index:
+			tr = tt.loc[i]
+			control_query = generate_row_query(keys, deltas, tr)
+			matches = c.query(control_query).index
+			matching[i] = matches.drop_duplicates().tolist()
+	else:
+		for i in c.index:
+			tr = c.loc[i]
+			target_query = generate_row_query(keys, deltas, tr)
+			matches = tt.query(target_query).index
+			matching[i] = matches.drop_duplicates().tolist()
 	return matching
 
 def generate_matches(matching, goal):
@@ -63,7 +70,7 @@ def generate_matches(matching, goal):
 
 def maximize_matches(matching):
 	prev = generate_matches(matching, 1)
-	if prev[2] == False:
+	while prev[2] == False:
 		return prev
 
 	# If 1-1 matching was successful, attempt to maximize starting from 2
@@ -98,7 +105,7 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 	# Reformat arguments into Python format
 	keys = keys.split('+')
 	deltas = deltas.split(',')
-	deltas = [CATEGORICAL_DATA if x == '' else x for x in deltas]
+	deltas = [CATEGORICAL_DATA if x == '' else int(x) for x in deltas]
 
 	# Read data from the provided input file
 	data = pd.read_csv(path + inputfile)
@@ -115,16 +122,30 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 	targets = data[data[condition] == 1]
 	controls = data[data[condition] == 0]
 
-	# Get all of the potential matches for each target
+	match_by_control = len(targets) > len(controls)
+
 	matching = get_options(targets, controls, keys, deltas)
 	if goal != -1:
 		final, used, success, matched = generate_matches(matching, goal)
 		if success:
-			all_used = used + targets.index.tolist()
+			if match_by_control:
+				all_used = used + controls.index.tolist()
+			else:
+				all_used = used + targets.index.tolist()
 			output_matches(path, outputfile, data, all_used, success, matched)
 			return
 		else:
-			print("Failed to perform 1-%s, attempting to maximize..." % (goal))		
+			print("Failed to perform 1-%s, attempting to maximize..." % (goal))
+			while not success:
+				goal = 1
+				print(deltas)
+				deltas = [element + 1 if element != CATEGORICAL_DATA else element for element in deltas]
+				matching = get_options(targets, controls, keys, deltas)
+				final, used, success, matched = generate_matches(matching, goal)
+			print("Used %s as delta values across keys. Generated a 1-%s match." % (deltas, goal))
 	final, used, success, matched = maximize_matches(matching)
-	all_used = used + targets.index.tolist()
+	if match_by_control:
+		all_used = used + controls.index.tolist()
+	else:
+		all_used = used + targets.index.tolist()
 	output_matches(path, outputfile, data, all_used, success, matched)
