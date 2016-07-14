@@ -2,8 +2,9 @@
 README.txt
 setup.cfg
 setup.py
+bin/censorData
 bin/generateGroups
-bin/maximize_controls
+bin/maximizeControls
 bin/pyPhewasLookup
 bin/pyPhewasModel
 bin/pyPhewasPlot

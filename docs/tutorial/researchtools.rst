@@ -143,3 +143,5 @@ Age Matching
 
 Censoring
 ---------
+
+The age censoring tool allows you to censor data from a variable amount of 
