@@ -1,28 +1,23 @@
 #!/usr/bin/env python
 
 from pyPheWAS.pyPhewasCore import *
-from pyPheWAS.rt_censor_diagnosis import *
 import sys, os
+import datetime
+import pandas as pd
 
 optargs = {
 	'--phenotype': 'phenotype_file',
 	'--group':'genotype_file',
 	'--path':'path',
-	'--field':'field',
 	'--phenotypeout': 'final_pfile',
-	'--groupout': 'final_gfile',
-	'--start':'start_time',
-	'--end':'end_time',
+	'--eventcolumn':'ec',
+	'--precision':'precision'
 }
-
-"""
-Retrieve and validate all arguments.
-"""
 
 args = sys.argv[1:]
 
 # Define any default arguments
-kwargs = {'path':'.', 'field':'na', 'start_time':float('nan'), 'end_time':float('nan')}
+kwargs = {'path':'.','eventcolumn':'Event_date', 'precision':2}
 
 kwargs = process_args(kwargs, optargs, *args)
 
@@ -31,14 +26,12 @@ kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
 
 print(kwargs)
 
-
 # Assert that valid files were given
 assert kwargs['phenotype_file'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotypes'])
 assert kwargs['genotype_file'].endswith('.csv'), "%s is not a valid group file, must be a .csv file" % (kwargs['groups'])
 
 # Assert that the output file is valid
 assert kwargs['final_pfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenout'])
-assert kwargs['final_gfile'].endswith('.csv'), "%s is not a vailid output file, must be a .csv file" % (kwargs['groupout'])
 
 # Print Arguments
 display_kwargs(kwargs)
@@ -49,12 +42,35 @@ kwargs['genotype_file'] = os.sep.join([kwargs['path'], kwargs['genotype_file']])
 
 kwargs['final_pfile'] = os.sep.join([kwargs['path'], kwargs['final_pfile']])
 
-# Change times to integers
-kwargs['start_time'] = float(kwargs['start_time'])
-kwargs['end_time'] = float(kwargs['end_time'])
-
+# Make precision an integer
+kwargs['precision'] = int(kwargs['precision'])
 
 # Make all arguments local variables
 locals().update(kwargs)
 
-censor_diagnosis(genotype_file, phenotype_file, final_pfile, final_gfile, field, start_time, end_time)
+group = pd.read_csv(genotype_file)
+phen = pd.read_csv(phenotype_file)
+group['nDOB'] = pd.to_datetime(group['DOB'])
+phen['nEvent_date'] = pd.to_datetime(phen[ec])
+
+df = pd.merge(group, phen, on='id')
+
+century = datetime.timedelta(365.2425) * 100
+
+correctedDOB = []
+for i in df.index:
+	tr = df.loc[i]
+	if tr['nEvent_date'] < tr['nDOB']:
+		correctedDOB.append(tr['nDOB'] - century)
+	else:
+		correctedDOB.append(tr['nDOB'])
+
+df['nDOB'] = correctedDOB
+df['AgeAtICD'] = (df['nEvent_date'] - df['nDOB'])
+correctedAge = []
+for i in df.index:
+	tr = df.loc[i]
+	age = tr['AgeAtICD'] 
+	correctedAge.append(round(age.days/365.0,precision))
+df['AgeAtICD'] = correctedAge
+df.get(['id', 'icd9', ec, 'AgeAtICD']).to_csv(final_pfile, index=False)
