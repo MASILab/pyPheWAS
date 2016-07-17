@@ -10,7 +10,6 @@ optargs = {
 	'--path':'path',
 	'--field':'field',
 	'--phenotypeout': 'final_pfile',
-	'--groupout': 'final_gfile',
 	'--start':'start_time',
 	'--end':'end_time',
 }
@@ -38,7 +37,6 @@ assert kwargs['genotype_file'].endswith('.csv'), "%s is not a valid group file, 
 
 # Assert that the output file is valid
 assert kwargs['final_pfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenout'])
-assert kwargs['final_gfile'].endswith('.csv'), "%s is not a vailid output file, must be a .csv file" % (kwargs['groupout'])
 
 # Print Arguments
 display_kwargs(kwargs)
@@ -57,4 +55,4 @@ kwargs['end_time'] = float(kwargs['end_time'])
 # Make all arguments local variables
 locals().update(kwargs)
 
-censor_diagnosis(genotype_file, phenotype_file, final_pfile, final_gfile, field, start_time, end_time)
+censor_diagnosis(genotype_file, phenotype_file, final_pfile, field, start_time, end_time)
