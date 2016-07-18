@@ -151,7 +151,7 @@ The age censoring tool allows you to censor your data by age. The tool allows yo
 #. Censor the data from exact start and end ages
 #. Censor the data as a range from a period of time, relative to an age in the demographic data.
 
-..note:: The field 'AgeAtICD' must be included in the phenotype file, this is the age that will be censored according to the parameters.
+.. note:: The field 'AgeAtICD' must be included in the phenotype file, this is the age that will be censored according to the parameters.
 
 The options:
  * ``--path``:			the path to all input files and destination of the output files
@@ -176,14 +176,14 @@ A sample execution of *censorData* with using ``field``::
 
 	censorData --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --start=2 --end=4 --phenotypeout="newicd9.csv" --field="AgeAtDx"
 
-..note:: In order to use the second censoring method. The parameter ``field`` must be included as a column in the group file, and must be an age, similar to the 'AgeAtICD'
+.. note:: In order to use the second censoring method. The parameter ``field`` must be included as a column in the group file, and must be an age, similar to the 'AgeAtICD'
 
 Event to Age
 ------------
 
 A lot of EMR data comes in the form of event dates instead of ages for each set of data. To amend this, this tool exists to convert all of the event dates to ages (*AgeAtICD*). It takes the difference from DOB and event date and fills the age for each data point.
 
-..note:: Date of birth must be included in the group data, referred to as *DOB*.
+.. note:: Date of birth must be included in the group data, referred to as *DOB*.
 
 The options:
  * ``--path``:			the path to all input files and destination of output files
@@ -195,5 +195,5 @@ The options:
 
 A sample execution of *convertEventToAge*::
 
-		convertEventToAge --path="/Users/me/Documents/EMRData/ --phenotype="icd9_data.csv" --group="group.csv" --phenotypeout="icd9_with_age.csv" --eventcolumn="Event_date" --precision=2
+		convertEventToAge --path="/Users/me/Documents/EMRData/" --phenotype="icd9_data.csv" --group="group.csv" --phenotypeout="icd9_with_age.csv" --eventcolumn="Event_date" --precision=2
 

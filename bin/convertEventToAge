@@ -17,7 +17,7 @@ optargs = {
 args = sys.argv[1:]
 
 # Define any default arguments
-kwargs = {'path':'.','eventcolumn':'Event_date', 'precision':2}
+kwargs = {'path':'.','ec':'Event_date', 'precision':2}
 
 kwargs = process_args(kwargs, optargs, *args)
 
