@@ -57,20 +57,19 @@ df = pd.merge(group, phen, on='id')
 
 century = datetime.timedelta(365.2425) * 100
 
-correctedDOB = []
-for i in df.index:
-	tr = df.loc[i]
+def correct_year(tr):
+	n = {}
 	if tr['nEvent_date'] < tr['nDOB']:
-		correctedDOB.append(tr['nDOB'] - century)
+		n['nDOB'] = tr['nDOB'] - century
 	else:
-		correctedDOB.append(tr['nDOB'])
+		n['nDOB'] = tr['nDOB']
+	return pd.Series(n)
 
-df['nDOB'] = correctedDOB
+def correct_age(tr):
+	return round(tr['AgeAtICD'].days/365.0, precision)
+
+
+df['nDOB'] = df.apply(correct_year, axis=1)
 df['AgeAtICD'] = (df['nEvent_date'] - df['nDOB'])
-correctedAge = []
-for i in df.index:
-	tr = df.loc[i]
-	age = tr['AgeAtICD'] 
-	correctedAge.append(round(age.days/365.0,precision))
-df['AgeAtICD'] = correctedAge
+df['AgeAtICD'] = df.apply(correct_age, axis=1)
 df.get(['id', 'icd9', ec, 'AgeAtICD']).to_csv(final_pfile, index=False)
