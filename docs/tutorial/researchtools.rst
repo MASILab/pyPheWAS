@@ -32,8 +32,8 @@ pyPhewasLookup takes the phenotype file and the group file and will generate the
 
 The options:
  * ``--path``:		the path to all input files and destination of output files
- * ``--phenotype``:	the name of the phenotype file (e.g. "icd9_data.csv")
- * ``--group``:		the name of the group file (e.g. "groups.csv")
+ * ``--phenotype``:	the name of the phenotype file
+ * ``--group``:		the name of the group file
  * ``--outfile``:	the name of the output file that contains the feature matrix
  * ``--reg_type``: the type of regression that you would like to use. (See the key below for more information)
 
@@ -130,7 +130,7 @@ The grouping tool allows you to take two or more icd9 files, and two or more gro
 The options:
  * ``--path``:			the path to all input files and destination of output files
  * ``--phenotypefiles``:		a list of phenotype file names, each separated by a *+*
- * ``--groupfile``:				a list of group file names, each separated by a *+*
+ * ``--groupfiles``:				a list of group file names, each separated by a *+*
  * ``--phenotypeout``:			the output file name for the merged phenotype files
  * ``--groupout``:				the output file name for the merged group files
 
@@ -141,7 +141,59 @@ A sample execution of *generateGroups*::
 Age Matching
 ------------
 
+
+
 Censoring
 ---------
 
-The age censoring tool allows you to censor data from a variable amount of 
+The age censoring tool allows you to censor your data by age. The tool allows you to do two things:
+
+#. Censor the data from exact start and end ages
+#. Censor the data as a range from a period of time, relative to an age in the demographic data.
+
+..note:: The field 'AgeAtICD' must be included in the phenotype file, this is the age that will be censored according to the parameters.
+
+The options:
+ * ``--path``:			the path to all input files and destination of the output files
+ * ``--phenotype``:		the name of the phenotype file
+ * ``--group``:			the name of the group file
+ * ``--phenotypeout``:	the output file name for the set of age censored data points
+ * ``--start``:			the start time of the range
+ * ``--end``:			the end time of the range
+ * ``--field``:			the name of the field from which the difference will be calculated (*optional*, leave blank if using exact ages)
+
+Exact start and end ages:
+	This method *does not* require the ``field`` input. ``start`` will the beginning of the range and ``end`` will be the end of the age range. For example if ``--start=2`` and ``--end=4``, then only data that has 'AgeAtICD' between the 2 and 4 will be included in the output field.
+
+A sample execution of *censorData* without using ``field``::
+
+	censorData --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --start=2 --end=4 --phenotypeout="newicd9.csv"
+
+Delta from the ``field`` parameter:
+	This method *does* require the ``field`` input. The difference between the ``field`` parameter and the 'AgeAtICD' parameter will be calculated for each data point. Then only data points for which the difference falls in between start and end will be included. For example, if the parameter ``field=AgeAtDx``, ``start=2`` and ``end=4``. Only data points for which 'AgeAtICD' is 2 to 4 years prior to 'AgeAtDx' will be included. Suppose for a given patient, 'AgeAtDx'=10, for that patient, only data points from the icd9 file in which 'AgeAtICD' are between 6 and 8 will be included.
+
+A sample execution of *censorData* with using ``field``::
+
+	censorData --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --start=2 --end=4 --phenotypeout="newicd9.csv" --field="AgeAtDx"
+
+..note:: In order to use the second censoring method. The parameter ``field`` must be included as a column in the group file, and must be an age, similar to the 'AgeAtICD'
+
+Event to Age
+------------
+
+A lot of EMR data comes in the form of event dates instead of ages for each set of data. To amend this, this tool exists to convert all of the event dates to ages (*AgeAtICD*). It takes the difference from DOB and event date and fills the age for each data point.
+
+..note:: Date of birth must be included in the group data, referred to as *DOB*.
+
+The options:
+ * ``--path``:			the path to all input files and destination of output files
+ * ``--phenotype``:		the name of the phenotype file
+ * ``--group``:			the name of the group file
+ * ``--phenotypeout``:	the name of the output file
+ * ``--eventcolumn``:	the name of the column in the phenotype file that includes event dates
+ * ``--precision``:		the number of decimal points to be included in the age
+
+A sample execution of *convertEventToAge*::
+
+		convertEventToAge --path="/Users/me/Documents/EMRData/ --phenotype="icd9_data.csv" --group="group.csv" --phenotypeout="icd9_with_age.csv" --eventcolumn="Event_date" --precision=2
+
