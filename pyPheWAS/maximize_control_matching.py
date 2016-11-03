@@ -128,3 +128,7 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 	final, used, success, matched = maximize_matches(matching)
 	all_used = used + targets.index.tolist()
 	output_matches(path, outputfile, data, all_used, success, matched)
+	if goal==-1:
+		final, used, success, matched = maximize_matches(matching)
+		all_used = used + targets.index.tolist()
+		output_matches(path, outputfile, data, all_used, success, matched)

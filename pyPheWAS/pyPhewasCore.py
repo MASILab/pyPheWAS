@@ -10,6 +10,7 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import sys
 
+
 def get_codes(): #same
 	"""
 	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
@@ -20,7 +21,7 @@ def get_codes(): #same
 	"""
 	sep = os.sep
 	path = os.path.dirname(os.path.abspath(__file__))
-	filename = os.sep.join([path,'resources','codes.csv'])
+	filename = os.sep.join([path,'..','resources','codes.csv'])
 	return pd.read_csv(filename)
 
 def get_group_file(path, filename): #same
@@ -68,9 +69,8 @@ def get_input(path, filename, reg_type): #diff -done - add duration
 		"""
 		phenotypes = pd.merge(icdfile,codes,on='icd9')	
 		phenotypes['count']=0
-		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')
-		if reg_type == 2:			
-			phenotypes['duration']=phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('max')-phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('min')+1
+		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')					
+		phenotypes['duration']=phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('max')-phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('min')+1
 	return phenotypes
 
 def generate_feature_matrix(genotypes,phenotypes, reg_type): #diff - done
@@ -411,7 +411,7 @@ imbalance_colors = {
 regression_map = {
 	'log':0,
 	'lin':1,
-	'dur':2
+	'lind':2
 }
 threshold_map = {
 	'bon': 0,

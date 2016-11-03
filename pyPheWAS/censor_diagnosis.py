@@ -9,22 +9,23 @@ def censor_diagnosis(genotype_file,phenotype_file,final_pfile, final_gfile, fiel
                 print "Choose appropriate time period"
         if field=='na':
                 if np.isfinite(start_time) and np.isnan(end_time):
-                        final = mg[mg['AgeAtICD']>start_time]
+                        final = mg[mg['AgeAtICD']>=start_time]
                 elif np.isnan(start_time) and np.isfinite(end_time):
-                        final = mg[mg['AgeAtICD']<end_time]
+                        final = mg[mg['AgeAtICD']<=end_time]
                 else:
-                        final = mg[(mg['AgeAtICD']>start_time)&(mg['AgeAtICD']<end_time)]
+                        final = mg[(mg['AgeAtICD']>=start_time)&(mg['AgeAtICD']<=end_time)]
 
         else:
                 mg['diff']=mg[field]-mg['AgeAtICD']
                 if np.isfinite(start_time) and np.isnan(end_time):
-                        final = mg[(mg['diff']>start_time)|(np.isnan(mg['diff']))]
+                        final = mg[(mg['diff']>=start_time)|(np.isnan(mg['diff']))]
                 elif np.isnan(start_time) and np.isfinite(end_time):
-                        final = mg[(mg['diff']<end_time)|(np.isnan(mg['diff']))]
+                        final = mg[(mg['diff']<=end_time)|(np.isnan(mg['diff']))]
                 else:
-                        final = mg[(mg['diff']>start_time)&(mg['diff']<end_time)|(np.isnan(mg['diff']))]
+                        final = mg[(mg['diff']>=start_time)&(mg['diff']<=end_time)|(np.isnan(mg['diff']))]
+        final['MaxAgeBeforeDx'] = final.groupby('id')['AgeAtICD'].transform('max')
         final[['id','icd9','AgeAtICD']].to_csv(final_pfile)
-        final[['id', 'MaxAgeAtVisit', 'genotype']].drop_duplicates().to_csv(final_gfile)
+        final[['id', 'MaxAgeAtVisit','MaxAgeBeforeDx', 'AgeAtDx', 'genotype','sex']].drop_duplicates().to_csv(final_gfile)
 
         
 

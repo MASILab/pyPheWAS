@@ -8,6 +8,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 from collections import Counter
 import time,math, scipy.stats
 import pandas as pd
@@ -46,10 +47,9 @@ def get_input(path, filename): #diff -done - add duration
 	"""
 	wholefname = path + filename
 	icdfile = pd.read_csv(wholefname)
-
+	icdfile['icd9']=icdfile['icd9'].str.strip()
 	if  gen_ftype==0:
 		g=icdfile.groupby(['id','icd9'])
-		idx=g.filter(lambda x: len(x)==1).index
 		phenotypes = pd.merge(icdfile,codes,on='icd9')
 	else:
 		"""
@@ -61,6 +61,8 @@ def get_input(path, filename): #diff -done - add duration
 		phenotypes = pd.merge(icdfile,codes,on='icd9')
 		phenotypes['count']=0
 		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')
+		phenotypes['MaxAgeAtICD'] = 0
+		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
 		phenotypes['duration']=phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('max')-phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('min')+1
 	return phenotypes
 
@@ -137,23 +139,27 @@ def generate_feature_matrix(genotypes,phenotypes,control_age): #diff - done
 	:rtype:
 
 	"""
-	feature_matrix = np.zeros((genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
+	feature_matrix = np.zeros((2,genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
 	count=0
 	for i in genotypes['id']:
 		if gen_ftype==0:
 			match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
-			feature_matrix[count,match[match==True].index]=1
+			feature_matrix[0][count,match[match==True].index]=1
 
 		else:
-			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count','duration']]).drop_duplicates()
-			if gen_ftype==1:
+			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count','duration','MaxAgeAtICD']]).drop_duplicates()
+			if gen_ftype==1 or gen_ftype==4:
 				cts = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['count']
 				cts[np.isnan(cts)]=0
-				feature_matrix[count,:]=cts
-			elif gen_ftype==2:
+				feature_matrix[0][count,:]=cts
+			elif gen_ftype==2 or gen_ftype==5:
 				dura = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['duration']
 				dura[np.isnan(dura)]=0
-				feature_matrix[count,:]=dura
+				feature_matrix[0][count,:]=dura
+				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeBeforeDx']
+				feature_matrix[1][count, :] = age
+
 
 		count+=1
 	return feature_matrix
@@ -208,7 +214,7 @@ def run_phewas(fm, genotypes ,covariates): #same
 
 	:returns: A tuple containing indices, p-values, and all the regression data.
 	"""
-	m = len(fm[0,])
+	m = len(fm[0,0])
 	p_values = np.zeros(m, dtype=float)
 	print('running phewas')
 	icodes=[]
@@ -216,9 +222,10 @@ def run_phewas(fm, genotypes ,covariates): #same
 	regressions = pd.DataFrame(columns=output_columns)
 	for index in range(m):
 
-		phen_vector = fm[:,index]
+		phen_vector1 = fm[0][:,index]
+		phen_vector2 = fm[1][:,index]
 
-		res=calculate_odds_ratio(genotypes, phen_vector,covariates)
+		res=calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,covariates)
 
 		# save all of the regression data
 		phewas_info = get_phewas_info(index)
@@ -288,8 +295,8 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 	idx = c.sort_values(by='category').index
 
 	# Get the position of the lines and of the labels
-	linepos = get_x_label_positions(c['category'].tolist(), True)
-	x_label_positions = get_x_label_positions(c['category'].tolist(), False)
+	linepos = get_x_label_positions(c['category'].tolist(), False)
+	x_label_positions = get_x_label_positions(c['category'].tolist(), True)
 	x_labels = c.sort_values('category').category_string.drop_duplicates().tolist()
 
 	# Plot each of the points, if necessary, label the points.
@@ -300,7 +307,7 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 	plt.axhline(y=thresh1, color='blue')
 	plt.xticks(x_label_positions, x_labels, rotation=70, fontsize=10)
 	y_label_positions = [-math.log10(0.05), thresh0, thresh1]
-	plt.yticks(y_label_positions, ['p=0.05', 'Bonferroni Threshold','Benjamini-Hochberg threshold'], rotation=10,fontsize=10)
+	plt.yticks(y_label_positions, ['p=0.05', 'Bonferroni Threshold p = '+str(round(np.power(10,-thresh0),3)),'Benjamini-Hochberg threshold p = '+str(round(np.power(10,-thresh1),3))], rotation=10,fontsize=10)
 	plt.xlim(xmin=0, xmax=len(c))
 	plt.ylabel('-log10(p)')
 
@@ -309,12 +316,17 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 	else:
 		thresh=thresh1
 	for i in idx:
-		if show_imbalance:
-			plt.plot(e,y[i], 'o', color=imbalance_colors[imbalances[i]], fillstyle='full', markeredgewidth=0.0)
-		else:
-			plt.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]],markersize=10, fillstyle='full', markeredgewidth=0.0)
 		if y[i] > thresh:
-			artists.append(plt.text(e,y[i],c['phewas_string'][i], rotation=40, va='bottom'))
+			# if imbalances[i]>0:
+			artists.append(plt.text(e, y[i], c['phewas_string'][i], rotation=40, va='bottom'))
+		if show_imbalance:
+			if imbalances[i]>0:
+				plt.plot(e,y[i], 'o', color=imbalance_colors[imbalances[i]], fillstyle='full', markeredgewidth=0.0)
+			else:
+				#plt.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
+				plt.plot(e,y[i],'o', color=imbalance_colors[imbalances[i]], fillstyle='full', markeredgewidth=0.0)
+		else:
+			plt.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
 		e += 1
 
 	# If the imbalance is to be shown, draw lines to show the categories.
@@ -323,7 +335,9 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 			plt.axvline(x=pos, color='black', ls='dotted')
 	# Determine the type of output desired (saved to a plot or displayed on the screen)
 	if save:
-		plt.savefig(save,bbox_extra_artists=artists, bbox_inches='tight')
+		pdf = PdfPages(save)
+		pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
+		pdf.close()
 	else:
 		plt.subplots_adjust(left=0.05,right=0.85)
 		plt.show()
@@ -331,7 +345,7 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 	# Clear the plot in case another plot is to be made.
 	plt.clf()
 
-def calculate_odds_ratio(genotypes, phen_vector,covariates): #diff - done
+def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,covariates): #diff - done
 	"""
 	Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
 
@@ -353,32 +367,41 @@ def calculate_odds_ratio(genotypes, phen_vector,covariates): #diff - done
 	"""
 
 	data = genotypes
-	data['y']=phen_vector
-	f='y~'+covariates
+	data['y']=phen_vector1
+	data['MaxAgeAtICD']=phen_vector2
+	f='genotype~'+covariates
 	try:
 		if gen_ftype==0:
 			logreg = smf.glm(f,data=data,family=sm.families.Binomial()).fit()
 			p=logreg.pvalues.genotype
 			odds=logreg.deviance
 			conf = logreg.conf_int()
-			od = [-math.log10(p), logreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+			od = [-math.log10(p), p, logreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+			#od=[np.nan,np.nan,np.nan]
+		elif gen_ftype>3:
+			linreg = smf.glm(f,data=data,family=sm.families.Poisson()).fit()
+			p = linreg.pvalues.genotype
+			odds = 0
+			conf = linreg.conf_int()
+			od = [-math.log10(p), p, linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'], conf[1]['genotype'])]
+
 		else:
-			linreg = smf.ols(f,data=data).fit()
-			p=linreg.pvalues.genotype
+			linreg = smf.logit(f,data).fit(disp=False)
+			p=linreg.pvalues.y
 			odds=0
 			conf = linreg.conf_int()
-			od = [-math.log10(p), linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'],conf[1]['y'])]
 
 	except:
 		odds=0
 		p=np.nan
-		od = [np.nan,np.nan,np.nan]
+		od = [np.nan,np.nan,np.nan,np.nan]
 	return (odds,p,od)
 
 """
 Begin init code
 """
-
+test=1
 codes = get_codes()
 phewas_codes =  pd.DataFrame(codes['phewas_code'].drop_duplicates());
 phewas_codes = phewas_codes.reset_index()
@@ -386,6 +409,7 @@ phewas_codes = phewas_codes.reset_index()
 output_columns = ['PheWAS Code', 
  'PheWAS Name', 
  '\"-log(p)\"', 
+ 'p-val',
  'beta',
  'Conf-interval beta',
  'ICD-9']
@@ -430,7 +454,7 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, con
 	:param save: the desired filename to save the phewas plot
 	:param output: the desired filename to save the regression output
 	:param show_imbalance: determines whether or not to show the imbalance
-	:type path: str
+	:type path: st
 	:type filename: str
 	:type groupfile: str
 	:type covariates: str
@@ -448,12 +472,11 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, con
 	gen_ftype = reg_type
 	phenotypes = get_input(path, filename)
 	genotypes = get_group_file(path, groupfile)
-	fm = generate_feature_matrix(genotypes,phenotypes,control_age)
+	fm = generate_feature_matrix(genotypes,phenotypes,0)
 	print(len(fm))
 	results = run_phewas(fm, genotypes,covariates)
 	regressions = results[2]
-	if output:
-		regressions.to_csv(output, index=False)
+
 	normalized = neglogp(results[1])
 	#if thresh_type==0:
 	thresh0 = get_bon_thresh(normalized,0.05)
@@ -463,4 +486,8 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, con
 	if show_imbalance:
 		imbalances = get_imbalances(regressions)
 	plot_data_points(results[0],normalized,-math.log10(thresh0),-math.log10(thresh1),thresh_type, save, imbalances)
-	return (results[0], results[1], imbalances)
+	regressions=regressions.dropna(subset=['"-log(p)"']).sort('"-log(p)"',ascending=False)
+	regressions = regressions[regressions['"-log(p)"']>-math.log10(thresh1)]
+	if output:
+		regressions.to_csv(output, index=False)
+	return (results[0], results[1], regressions)
