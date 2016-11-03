@@ -6,7 +6,7 @@ def censor_diagnosis(genotype_file,phenotype_file,final_pfile, final_gfile, fiel
         phenotypes = pd.read_csv(phenotype_file)
         mg=pd.merge(phenotypes,genotypes,on='id')
         if np.isnan(start_time) and np.isnan(end_time):
-                print "Choose appropriate time period"
+                print("Choose appropriate time period")
         if field=='na':
                 if np.isfinite(start_time) and np.isnan(end_time):
                         final = mg[mg['AgeAtICD']>=start_time]

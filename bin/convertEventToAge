@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+from pyPheWAS.pyPhewasCore import *
+import sys, os
+import datetime
+import pandas as pd
+
+optargs = {
+	'--phenotype': 'phenotype_file',
+	'--group':'genotype_file',
+	'--path':'path',
+	'--phenotypeout': 'final_pfile',
+	'--eventcolumn':'ec',
+	'--precision':'precision'
+}
+
+args = sys.argv[1:]
+
+# Define any default arguments
+kwargs = {'path':'.','ec':'Event_date', 'precision':2}
+
+kwargs = process_args(kwargs, optargs, *args)
+
+# Change path to absolute path
+kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
+
+print(kwargs)
+
+# Assert that valid files were given
+assert kwargs['phenotype_file'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotypes'])
+assert kwargs['genotype_file'].endswith('.csv'), "%s is not a valid group file, must be a .csv file" % (kwargs['groups'])
+
+# Assert that the output file is valid
+assert kwargs['final_pfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenout'])
+
+# Print Arguments
+display_kwargs(kwargs)
+
+# Fill paths
+kwargs['phenotype_file'] = os.sep.join([kwargs['path'], kwargs['phenotype_file']])
+kwargs['genotype_file'] = os.sep.join([kwargs['path'], kwargs['genotype_file']])
+
+kwargs['final_pfile'] = os.sep.join([kwargs['path'], kwargs['final_pfile']])
+
+# Make precision an integer
+kwargs['precision'] = int(kwargs['precision'])
+
+# Make all arguments local variables
+locals().update(kwargs)
+
+group = pd.read_csv(genotype_file)
+phen = pd.read_csv(phenotype_file)
+group['nDOB'] = pd.to_datetime(group['DOB'])
+phen['nEvent_date'] = pd.to_datetime(phen[ec])
+
+df = pd.merge(group, phen, on='id')
+
+century = datetime.timedelta(365.2425) * 100
+
+def correct_year(tr):
+	n = {}
+	if tr['nEvent_date'] < tr['nDOB']:
+		n['nDOB'] = tr['nDOB'] - century
+	else:
+		n['nDOB'] = tr['nDOB']
+	return pd.Series(n)
+
+def correct_age(tr):
+	return round(tr['AgeAtICD'].days/365.0, precision)
+
+
+df['nDOB'] = df.apply(correct_year, axis=1)
+df['AgeAtICD'] = (df['nEvent_date'] - df['nDOB'])
+df['AgeAtICD'] = df.apply(correct_age, axis=1)
+df.get(['id', 'icd9', ec, 'AgeAtICD']).to_csv(final_pfile, index=False)

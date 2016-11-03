@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+from pyPheWAS.pyPhewasCore import *
+from pyPheWAS.rt_censor_diagnosis import *
+import sys, os
+
+optargs = {
+	'--phenotype': 'phenotype_file',
+	'--group':'genotype_file',
+	'--path':'path',
+	'--field':'field',
+	'--phenotypeout': 'final_pfile',
+	'--start':'start_time',
+	'--end':'end_time',
+}
+
+"""
+Retrieve and validate all arguments.
+"""
+
+args = sys.argv[1:]
+
+# Define any default arguments
+kwargs = {'path':'.', 'field':'na', 'start_time':float('nan'), 'end_time':float('nan')}
+
+kwargs = process_args(kwargs, optargs, *args)
+
+# Change path to absolute path
+kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
+
+print(kwargs)
+
+
+# Assert that valid files were given
+assert kwargs['phenotype_file'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotypes'])
+assert kwargs['genotype_file'].endswith('.csv'), "%s is not a valid group file, must be a .csv file" % (kwargs['groups'])
+
+# Assert that the output file is valid
+assert kwargs['final_pfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenout'])
+
+# Print Arguments
+display_kwargs(kwargs)
+
+# Fill paths
+kwargs['phenotype_file'] = os.sep.join([kwargs['path'], kwargs['phenotype_file']])
+kwargs['genotype_file'] = os.sep.join([kwargs['path'], kwargs['genotype_file']])
+
+kwargs['final_pfile'] = os.sep.join([kwargs['path'], kwargs['final_pfile']])
+
+# Change times to integers
+kwargs['start_time'] = float(kwargs['start_time'])
+kwargs['end_time'] = float(kwargs['end_time'])
+
+
+# Make all arguments local variables
+locals().update(kwargs)
+
+censor_diagnosis(genotype_file, phenotype_file, final_pfile, field, start_time, end_time)

@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
   name = 'pyPheWAS',
   packages = ['pyPheWAS'], # this must be the same as the name above
-  version = '0.1.3',
+  version = '0.1.19',
   description = 'MASI Lab Port of PheWAS into Python',
   author = 'MASI Lab',
   author_email = 'bennett.landman@vanderbilt.edu',
@@ -18,9 +18,15 @@ setup(
   'numexpr',
   'bottleneck'
 	],
-  scripts=['bin/maximize_controls',
+  package_data={
+    '':['resources/*.csv']
+  },
+  scripts=['bin/maximizeControls',
   'bin/pyPhewasLookup',
   'bin/pyPhewasModel',
   'bin/pyPhewasPlot',
+  'bin/generateGroups',
+  'bin/censorData',
+  'bin/convertEventToAge',
   ],
 )
