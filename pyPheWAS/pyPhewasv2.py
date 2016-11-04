@@ -49,8 +49,10 @@ def get_input(path, filename): #diff -done - add duration
 	icdfile = pd.read_csv(wholefname)
 	icdfile['icd9']=icdfile['icd9'].str.strip()
 	if  gen_ftype==0:
-		g=icdfile.groupby(['id','icd9'])
+		# g=icdfile.groupby(['id','icd9'])
 		phenotypes = pd.merge(icdfile,codes,on='icd9')
+		phenotypes['MaxAgeAtICD'] = 0
+		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
 	else:
 		"""
 		This needs to be changed, need to adjust for a variety of different naming conventions
@@ -143,8 +145,12 @@ def generate_feature_matrix(genotypes,phenotypes,control_age): #diff - done
 	count=0
 	for i in genotypes['id']:
 		if gen_ftype==0:
+			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD']]).drop_duplicates()
 			match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
 			feature_matrix[0][count,match[match==True].index]=1
+			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+			age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeBeforeDx']
+			feature_matrix[1][count, :] = age
 
 		else:
 			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count','duration','MaxAgeAtICD']]).drop_duplicates()
@@ -152,6 +158,9 @@ def generate_feature_matrix(genotypes,phenotypes,control_age): #diff - done
 				cts = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['count']
 				cts[np.isnan(cts)]=0
 				feature_matrix[0][count,:]=cts
+				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeBeforeDx']
+				feature_matrix[1][count, :] = age
 			elif gen_ftype==2 or gen_ftype==5:
 				dura = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['duration']
 				dura[np.isnan(dura)]=0
@@ -372,18 +381,18 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,covariates): #diff
 	f='genotype~'+covariates
 	try:
 		if gen_ftype==0:
-			logreg = smf.glm(f,data=data,family=sm.families.Binomial()).fit()
-			p=logreg.pvalues.genotype
-			odds=logreg.deviance
+			logreg = smf.logit(f,data).fit(disp=False)
+			p=logreg.pvalues.y
+			odds=0#logreg.deviance
 			conf = logreg.conf_int()
-			od = [-math.log10(p), p, logreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+			od = [-math.log10(p), p, logreg.params.y, '[%s,%s]' % (conf[0]['y'],conf[1]['y'])]
 			#od=[np.nan,np.nan,np.nan]
 		elif gen_ftype>3:
 			linreg = smf.glm(f,data=data,family=sm.families.Poisson()).fit()
 			p = linreg.pvalues.genotype
 			odds = 0
 			conf = linreg.conf_int()
-			od = [-math.log10(p), p, linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'], conf[1]['genotype'])]
+			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
 
 		else:
 			linreg = smf.logit(f,data).fit(disp=False)
