@@ -3,8 +3,8 @@ import pandas as pd
 import sys, os
 
 optargs = {
-	'--phenotypefiles': 'phenotypes',
-	'--groupfiles':'groups',
+	'--phenotype': 'phenotypes',
+	'--group':'groups',
 	'--path':'path',
 	'--groupout': 'groupout',
 	'--icd':'icd'
@@ -32,7 +32,6 @@ assert kwargs['phenotypes'].endswith('.csv'), "%s is not a valid phenotype file,
 assert kwargs['groups'].endswith('.csv'), "%s is not a valid group file, must be a .csv file" % (kwargs['groups'])
 
 # Assert that the output file is valid
-#assert kwargs['phenout'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenout'])
 assert kwargs['groupout'].endswith('.csv'), "%s is not a vailid output file, must be a .csv file" % (kwargs['groupout'])
 
 # Print Arguments

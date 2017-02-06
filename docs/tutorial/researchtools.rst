@@ -138,6 +138,21 @@ A sample execution of *generateGroups*::
 
 		generateGroups --path="/Users/me/Documents/EMRdata" --phenotypefiles="icd9_one.csv+icd9_two.csv" --groupfiles="group_one.csv+group_two.csv" --phenotypeout="new_icd9.csv" --groupout="new_group.csv"
 
+ICD Covariate (createICDCovariate)
+-------------
+
+To create an ICD-9 covariate in a group file, run the tool with the given parameters.
+
+The options:
+ * ``--path``:			the path to all input files and destination of output files
+ * ``--phenotype`:		a list of phenotype file names, each separated by a *+*
+ * ``--group``:				a list of group file names, each separated by a *+*
+ * ``--groupout``:				the output file name for the merged group files
+
+A sample execution of *generateGroups*::
+
+		createICDCovariate --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" --groupout="new_group.csv" --icd="xxx.xx"
+
 Age Matching
 ------------
 
