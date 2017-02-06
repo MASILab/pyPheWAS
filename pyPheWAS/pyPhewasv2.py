@@ -127,7 +127,7 @@ def get_imbalances(regressions):
 	imbalance[imbalance < 0] = -1
 	return imbalance
 
-def generate_feature_matrix(genotypes,phenotypes,control_age): #diff - done
+def generate_feature_matrix(genotypes,phenotypes,phewas_cov=''): #diff - done
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -140,7 +140,7 @@ def generate_feature_matrix(genotypes,phenotypes,control_age): #diff - done
 	:rtype:
 
 	"""
-	feature_matrix = np.zeros((2,genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
+	feature_matrix = np.zeros((3,genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
 	count=0
 	for i in genotypes['id']:
 		if gen_ftype==0:
@@ -150,6 +150,9 @@ def generate_feature_matrix(genotypes,phenotypes,control_age): #diff - done
 			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
 			age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeBeforeDx']
 			feature_matrix[1][count, :] = age
+			if phewas_code:
+				feature_matrix[2][count, :] = int(phewas_cov in list( phenotypes[phenotypes['id']==i]['phewas_code']))
+
 
 		else:
 			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count','duration','MaxAgeAtICD']]).drop_duplicates()
@@ -160,6 +163,10 @@ def generate_feature_matrix(genotypes,phenotypes,control_age): #diff - done
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
 				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeBeforeDx']
 				feature_matrix[1][count, :] = age
+				if phewas_code:
+					feature_matrix[2][count, :] = int(
+						phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
+
 			elif gen_ftype==2 or gen_ftype==5:
 				dura = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['duration']
 				dura[np.isnan(dura)]=0
@@ -167,7 +174,9 @@ def generate_feature_matrix(genotypes,phenotypes,control_age): #diff - done
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
 				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeBeforeDx']
 				feature_matrix[1][count, :] = age
-
+				if phewas_code:
+					feature_matrix[2][count, :] = int(
+						phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
 
 		count+=1
 	return feature_matrix
@@ -212,7 +221,7 @@ def get_fdr_thresh(p_values, power):
 	return sn[i]
 
 
-def run_phewas(fm, genotypes ,covariates): #same
+def run_phewas(fm, genotypes , covariates, response='',phewas_cov=''): #same
 	"""
 	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
 
@@ -232,8 +241,13 @@ def run_phewas(fm, genotypes ,covariates): #same
 
 		phen_vector1 = fm[0][:,index]
 		phen_vector2 = fm[1][:,index]
+		phen_vector3 = fm[2][:, index]
+		if phewas_cov:
 
-		res=calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,covariates)
+			res=calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,covariates,response=response,phen_vector3=phen_vector3)
+		else:
+			res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,response=response,phen_vector3=phen_vector3)
+
 
 		# save all of the regression data
 		phewas_info = get_phewas_info(index)
@@ -327,8 +341,8 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', path='', imbala
 		if y[i] > thresh:
 			if show_imbalance and imbalances[i]>0:
 				artists.append(plt.text(e, y[i], c['phewas_string'][i], rotation=40, va='bottom'))
-			# else:
-			# 	artists.append(plt.text(e, y[i], c['phewas_string'][i], rotation=40, va='bottom'))
+			else:
+				artists.append(plt.text(e, y[i], c['phewas_string'][i], rotation=40, va='bottom'))
 
 		if show_imbalance:
 			if imbalances[i]>0:
@@ -356,12 +370,12 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', path='', imbala
 	# Clear the plot in case another plot is to be made.
 	plt.clf()
 
-def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,covariates): #diff - done
+def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,covariates,response='',phen_vector3=''): #diff - done
 	"""
 	Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
 
 	:param genotypes: a DataFrame containing the genotype information
-	:param phen_vector: a array containing the phenotype vector
+	:param phen_vector: a array containing the phenotype vecto
 	:param covariates: a string containing all desired covariates
 	:type genotypes: pandas DataFrame
 	:type phen_vector: numpy array
@@ -380,7 +394,16 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,covariates): #diff
 	data = genotypes
 	data['y']=phen_vector1
 	data['MaxAgeAtICD']=phen_vector2
-	f='genotype~'+covariates
+	if response:
+		f = response+'~ genotype + ' + covariates
+		if phen_vector3.any():
+			data['phe'] = phen_vector3
+			f = response + '~ genotype + phe +' + covariates
+	else:
+		f = 'genotype~' + covariates
+		if phen_vector3.any():
+			data['phe'] = phen_vector3
+			f = 'genotype ~ phe +' + covariates
 	try:
 		if gen_ftype==0:
 			logreg = smf.logit(f,data).fit(method='bfgs',disp=False)
@@ -452,7 +475,7 @@ gen_ftype = 0
 neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
 
 
-def phewas(path, filename, groupfile, covariates,response='', reg_type=0, thresh_type=0, control_age=0, save='',output='', show_imbalance=False): #same
+def phewas(path, filename, groupfile, covariates, response='',phewas_cov='', reg_type=0, thresh_type=0, control_age=0, save='',output='', show_imbalance=False): #same
 	"""
 	The main phewas method. Takes a path, filename, groupfile, and a variety of different options.
 
@@ -483,12 +506,12 @@ def phewas(path, filename, groupfile, covariates,response='', reg_type=0, thresh
 	gen_ftype = reg_type
 	phenotypes = get_input(path, filename)
 	genotypes = get_group_file(path, groupfile)
-	fm = generate_feature_matrix(genotypes,phenotypes,0)
+	fm = generate_feature_matrix(genotypes,phenotypes,phewas_cov)
 	print(len(fm))
 	if response:
-		results = run_phewas(fm, response,covariates)
+		results = run_phewas(fm, genotypes,covariates, response=response,phewas_cov=phewas_cov)
 	else:
-		results = run_phewas(fm, genotypes, covariates)
+		results = run_phewas(fm, genotypes, covariates, phewas_cov=phewas_cov)
 
 	regressions = results[2]
 
