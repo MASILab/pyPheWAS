@@ -43,7 +43,7 @@ locals().update(kwargs)
 ni = pd.read_csv(os.sep.join([path, phenotypes]))
 ng = pd.read_csv(os.sep.join([path, groups]))
 
-ng['icd=%s'%(icd)] = ng['id'].isin(ni[ni.icd9==icd]['id'])
+ng['icd=%s'%(icd)] = ng['id'].isin(ni[ni.icd9==icd]['id']).astype(np.int)
 
 ng.to_csv(os.sep.join([path,groupout]))
 
