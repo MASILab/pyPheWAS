@@ -12,10 +12,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 from collections import Counter
 import time,math, scipy.stats
 import pandas as pd
-import statsmodels.formula.api as smf
-import statsmodels.api as sm
 from matplotlib import rcParams
 import os
+import statsmodels.formula.api as smf
 
 """
 I/O Reading Input From Files
@@ -276,7 +275,7 @@ def get_x_label_positions(categories, lines=True): #same
 		s += v
 	return label_positions
 
-def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.array([])): #same
+def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', path='', imbalances=np.array([])): #same
 	"""
 	Plots the data with a variety of different options.
 
@@ -326,14 +325,17 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 		thresh=thresh1
 	for i in idx:
 		if y[i] > thresh:
-			# if imbalances[i]>0:
-			artists.append(plt.text(e, y[i], c['phewas_string'][i], rotation=40, va='bottom'))
+			if show_imbalance and imbalances[i]>0:
+				artists.append(plt.text(e, y[i], c['phewas_string'][i], rotation=40, va='bottom'))
+			# else:
+			# 	artists.append(plt.text(e, y[i], c['phewas_string'][i], rotation=40, va='bottom'))
+
 		if show_imbalance:
 			if imbalances[i]>0:
 				plt.plot(e,y[i], 'o', color=imbalance_colors[imbalances[i]], fillstyle='full', markeredgewidth=0.0)
-			else:
-				#plt.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
-				plt.plot(e,y[i],'o', color=imbalance_colors[imbalances[i]], fillstyle='full', markeredgewidth=0.0)
+			# else:
+			# 	#plt.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
+			# 	plt.plot(e,y[i],'o', color=imbalance_colors[imbalances[i]], fillstyle='full', markeredgewidth=0.0)
 		else:
 			plt.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
 		e += 1
@@ -344,7 +346,7 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', imbalances=np.a
 			plt.axvline(x=pos, color='black', ls='dotted')
 	# Determine the type of output desired (saved to a plot or displayed on the screen)
 	if save:
-		pdf = PdfPages(save)
+		pdf = PdfPages(path+save)
 		pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
 		pdf.close()
 	else:
@@ -381,21 +383,21 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,covariates): #diff
 	f='genotype~'+covariates
 	try:
 		if gen_ftype==0:
-			logreg = smf.logit(f,data).fit(disp=False)
+			logreg = smf.logit(f,data).fit(method='bfgs',disp=False)
 			p=logreg.pvalues.y
 			odds=0#logreg.deviance
 			conf = logreg.conf_int()
 			od = [-math.log10(p), p, logreg.params.y, '[%s,%s]' % (conf[0]['y'],conf[1]['y'])]
 			#od=[np.nan,np.nan,np.nan]
 		elif gen_ftype>3:
-			linreg = smf.glm(f,data=data,family=sm.families.Poisson()).fit()
-			p = linreg.pvalues.genotype
+			linreg = smf.logit(f,data).fit(disp=False)
+			p = linreg.pvalues.y
 			odds = 0
 			conf = linreg.conf_int()
 			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
 
 		else:
-			linreg = smf.logit(f,data).fit(disp=False)
+			linreg = smf.logit(f,data).fit(method='bfgs',disp=False)
 			p=linreg.pvalues.y
 			odds=0
 			conf = linreg.conf_int()
@@ -450,7 +452,7 @@ gen_ftype = 0
 neglogp = np.vectorize(lambda x: -math.log10(x) if x != 0 else 0)
 
 
-def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, control_age=0, save='',output='', show_imbalance=False): #same
+def phewas(path, filename, groupfile, covariates,response='', reg_type=0, thresh_type=0, control_age=0, save='',output='', show_imbalance=False): #same
 	"""
 	The main phewas method. Takes a path, filename, groupfile, and a variety of different options.
 
@@ -483,7 +485,11 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, con
 	genotypes = get_group_file(path, groupfile)
 	fm = generate_feature_matrix(genotypes,phenotypes,0)
 	print(len(fm))
-	results = run_phewas(fm, genotypes,covariates)
+	if response:
+		results = run_phewas(fm, response,covariates)
+	else:
+		results = run_phewas(fm, genotypes, covariates)
+
 	regressions = results[2]
 
 	normalized = neglogp(results[1])
@@ -494,9 +500,12 @@ def phewas(path, filename, groupfile, covariates, reg_type=0, thresh_type=0, con
 	imbalances = np.array([])
 	if show_imbalance:
 		imbalances = get_imbalances(regressions)
-	plot_data_points(results[0],normalized,-math.log10(thresh0),-math.log10(thresh1),thresh_type, save, imbalances)
-	regressions=regressions.dropna(subset=['"-log(p)"']).sort('"-log(p)"',ascending=False)
-	regressions = regressions[regressions['"-log(p)"']>-math.log10(thresh1)]
+	plot_data_points(results[0],normalized,-math.log10(thresh0),-math.log10(thresh1),thresh_type, save, path, imbalances)
+	sig_regressions = regressions.dropna(subset=['"-log(p)"']).sort('"-log(p)"',ascending=False)
+	if thresh_type == 0:
+		sig_regressions = sig_regressions[sig_regressions['"-log(p)"']>-math.log10(thresh0)]
+	else:
+		sig_regressions = sig_regressions[sig_regressions['"-log(p)"'] > -math.log10(thresh1)]
 	if output:
-		regressions.to_csv(output, index=False)
+		sig_regressions.to_csv(path+output, index=False)
 	return (results[0], results[1], regressions)
