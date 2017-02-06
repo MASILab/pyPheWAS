@@ -141,15 +141,15 @@ A sample execution of *generateGroups*::
 ICD Covariate (createICDCovariate)
 -------------
 
-To create an ICD-9 covariate in a group file, run the tool with the given parameters.
-
+Create an ICD-9 covariate in a group file. For each patient in the group file, if they have a given ICD-9 in their history, add this as a variable to the group file. 
 The options:
  * ``--path``:			the path to all input files and destination of output files
  * ``--phenotype`:		a list of phenotype file names, each separated by a *+*
  * ``--group``:				a list of group file names, each separated by a *+*
  * ``--groupout``:				the output file name for the merged group files
+ * ``--icd``:			the icd code of interest
 
-A sample execution of *generateGroups*::
+A sample execution of *createICDCovariate*::
 
 		createICDCovariate --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" --groupout="new_group.csv" --icd="xxx.xx"
 
