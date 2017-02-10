@@ -150,7 +150,7 @@ def generate_feature_matrix(genotypes,phenotypes,phewas_cov=''): #diff - done
 			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
 			age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeBeforeDx']
 			feature_matrix[1][count, :] = age
-			if phewas_code:
+			if phewas_cov:
 				feature_matrix[2][count, :] = int(phewas_cov in list( phenotypes[phenotypes['id']==i]['phewas_code']))
 
 
@@ -163,7 +163,7 @@ def generate_feature_matrix(genotypes,phenotypes,phewas_cov=''): #diff - done
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
 				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeBeforeDx']
 				feature_matrix[1][count, :] = age
-				if phewas_code:
+				if phewas_cov:
 					feature_matrix[2][count, :] = int(
 						phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
 
@@ -174,7 +174,7 @@ def generate_feature_matrix(genotypes,phenotypes,phewas_cov=''): #diff - done
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
 				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeBeforeDx']
 				feature_matrix[1][count, :] = age
-				if phewas_code:
+				if phewas_cov:
 					feature_matrix[2][count, :] = int(
 						phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
 
@@ -341,7 +341,7 @@ def plot_data_points(x, y, thresh0,thresh1,thresh_type, save='', path='', imbala
 		if y[i] > thresh:
 			if show_imbalance and imbalances[i]>0:
 				artists.append(plt.text(e, y[i], c['phewas_string'][i], rotation=40, va='bottom'))
-			else:
+			elif not show_imbalance:
 				artists.append(plt.text(e, y[i], c['phewas_string'][i], rotation=40, va='bottom'))
 
 		if show_imbalance:
@@ -394,6 +394,8 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,covariates,respons
 	data = genotypes
 	data['y']=phen_vector1
 	data['MaxAgeAtICD']=phen_vector2
+
+	# data[data['SEX']>0]=0
 	if response:
 		f = response+'~ genotype + ' + covariates
 		if phen_vector3.any():
