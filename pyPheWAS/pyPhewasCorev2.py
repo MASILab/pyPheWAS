@@ -196,17 +196,17 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 			od = [-math.log10(p), logreg.params.y, '[%s,%s]' % (conf[0]['y'],conf[1]['y'])]
 		else:
 			linreg = smf.logit(f,data).fit(method='bfgs',disp=False)
-			p=linreg.pvalues.genotype
+			p=linreg.pvalues.y
 			odds=0
 			conf = linreg.conf_int()
-			od = [-math.log10(p), linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'],conf[1]['y'])]
 	except:
 		odds=0
 		p=np.nan
 		od = [np.nan,np.nan,np.nan]
 	return (odds,p,od)
 
-def run_phewas(fm, genotypes ,covariates, reg_type): #same
+def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): #same
 	"""
 	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
 	
@@ -223,10 +223,11 @@ def run_phewas(fm, genotypes ,covariates, reg_type): #same
 	regressions = pd.DataFrame(columns=output_columns)
 	for index in range(m):
 
-		phen_vector = fm[:,index]
-		
-		res=calculate_odds_ratio(genotypes, phen_vector,covariates, reg_type)
-		
+		phen_vector1 = fm[0][:,index]
+		phen_vector2 = fm[1][:,index]
+		phen_vector3 = fm[2][:, index]
+		res=calculate_odds_ratio(genotypes, phen_vector1,phen_vector2, reg_type,covariates,response=response,phen_vector3=phen_vector3)
+
 		# save all of the regression data
 		phewas_info = get_phewas_info(index)
 		stat_info = res[2]
