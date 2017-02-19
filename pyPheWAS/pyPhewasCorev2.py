@@ -76,7 +76,7 @@ def get_input(path, filename, reg_type): #diff -done - add duration
 		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
 	return phenotypes
 
-def generate_feature_matrix(genotypes,phenotypes, reg_type): #diff - done
+def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff - done
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
