@@ -89,7 +89,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type): #diff - done
 	:rtype:
 
 	"""
-	feature_matrix = np.zeros((genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
+	feature_matrix = np.zeros((3,genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
 	count = 0;
 	for i in genotypes['id']:
 		if reg_type == 0:
