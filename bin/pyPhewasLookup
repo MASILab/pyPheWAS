@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pyPheWAS.pyPhewasCore import *
+from pyPheWAS.pyPhewasCorev2 import *
 import sys, os
 
 optargs = {
@@ -9,6 +9,7 @@ optargs = {
 	'--path':'path',
 	'--outfile': 'outfile',
 	'--reg_type':'reg_type',
+	'--phewas_cov':'phewas_cov'
 }
 
 """
@@ -18,7 +19,7 @@ Retrieve and validate all arguments.
 args = sys.argv[1:]
 
 # Define any default arguments
-kwargs = {'outfile' : None, 'path':'.'}
+kwargs = {'outfile' : None, 'path':'.','phewas_cov':''}
 
 kwargs = process_args(kwargs, optargs, *args)
 
@@ -42,6 +43,10 @@ if kwargs['outfile'] == None:
 # Assert that the output file is valid
 assert kwargs['outfile'].endswith('.csv'), "%s is not a valid outputfile, must be a .csv file" % (kwargs['outfile'])
 
+# Check phewas_cov
+if kwargs['phewas_cov']:
+	kwargs['phewas_cov'] = float(kwargs['phewas_cov'])
+
 # Print Arguments
 display_kwargs(kwargs)
 
@@ -57,7 +62,10 @@ print("Retrieving group data...")
 genotypes = get_group_file(path, groupfile)
 
 print("Generating feature matrix...")
-fm = generate_feature_matrix(genotypes, phenotypes, reg_type)
+fm = generate_feature_matrix(genotypes, phenotypes, reg_type, phewas_cov)
 
 print("Saving feature matrix to %s" % (path + outfile))
-np.savetxt(path + outfile, fm, comments='', delimiter=',', fmt='%1u')
+
+np.savetxt(path + 'agg_measures_' + outfile, fm[0],delimiter=',')
+np.savetxt(path + 'icd_age_' + outfile, fm[1],delimiter=',')
+np.savetxt(path + 'phewas_cov_' + outfile, fm[2],delimiter=',')

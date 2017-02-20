@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pyPheWAS.pyPhewasCore import *
+from pyPheWAS.pyPhewasCorev2 import *
 import sys, os
 
 optargs = {
@@ -9,13 +9,16 @@ optargs = {
 	'--covariates':'covariates',
 	'--reg_type':'reg_type',
 	'--group':'groupfile',
-	'--outfile':'outfile'
+	'--outfile':'outfile',
+	'--response':'response',
+	'--phewas_cov':'phewas_cov'
+	
 }
 
 args = sys.argv[1:]
 
 # Define default arguments
-kwargs = {'outfile' : None, 'path':'.'}
+kwargs = {'outfile' : None, 'path':'.', 'response':'', 'phewas_cov':''}
 
 kwargs = process_args(kwargs, optargs, *args)
 
@@ -38,6 +41,12 @@ if kwargs['outfile'] == None:
 # Assert that the output file is valid
 assert kwargs['outfile'].endswith('.csv'), "%s is not a valid outputfile, must be a .csv file" % (kwargs['outfile'])
 
+# Check phewas_cov
+if kwargs['phewas_cov']:
+	kwargs['phewas_cov'] = float(kwargs['phewas_cov'])
+
+if kwargs['response'] == None:
+	kwargs['response'] = ""
 # Print Arguments
 display_kwargs(kwargs)
 
@@ -47,15 +56,17 @@ locals().update(kwargs)
 print("Retrieving group data...")
 genotypes = get_group_file(path, groupfile)
 
-print("Retrieving feature matrix...")
-fm = np.loadtxt(path + feature_matrix, delimiter=',')
+a = np.loadtxt(path + 'agg_measures_' + feature_matrix, delimiter=',')
+b = np.loadtxt(path + 'icd_age_' + feature_matrix, delimiter=',')
+c = np.loadtxt(path + 'phewas_cov_' + feature_matrix, delimiter=',')
+fm = np.array([a,b,c])
 
 print("Running PheWAS regressions...")
-regressions = run_phewas(fm, genotypes,covariates, reg_type)
+regressions = run_phewas(fm, genotypes,covariates, reg_type, response, phewas_cov)
 
 print("Saving regression data to %s" % (path + outfile))
 header = ','.join(['str_reg_type', str_reg_type, 'group', groupfile]) + '\n'
-f = open(path + outfile, 'w')
+f = open(os.sep.join([path, outfile]), 'w')
 f.write(header)
 regressions.to_csv(f)
 f.close()
