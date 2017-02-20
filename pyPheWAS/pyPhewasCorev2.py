@@ -187,7 +187,7 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 		if phen_vector3.any():
 			data['phe'] = phen_vector3
 			f = 'genotype ~ phe +' + covariates
-	#try:
+	try:
 		if reg_type==0:
 			logreg = smf.logit(f,data).fit(method='bfgs',disp=False)
 			p=logreg.pvalues.y
