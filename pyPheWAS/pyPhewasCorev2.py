@@ -170,7 +170,7 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 			l = ['genotype', 'age'] # a list of your covariates
 			covariates = '+'.join(l) # pyPhewas format
 
-		The covariates that are listed here *must* be headers to your genotype CSV file. 
+		The covariates that are listed here *must* be headers to your genotype CSV file.
 	"""
 
 	data = genotypes
@@ -178,28 +178,28 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 	data['MaxAgeAtICD'] = phen_vector2
 	#f='y~'+covariates
 	if response:
-		f = response+'~ genotype + ' + covariates
+		f = response+'~ y + ' + covariates
 		if phen_vector3.any():
 			data['phe'] = phen_vector3
-			f = response + '~ genotype + phe +' + covariates
+			f = response + '~ y + phe +' + covariates
 	else:
-		f = 'genotype~' + covariates
+		f = 'y ~' + covariates
 		if phen_vector3.any():
 			data['phe'] = phen_vector3
-			f = 'genotype ~ phe +' + covariates
+			f = 'y ~ phe +' + covariates
 	try:
 		if reg_type==0:
 			logreg = smf.logit(f,data).fit(method='bfgs',disp=False)
-			p=logreg.pvalues.y
-			odds=logreg.params.y
+			p=logreg.pvalues.genotype
+			odds=logreg.params.genotype
 			conf = logreg.conf_int()
-			od = [-math.log10(p), logreg.params.y, '[%s,%s]' % (conf[0]['y'],conf[1]['y'])]
+			od = [-math.log10(p), logreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
 		else:
 			linreg = smf.logit(f,data).fit(method='bfgs',disp=False)
-			p=linreg.pvalues.y
+			p=linreg.pvalues.genotype
 			odds=0
 			conf = linreg.conf_int()
-			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'],conf[1]['y'])]
+			od = [-math.log10(p), p, linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
 	except:
 		odds=0
 		p=np.nan
