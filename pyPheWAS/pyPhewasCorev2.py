@@ -216,7 +216,7 @@ def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): 
 
 	:returns: A tuple containing indices, p-values, and all the regression data.
 	"""
-	m = len(fm[0,])
+	m = len(fm[0,0])
 	p_values = np.zeros(m, dtype=float)
 	icodes=[]
 	# store all of the pertinent data from the regressions
