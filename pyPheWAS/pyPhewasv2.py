@@ -51,7 +51,7 @@ def get_input(path, filename): #diff -done - add duration
 		# g=icdfile.groupby(['id','icd9'])
 		phenotypes = pd.merge(icdfile,codes,on='icd9')
 		phenotypes['MaxAgeAtICD'] = 0
-		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
+		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD9'].transform('max')
 	else:
 		"""
 		This needs to be changed, need to adjust for a variety of different naming conventions
@@ -63,8 +63,8 @@ def get_input(path, filename): #diff -done - add duration
 		phenotypes['count']=0
 		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')
 		phenotypes['MaxAgeAtICD'] = 0
-		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
-		phenotypes['duration']=phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('max')-phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('min')+1
+		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD9'].transform('max')
+		phenotypes['duration']=phenotypes.groupby(['id','phewas_code'])['AgeAtICD9'].transform('max')-phenotypes.groupby(['id','phewas_code'])['AgeAtICD9'].transform('min')+1
 	return phenotypes
 
 def get_phewas_info(p_index): #same

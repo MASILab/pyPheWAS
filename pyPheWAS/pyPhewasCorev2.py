@@ -104,7 +104,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 
 		else:
 			if reg_type == 1:
-				temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count']]).drop_duplicates()
+				temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD','count']]).drop_duplicates()
 				cts = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['count']
 				cts[np.isnan(cts)]=0
 				feature_matrix[0][count,:]=cts
@@ -116,7 +116,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 						phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
 
 			elif reg_type==2:
-				temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','count', 'duration']]).drop_duplicates()
+				temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD','duration']]).drop_duplicates()
 				dura = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['duration']
 				dura[np.isnan(dura)]=0
 				feature_matrix[0][count,:]=dura
