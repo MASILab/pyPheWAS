@@ -97,7 +97,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 			match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
 			feature_matrix[0][count,match[match==True].index]=1
 			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-			age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeBeforeDx']
+			age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeAtVisit']
 			feature_matrix[1][count, :] = age
 			if phewas_cov:
 				feature_matrix[2][count, :] = int(phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
@@ -109,7 +109,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 				cts[np.isnan(cts)]=0
 				feature_matrix[0][count,:]=cts
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeBeforeDx']
+				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
 				feature_matrix[1][count, :] = age
 				if phewas_cov:
 					feature_matrix[2][count, :] = int(
@@ -121,7 +121,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 				dura[np.isnan(dura)]=0
 				feature_matrix[0][count,:]=dura
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeBeforeDx']
+				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
 				feature_matrix[1][count, :] = age
 				if phewas_cov:
 					feature_matrix[2][count, :] = int(
@@ -420,6 +420,7 @@ def display_kwargs(kwargs):
 output_columns = ['PheWAS Code', 
  'PheWAS Name', 
  '\"-log(p)\"', 
+ 'p-val',
  'beta',
  'Conf-interval beta',
  'ICD-9']
