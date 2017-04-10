@@ -231,7 +231,7 @@ def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): 
 		# save all of the regression data
 		phewas_info = get_phewas_info(index)
 		stat_info = res[2]
-		info = phewas_info[0:2] + stat_info + [phewas_info[2]]
+		info = phewas_info[0:2] + [res[1]] + stat_info  + [phewas_info[2]]
 		regressions.loc[index] = info
 		
 		p_values[index] = res[1]
@@ -418,9 +418,9 @@ def display_kwargs(kwargs):
 		print(left + right)
 
 output_columns = ['PheWAS Code', 
- 'PheWAS Name', 
- '\"-log(p)\"', 
+ 'PheWAS Name',
  'p-val',
+ '\"-log(p)\"',
  'beta',
  'Conf-interval beta',
  'ICD-9']
