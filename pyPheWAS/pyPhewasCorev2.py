@@ -199,7 +199,7 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 			p=linreg.pvalues.genotype
 			odds=0
 			conf = linreg.conf_int()
-			od = [-math.log10(p), p, linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+			od = [-math.log10(p), linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
 	except:
 		odds=0
 		p=np.nan
@@ -222,7 +222,7 @@ def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): 
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
 	for index in range(m):
-
+		print index
 		phen_vector1 = fm[0][:,index]
 		phen_vector2 = fm[1][:,index]
 		phen_vector3 = fm[2][:, index]
