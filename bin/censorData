@@ -10,6 +10,7 @@ optargs = {
 	'--path':'path',
 	'--field':'field',
 	'--phenotypeout': 'final_pfile',
+	'--groupout': 'final_gfile',
 	'--start':'start_time',
 	'--end':'end_time',
 }
@@ -46,6 +47,7 @@ kwargs['phenotype_file'] = os.sep.join([kwargs['path'], kwargs['phenotype_file']
 kwargs['genotype_file'] = os.sep.join([kwargs['path'], kwargs['genotype_file']])
 
 kwargs['final_pfile'] = os.sep.join([kwargs['path'], kwargs['final_pfile']])
+kwargs['final_gfile'] = os.sep.join([kwargs['path'], kwargs['final_gfile']])
 
 # Change times to integers
 kwargs['start_time'] = float(kwargs['start_time'])
@@ -55,4 +57,4 @@ kwargs['end_time'] = float(kwargs['end_time'])
 # Make all arguments local variables
 locals().update(kwargs)
 
-censor_diagnosis(genotype_file, phenotype_file, final_pfile, field, start_time, end_time)
+censor_diagnosis(path,genotype_file, phenotype_file, final_pfile,final_pfile, field, type='ICD', start_time, end_time)

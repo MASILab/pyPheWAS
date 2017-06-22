@@ -138,20 +138,6 @@ A sample execution of *generateGroups*::
 
 		generateGroups --path="/Users/me/Documents/EMRdata" --phenotypefiles="icd9_one.csv+icd9_two.csv" --groupfiles="group_one.csv+group_two.csv" --phenotypeout="new_icd9.csv" --groupout="new_group.csv"
 
-ICD Covariate (createICDCovariate)
--------------
-
-Create an ICD-9 covariate in a group file. For each patient in the group file, if they have a given ICD-9 in their history, add this as a variable to the group file. 
-The options:
- * ``--path``:			the path to all input files and destination of output files
- * ``--phenotype`:		a list of phenotype file names, each separated by a *+*
- * ``--group``:				a list of group file names, each separated by a *+*
- * ``--groupout``:				the output file name for the merged group files
- * ``--icd``:			the icd code of interest
-
-A sample execution of *createICDCovariate*::
-
-		createICDCovariate --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" --groupout="new_group.csv" --icd="xxx.xx"
 
 Age Matching
 ------------
@@ -160,15 +146,18 @@ Age Matching
 Censoring
 ---------
 
-Censor files such 
+Censor files to restrict data to a specific time interval. The default field option is to censor based on AgeAtICD. Can change the default field to other events such as AgeAtDx. 
 The options:
  * ``--path``:			the path to all input files and destination of output files
  * ``--phenotype`:		a list of phenotype file names, each separated by a *+*
- * ``--group``:				a list of group file names, each separated by a *+*
- * ``--groupout``:				the output file name for the merged group files
- * ``--icd``:			the icd code of interest
+ * ``--group``:			a list of group file names, each separated by a *+*
+ * ``--field``:			the field is the type of event to censor on
+ * ``-—phenotypeout``:		the output file name for the censored phenotype files
+ * ``-—groupout``:		the output file name for the censored genotype files
+ * ``-—start``:			start time for censoring
+ * ``-—end``:			end time for censoring
 
-A sample execution of *createICDCovariate*::
+A sample execution of *Censoring*::
 
-		createICDCovariate --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" --groupout="new_group.csv" --icd="xxx.xx"
+		createICDCovariate --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" —field=“AgeAtDx” —-phenotypeout="icd9_data_cen.csv" —groupout="group_cen.csv" -—start="0" —-end="2"
 
