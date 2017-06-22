@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pyPheWAS.pyPhewasCore import *
+from pyPheWAS.pyPhewasCorev2 import *
 from pyPheWAS.rt_censor_diagnosis import *
 import sys, os
 

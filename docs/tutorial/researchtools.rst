@@ -156,5 +156,19 @@ A sample execution of *createICDCovariate*::
 Age Matching
 ------------
 
+
 Censoring
 ---------
+
+Censor files such 
+The options:
+ * ``--path``:			the path to all input files and destination of output files
+ * ``--phenotype`:		a list of phenotype file names, each separated by a *+*
+ * ``--group``:				a list of group file names, each separated by a *+*
+ * ``--groupout``:				the output file name for the merged group files
+ * ``--icd``:			the icd code of interest
+
+A sample execution of *createICDCovariate*::
+
+		createICDCovariate --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" --groupout="new_group.csv" --icd="xxx.xx"
+

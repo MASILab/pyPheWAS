@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from pyPheWAS.pyPhewasCore import process_args
+from pyPheWAS.pyPhewasCorev2 import process_args
 from pyPheWAS.maximize_control_matching import *
 import sys, os
 

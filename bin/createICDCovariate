@@ -1,4 +1,4 @@
-from pyPheWAS.pyPhewasCore import *
+from pyPheWAS.pyPhewasCorev2 import *
 import pandas as pd
 import sys, os
 

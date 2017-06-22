@@ -1,5 +1,5 @@
 
-def censor_diagnosis(path,genotype_file,phenotype_file,final_pfile, final_gfile, field ='na',type='ICD9',start_time=float('nan'),end_time=float('nan')):
+def censor_diagnosis(path,genotype_file,phenotype_file,final_pfile, final_gfile, field ='na',type='ICD',start_time=float('nan'),end_time=float('nan')):
         import pandas as pd
         import numpy as np
         genotypes = pd.read_csv(path+genotype_file)
@@ -13,7 +13,7 @@ def censor_diagnosis(path,genotype_file,phenotype_file,final_pfile, final_gfile,
                 elif np.isnan(start_time) and np.isfinite(end_time):
                         final = mg[mg['AgeAt'+type]<=end_time]
                 else:
-                        final = mg[(mg['AgeAt'+type]>=start_time)&(mg['AgeAtICD']<=end_time)]
+                        final = mg[(mg['AgeAt'+type]>=start_time)&(mg['AgeAt'+type]<=end_time)]
 
         else:
                 mg['diff']=mg[field]-mg['AgeAt'+type]
@@ -22,7 +22,7 @@ def censor_diagnosis(path,genotype_file,phenotype_file,final_pfile, final_gfile,
                 elif np.isnan(start_time) and np.isfinite(end_time):
                         final = mg[(mg['diff']<=end_time)|(np.isnan(mg['diff']))]
                 else:
-                        final = mg[(mg['diff']>=start_time)&(mg['diff']<=end_time)|(np.isnan(mg['diff']))]
+                        final = mg[(mg[field]>=start_time)&(mg[field]<=end_time)|(np.isnan(mg[field]))]
         final['MaxAgeBeforeDx'] = final.groupby('id')['AgeAt'+type].transform('max')
         final.dropna(subset=['MaxAgeBeforeDx'],inplace=True)
         final[['id',type.lower(),'AgeAt'+type]].to_csv(path+final_pfile)

@@ -19,3 +19,4 @@ pyPheWAS/rt_censor_diagnosis.py
 pyPheWAS/resources/codes.csv
 pyPheWAS/resources/phecode_exclude.csv
 pyPheWAS/resources/prowas_codes.csv
+pyPheWAS/resources/prowas_codes_eye.csv
