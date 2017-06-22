@@ -149,7 +149,7 @@ Censoring (censorData)
 Censor files to restrict data to a specific time interval. The default field option is to censor based on AgeAtICD. Can change the default field to other events such as AgeAtDx. 
 The options:
  * ``--path``:			the path to all input files and destination of output files
- * ``--phenotype`:		a list of phenotype file names, each separated by a *+*
+ * ``--phenotype``:		a list of phenotype file names, each separated by a *+*
  * ``--group``:			a list of group file names, each separated by a *+*
  * ``--field``:			the field is the type of event to censor on
  * ``-—phenotypeout``:		the output file name for the censored phenotype files
