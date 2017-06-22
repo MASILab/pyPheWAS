@@ -143,7 +143,7 @@ Age Matching
 ------------
 
 
-Censoring
+Censoring (censorData)
 ---------
 
 Censor files to restrict data to a specific time interval. The default field option is to censor based on AgeAtICD. Can change the default field to other events such as AgeAtDx. 
@@ -157,7 +157,7 @@ The options:
  * ``-—start``:			start time for censoring
  * ``-—end``:			end time for censoring
 
-A sample execution of *Censoring*::
+A sample execution of *censorData*::
 
-		createICDCovariate --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" —field=“AgeAtDx” —-phenotypeout="icd9_data_cen.csv" —groupout="group_cen.csv" -—start="0" —-end="2"
+		censorData --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" —field=“AgeAtDx” —-phenotypeout="icd9_data_cen.csv" —groupout="group_cen.csv" -—start="0" —-end="2"
 
