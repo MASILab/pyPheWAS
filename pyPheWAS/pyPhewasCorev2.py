@@ -98,6 +98,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 			feature_matrix[0][count,match[match==True].index]=1
 			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
 			age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeAtVisit']
+			assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
 			feature_matrix[1][count, :] = age
 			if phewas_cov:
 				feature_matrix[2][count, :] = int(phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
@@ -110,6 +111,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 				feature_matrix[0][count,:]=cts
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
 				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
+				assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
 				feature_matrix[1][count, :] = age
 				if phewas_cov:
 					feature_matrix[2][count, :] = int(
@@ -122,6 +124,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 				feature_matrix[0][count,:]=dura
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
 				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
+				assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
 				feature_matrix[1][count, :] = age
 				if phewas_cov:
 					feature_matrix[2][count, :] = int(
@@ -178,28 +181,28 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 	data['MaxAgeAtICD'] = phen_vector2
 	#f='y~'+covariates
 	if response:
-		f = response+'~ y + ' + covariates
+		f = response+'~ y + genotype +' + covariates
 		if phen_vector3.any():
 			data['phe'] = phen_vector3
-			f = response + '~ y + phe +' + covariates
+			f = response + '~ y + phe + genotype' + covariates
 	else:
-		f = 'y ~' + covariates
+		f = 'genotype ~ y +' + covariates
 		if phen_vector3.any():
 			data['phe'] = phen_vector3
-			f = 'y ~ phe +' + covariates
+			f = 'genotype ~ y + phe +' + covariates
 	try:
 		if reg_type==0:
 			logreg = smf.logit(f,data).fit(method='bfgs',disp=False)
-			p=logreg.pvalues.genotype
-			odds=logreg.params.genotype
+			p=logreg.pvalues.y
+			odds=logreg.params.y
 			conf = logreg.conf_int()
-			od = [-math.log10(p), logreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+			od = [-math.log10(p), logreg.params.y, '[%s,%s]' % (conf[0]['y'],conf[1]['y'])]
 		else:
 			linreg = smf.logit(f,data).fit(method='bfgs',disp=False)
-			p=linreg.pvalues.genotype
-			odds=0
+			p=linreg.pvalues.y
+			odds=linreg.params.y
 			conf = linreg.conf_int()
-			od = [-math.log10(p), linreg.params.genotype, '[%s,%s]' % (conf[0]['genotype'],conf[1]['genotype'])]
+			od = [-math.log10(p), linreg.params.y, '[%s,%s]' % (conf[0]['y'],conf[1]['y'])]
 	except:
 		odds=0
 		p=np.nan

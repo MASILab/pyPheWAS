@@ -526,7 +526,7 @@ def phewas(path, filename, groupfile, covariates, response='',phewas_cov='', reg
 	if show_imbalance:
 		imbalances = get_imbalances(regressions)
 	plot_data_points(results[0],normalized,-math.log10(thresh0),-math.log10(thresh1),thresh_type, save, path, imbalances)
-	sig_regressions = regressions.dropna(subset=['"-log(p)"']).sort('"-log(p)"',ascending=False)
+	sig_regressions = regressions.dropna(subset=['"-log(p)"']).sort_values('"-log(p)"',ascending=False)
 	if thresh_type == 0:
 		sig_regressions = sig_regressions[sig_regressions['"-log(p)"']>-math.log10(thresh0)]
 	else:
