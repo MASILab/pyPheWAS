@@ -12,9 +12,11 @@ bin/pyPhewasPlot
 pyPheWAS/__init__.py
 pyPheWAS/censor_diagnosis.py
 pyPheWAS/maximize_control_matching.py
+pyPheWAS/prowas_reg.py
 pyPheWAS/pyPhewasCore.py
 pyPheWAS/pyPhewasCorev2.py
 pyPheWAS/pyPhewasv2.py
+pyPheWAS/pyProWAS.py
 pyPheWAS/rt_censor_diagnosis.py
 pyPheWAS/resources/codes.csv
 pyPheWAS/resources/phecode_exclude.csv

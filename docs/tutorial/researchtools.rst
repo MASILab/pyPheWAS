@@ -138,7 +138,6 @@ A sample execution of *generateGroups*::
 
 		generateGroups --path="/Users/me/Documents/EMRdata" --phenotypefiles="icd9_one.csv+icd9_two.csv" --groupfiles="group_one.csv+group_two.csv" --phenotypeout="new_icd9.csv" --groupout="new_group.csv"
 
-
 Conver event to age (convertEventToAge)
 ------------
 Converts event date of ICD9 or CPT to age at the event. Phenotype and group files should be provided with “id” column in both files, and a “DOB” column in the group file.
