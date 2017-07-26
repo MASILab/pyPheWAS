@@ -51,5 +51,5 @@ ng.drop_duplicates('id', inplace=True)
 ni = pd.concat(icd9sDF)
 ni.drop_duplicates(inplace=True)
 
-ni.to_csv(os.path.abspath(os.sep.join([path,groupout])))
-ng.to_csv(os.path.abspath(os.sep.join([path,phenout])))
+ng.to_csv(os.path.abspath(os.sep.join([path,groupout])))
+ni.to_csv(os.path.abspath(os.sep.join([path,phenout])))

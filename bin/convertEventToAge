@@ -11,13 +11,15 @@ optargs = {
 	'--path':'path',
 	'--phenotypeout': 'final_pfile',
 	'--eventcolumn':'ec',
-	'--precision':'precision'
+	'--precision':'precision',
+	'--type':'type',
+	'--phenotype_column':'pcol'
 }
 
 args = sys.argv[1:]
 
 # Define any default arguments
-kwargs = {'path':'.','ec':'Event_date', 'precision':2}
+kwargs = {'path':'.','ec':'Event_date', 'precision':2,'type':ICD,'pcol':'icd9'}
 
 kwargs = process_args(kwargs, optargs, *args)
 
@@ -51,25 +53,12 @@ locals().update(kwargs)
 group = pd.read_csv(genotype_file)
 phen = pd.read_csv(phenotype_file)
 group['nDOB'] = pd.to_datetime(group['DOB'])
-phen['nEvent_date'] = pd.to_datetime(phen[ec])
-
+phen['nEvent_date'] = pd.to_datetime(phen[ec],infer_datetime_format=True)
 df = pd.merge(group, phen, on='id')
 
 century = datetime.timedelta(365.2425) * 100
+df.loc[df['nEvent_date'] < df['nDOB'], 'nDOB'] = df[df['nEvent_date'] < df['nDOB']]['nDOB'] - century
 
-def correct_year(tr):
-	n = {}
-	if tr['nEvent_date'] < tr['nDOB']:
-		n['nDOB'] = tr['nDOB'] - century
-	else:
-		n['nDOB'] = tr['nDOB']
-	return pd.Series(n)
-
-def correct_age(tr):
-	return round(tr['AgeAtICD'].days/365.0, precision)
-
-
-df['nDOB'] = df.apply(correct_year, axis=1)
-df['AgeAtICD'] = (df['nEvent_date'] - df['nDOB'])
-df['AgeAtICD'] = df.apply(correct_age, axis=1)
-df.get(['id', 'icd9', ec, 'AgeAtICD']).to_csv(final_pfile, index=False)
+df['AgeAt'+type] = (df['nEvent_date'] - df['nDOB']).astype('timedelta64[D]')/365.2425
+df['AgeAt'+type] = df['AgeAtCPT'].round(2)
+df[['id', pcol, ec, 'AgeAt'+type]].to_csv(final_pfile, index=False)

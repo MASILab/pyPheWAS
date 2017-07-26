@@ -139,9 +139,17 @@ A sample execution of *generateGroups*::
 		generateGroups --path="/Users/me/Documents/EMRdata" --phenotypefiles="icd9_one.csv+icd9_two.csv" --groupfiles="group_one.csv+group_two.csv" --phenotypeout="new_icd9.csv" --groupout="new_group.csv"
 
 
-Age Matching
+Conver event to age (convertEventToAge)
 ------------
-
+Converts event date of ICD9 or CPT to age at the event. Phenotype and group files should be provided with “id” column in both files, and a “DOB” column in the group file.
+The options:
+ * ``--phenotype``: phenotype file name
+ * ``--group``:	 group file name
+ * ``--path``:	the path to all input files and destination of output files
+ * ``--phenotypeout``:	the output file name for the merged phenotype files
+ * ``--eventcolumn``:	Name of the event date column
+ * ``-—precision``:	Decimal precision of the age needed
+ * ``-—type``:	Type of data:CPT or ICD
 
 Censoring (censorData)
 ---------
@@ -149,8 +157,8 @@ Censoring (censorData)
 Censor files to restrict data to a specific time interval. The default field option is to censor based on AgeAtICD. Can change the default field to other events such as AgeAtDx. 
 The options:
  * ``--path``:			the path to all input files and destination of output files
- * ``--phenotype``:		a list of phenotype file names, each separated by a *+*
- * ``--group``:			a list of group file names, each separated by a *+*
+ * ``--phenotype``:		phenotype file name
+ * ``--group``:			group file name
  * ``--field``:			the field is the type of event to censor on
  * ``-—phenotypeout``:		the output file name for the censored phenotype files
  * ``-—groupout``:		the output file name for the censored genotype files
