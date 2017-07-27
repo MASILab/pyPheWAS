@@ -60,5 +60,5 @@ century = datetime.timedelta(365.2425) * 100
 df.loc[df['nEvent_date'] < df['nDOB'], 'nDOB'] = df[df['nEvent_date'] < df['nDOB']]['nDOB'] - century
 
 df['AgeAt'+type] = (df['nEvent_date'] - df['nDOB']).astype('timedelta64[D]')/365.2425
-df['AgeAt'+type] = df['AgeAtCPT'].round(2)
+df['AgeAt'+type] = df['AgeAt'+type].round(2)
 df[['id', pcol, ec, 'AgeAt'+type]].to_csv(final_pfile, index=False)
