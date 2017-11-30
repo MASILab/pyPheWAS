@@ -290,9 +290,9 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
         phen_vector1 = fm[0][:, index]
         phen_vector2 = fm[1][:, index]
         phen_vector3 = fm[2][:, index]
-        if np.where(phen_vector1>0)[0].shape[0]>5:
+        if sum(phen_vector1)>5:
             if index in inds:
-                # print index
+                print index
                 res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=1, response=response,
                                    phen_vector3=phen_vector3)
             else:
@@ -597,7 +597,7 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covari
             f = 'genotype ~ phe +' + covariates
     try:
         #if reg_type == 0:
-        if lr == 0:
+        if lr >2:
             logreg = smf.logit(f, data).fit(disp=False)
             # logit = sm.Logit(data['genotype'], data[['y', 'MaxAgeAtVisit', 'sex']])
             # lf = logit.fit_regularized(method='l1', alpha=0.9,disp=0,trim_mode='size',qc_verbose=0)
@@ -610,7 +610,7 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covari
             # od = [-math.log10(p), p, lf.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
         # od=[np.nan,np.nan,np.nan]
         #elif reg_type > 3:
-        elif lr == 1:
+        elif lr == 10:
             # linreg = smf.logit(f, data).fit(disp=False)
             logit = sm.Logit(data['genotype'], data[['y', 'MaxAgeAtVisit', 'sex']])
             lf = logit.fit_regularized(method='l1', alpha=1, disp=0,trim_mode='size',qc_verbose=0)
@@ -735,24 +735,18 @@ def phewas(path, filename, groupfile, covariates, response='', phewas_cov='', re
     plot_data_points(results[0], normalized, -math.log10(thresh0), -math.log10(thresh1),-math.log10(thresh2), thresh_type, save, path,
                      imbalances)
 
-    try:
-        regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
-        regressions.uplim = regressions.uplim.str.replace(']', '')
-        regressions.lowlim = regressions.lowlim.str.replace('[', '')
-        y = regressions[['beta', 'lowlim', 'uplim']].as_matrix()
-        y = y.astype(float)
-        plot_odds_ratio(y, normalized, -math.log10(thresh0), -math.log10(thresh1), -math.log10(thresh2), thresh_type,
-                        saveb, path, imbalances)
-    except:
-        print 'no corr'
+    regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
+    regressions.uplim = regressions.uplim.str.replace(']', '')
+    regressions.lowlim = regressions.lowlim.str.replace('[', '')
+    y = regressions[['beta', 'lowlim', 'uplim']].as_matrix()
+    y = y.astype(float)
+    plot_odds_ratio(y, normalized, -math.log10(thresh0),  -math.log10(thresh1),-math.log10(thresh2), thresh_type, saveb, path, imbalances)
 
     sig_regressions = regressions.dropna(subset=['"-log(p)"']).sort_values('"-log(p)"', ascending=False)
     if thresh_type == 0:
         sig_regressions = sig_regressions[sig_regressions['"-log(p)"'] > -math.log10(thresh0)]
-    elif thresh_type==1:
-        sig_regressions = sig_regressions[sig_regressions['"-log(p)"'] > -math.log10(thresh1)]
     else:
-        sig_regressions = sig_regressions[sig_regressions['"-log(p)"'] > -math.log10(thresh2)]
+        sig_regressions = sig_regressions[sig_regressions['"-log(p)"'] > -math.log10(thresh1)]
     if output:
         sig_regressions.to_csv(path + output, index=False)
     return (results[0], results[1], regressions)

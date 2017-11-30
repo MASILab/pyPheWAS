@@ -1,5 +1,4 @@
-
-def censor_diagnosis(path,genotype_file,phenotype_file,final_pfile, final_gfile, field ='na',type='ICD',start_time=float('nan'),end_time=float('nan')):
+def censor_diagnosis(path,genotype_file,phenotype_file,final_pfile, final_gfile, field ='na',type='ICD',ad=1,start_time=float('nan'),end_time=float('nan')):
         import pandas as pd
         import numpy as np
         genotypes = pd.read_csv(path+genotype_file)
@@ -23,10 +22,22 @@ def censor_diagnosis(path,genotype_file,phenotype_file,final_pfile, final_gfile,
                         final = mg[(mg['diff']<=end_time)|(np.isnan(mg['diff']))]
                 else:
                         final = mg[(mg[field]>=start_time)&(mg[field]<=end_time)|(np.isnan(mg[field]))]
+
         final['MaxAgeBeforeDx'] = final.groupby('id')['AgeAt'+type].transform('max')
+        if ad==0:
+                final['AgeNow'] = final[field]-start_time
+                idx = np.isnan(final.AgeNow)
+                final.ix[idx,'AgeNow']=final.ix[idx,'MaxAgeBeforeDx']
+
         final.dropna(subset=['MaxAgeBeforeDx'],inplace=True)
-        final[['id',type.lower(),'AgeAt'+type]].to_csv(path+final_pfile)
-        final[['id', 'MaxAgeAtVisit','MaxAgeBeforeDx', 'AgeAtDx', 'genotype','sex']].drop_duplicates().to_csv(path+final_gfile)
+        final[['id',type.lower(),'AgeAt'+type]].to_csv(path+final_pfile,index=False)
+        cnames = list(genotypes.columns.values)
+        if ad==0:
+                if not 'AgeNow' in genotypes.columns.values:
+                        cnames.append('AgeNow')
+        if not 'MaxAgeBeforeDx' in genotypes.columns.values:
+                cnames.append('MaxAgeBeforeDx')
+        final[cnames].drop_duplicates().to_csv(path+final_gfile,index=False)
 
         
 

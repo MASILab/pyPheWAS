@@ -90,15 +90,16 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 
 	"""
 	feature_matrix = np.zeros((3,genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
-	count = 0;
+	count = 0
 	for i in genotypes['id']:
 		if reg_type == 0:
 			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD']]).drop_duplicates()
 			match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
 			feature_matrix[0][count,match[match==True].index]=1
 			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+			#change this to a warning
+			# assert 'MaxAgeAtVisit' in genotypes "make sure MaxAgeAtVisit is filled"
 			age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeAtVisit']
-			assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
 			feature_matrix[1][count, :] = age
 			if phewas_cov:
 				feature_matrix[2][count, :] = int(phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
@@ -110,8 +111,8 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 				cts[np.isnan(cts)]=0
 				feature_matrix[0][count,:]=cts
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+				# assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
 				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
-				assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
 				feature_matrix[1][count, :] = age
 				if phewas_cov:
 					feature_matrix[2][count, :] = int(
@@ -123,8 +124,8 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 				dura[np.isnan(dura)]=0
 				feature_matrix[0][count,:]=dura
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+				# assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
 				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
-				assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
 				feature_matrix[1][count, :] = age
 				if phewas_cov:
 					feature_matrix[2][count, :] = int(
@@ -148,7 +149,7 @@ def get_phewas_info(p_index): #same
 	:returns: A list including the code, the name, and the rollup of the phewas code. The rollup is a list of all of the ICD-9 codes that are grouped into this phewas code.
 	:rtype: list of strings
 	"""
-	p_code = phewas_codes.loc[p_index].phewas_code	
+	p_code = phewas_codes.loc[p_index].phewas_code
 	corresponding = codes[codes.phewas_code == p_code]
 
 	p_name = corresponding.iloc[0].phewas_string
@@ -275,7 +276,7 @@ def get_fdr_thresh(p_values, power):
 	sn = sn[::-1]
 	for i in range(len(sn)):
 		thresh=0.05*i/len(sn)
-		if sn[i]<=power:
+		if sn[i]<=thresh:
 			break
 	return sn[i]
 

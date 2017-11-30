@@ -4,6 +4,8 @@ import random
 import numpy as np
 import sys
 import getopt
+from hopcroftkarp import HopcroftKarp
+
 """
 
 
@@ -34,12 +36,15 @@ def get_options(targets, controls, keys, deltas):
 			control_query = generate_row_query(keys, deltas, tr)
 			matches = c.query(control_query).index
 			matching[i] = matches.drop_duplicates().tolist()
+			# matching[i] = set(matches)
 	else:
 		for i in c.index:
 			tr = c.loc[i]
 			target_query = generate_row_query(keys, deltas, tr)
 			matches = tt.query(target_query).index
 			matching[i] = matches.drop_duplicates().tolist()
+			# matching[i] = set(matches)
+
 	return matching
 
 def generate_matches(matching, goal):
@@ -98,7 +103,7 @@ def output_matches(path, outputfile, data, all_used, success, matched):
 		if '%s' in outputfile:
 			outputfile = outputfile % (matched)
 
-	new_data.to_csv(path + outputfile)
+	new_data.to_csv(path + outputfile,index=False)
 	print("Data in %s" % (path + outputfile))
 
 def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype',goal=-1):
@@ -125,6 +130,7 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 	match_by_control = len(targets) > len(controls)
 
 	matching = get_options(targets, controls, keys, deltas)
+
 	if goal != -1:
 		final, used, success, matched = generate_matches(matching, goal)
 		if success:
@@ -133,7 +139,7 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 			else:
 				all_used = used + targets.index.tolist()
 			output_matches(path, outputfile, data, all_used, success, matched)
-			return
+			# return
 		else:
 			print("Failed to perform 1-%s, attempting to maximize..." % (goal))
 			while not success:
