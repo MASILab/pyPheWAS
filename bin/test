@@ -1,0 +1,1 @@
+convertEventToAge --phenotype 'Landman_Optic_CPT_20150904.csv' --group 'Landman_Optic_DEMO_20150904.csv' --path '/Users/shikhachaganti/IIH/' --phenotypeout 'Landman_Optic_CPT_wAge.csv' --eventcolumn 'Event_date' --precision '2'
