@@ -6,7 +6,7 @@
 # v2.0
 
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from collections import Counter
 import time, math, scipy.stats

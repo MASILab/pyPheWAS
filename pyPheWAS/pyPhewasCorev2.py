@@ -1,7 +1,7 @@
 from collections import Counter
 import getopt
 import math
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import os
@@ -39,6 +39,7 @@ def get_group_file(path, filename): #same
 	"""
 	wholefname = path + filename
 	genotypes = pd.read_csv(wholefname)
+	genotypes = genotypes.drop_na(subset=['id'])
 	return genotypes
 
 
@@ -91,14 +92,16 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 	"""
 	feature_matrix = np.zeros((3,genotypes.shape[0],phewas_codes.shape[0]), dtype=int)
 	count = 0
+
 	for i in genotypes['id']:
+		print i
 		if reg_type == 0:
 			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD']]).drop_duplicates()
 			match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
 			feature_matrix[0][count,match[match==True].index]=1
 			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
 			#change this to a warning
-			# assert 'MaxAgeAtVisit' in genotypes "make sure MaxAgeAtVisit is filled"
+			assert 'MaxAgeAtVisit' in genotypes "make sure MaxAgeAtVisit is filled"
 			age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeAtVisit']
 			feature_matrix[1][count, :] = age
 			if phewas_cov:
@@ -111,7 +114,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 				cts[np.isnan(cts)]=0
 				feature_matrix[0][count,:]=cts
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-				# assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
+				assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
 				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
 				feature_matrix[1][count, :] = age
 				if phewas_cov:
@@ -124,7 +127,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 				dura[np.isnan(dura)]=0
 				feature_matrix[0][count,:]=dura
 				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-				# assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
+				assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
 				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
 				feature_matrix[1][count, :] = age
 				if phewas_cov:
@@ -275,8 +278,8 @@ def get_fdr_thresh(p_values, power):
 	sn = sn[np.isfinite(sn)]
 	sn = sn[::-1]
 	for i in range(len(sn)):
-		thresh=0.05*i/len(sn)
-		if sn[i]<=thresh:
+		thresh = power * i / len(sn)
+		if sn[i] <= thresh:
 			break
 	return sn[i]
 
