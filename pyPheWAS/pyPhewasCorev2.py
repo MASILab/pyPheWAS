@@ -218,7 +218,7 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 	except:
 		odds=0
 		p=np.nan
-		od = [np.nan,np.nan,np.nan]
+		od = [np.nan,np.nan,np.nan,np.nan]
 	return (odds,p,od)
 
 def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): #same
@@ -264,6 +264,7 @@ def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): 
 		phewas_info = get_phewas_info(index)
 		stat_info = res[2]
 		info = phewas_info[0:2] + stat_info + [phewas_info[2]]
+
 		regressions.loc[index] = info
 
 		p_values[index] = res[1]
@@ -447,7 +448,7 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
             # else:
             #	artists.append(ax.text(e, -y[i], c['phewas_string'][i], rotation=271, va='top',fontsize=8))
             elif not show_imbalance:
-                artists.append(ax.text(e, y[i], c['phewas_string'][i], rotation=40, va='bottom'))
+                artists.append(ax.text(e, y[i], c['phewas_string'][i], rotation=89, va='bottom'))
         else:
             e += 0
 
@@ -581,7 +582,7 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
     # 		ax.axvline(x=pos, color='black', ls='dotted')
     # Determine the type of output desired (saved to a plot or displayed on the screen)
     if save:
-        pdf = PdfPages(path + save)
+        pdf = PdfPages(save)
         pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
         pdf.close()
     else:
@@ -611,13 +612,15 @@ def display_kwargs(kwargs):
 		right = str(v).rjust(50,'.')
 		print(left + right)
 
-output_columns = ['PheWAS Code', 
- 'PheWAS Name',
- 'p-val',
- '\"-log(p)\"',
- 'beta',
- 'Conf-interval beta',
- 'ICD-9']
+
+output_columns = ['PheWAS Code',
+                  'PheWAS Name',
+                  '\"-log(p)\"',
+                  'p-val',
+                  'beta',
+                  'Conf-interval beta',
+                  'ICD-9']
+
 plot_colors = {'-' : 'gold',
  'circulatory system' : 'red',
  'congenital anomalies': 'mediumspringgreen',

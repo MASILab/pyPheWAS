@@ -59,7 +59,7 @@ try:
 	regressions.uplim = regressions.uplim.str.replace(']', '')
 	regressions.lowlim = regressions.lowlim.str.replace('[', '')
 	yb = regressions[['beta', 'lowlim', 'uplim']].as_matrix()
-	yb = y.astype(float)
+	yb = yb.astype(float)
 except:
 	print 'no corr'
 
@@ -89,4 +89,4 @@ else:
 
 
 plot_data_points(y, -math.log10(thresh), save, imbalances)
-plot_odds_ratio(yb, y, thresh, save='')
+plot_odds_ratio(yb, y, -math.log10(thresh), saveb, imbalances)

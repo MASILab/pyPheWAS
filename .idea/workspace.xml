@@ -7,7 +7,6 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bin/pyPhewasPlot" afterPath="$PROJECT_DIR$/bin/pyPhewasPlot" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" afterPath="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" afterPath="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" />
     </list>
     <ignored path="pyPheWAS.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -30,8 +29,8 @@
       <file leaf-file-name="run_blsa.py" pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-345">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="4" selection-end-column="32" />
+            <state relative-caret-position="0">
+              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="1" selection-end-column="93" />
               <folding />
             </state>
           </provider>
@@ -50,8 +49,8 @@
       <file leaf-file-name="pyPhewasv2.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="437">
-              <caret line="743" column="37" selection-start-line="743" selection-start-column="27" selection-end-line="743" selection-end-column="37" />
+            <state relative-caret-position="152">
+              <caret line="727" column="26" selection-start-line="727" selection-start-column="0" selection-end-line="728" selection-end-column="0" />
               <folding>
                 <element signature="e#136#154#0" expanded="true" />
               </folding>
@@ -69,11 +68,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="pyPhewasCorev2.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="pyPhewasCorev2.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="141">
-              <caret line="493" column="23" selection-start-line="493" selection-start-column="23" selection-end-line="493" selection-end-column="24" />
+            <state relative-caret-position="165">
+              <caret line="450" column="82" selection-start-line="450" selection-start-column="82" selection-end-line="450" selection-end-column="82" />
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
               </folding>
@@ -84,18 +83,18 @@
       <file leaf-file-name="pyPhewasModel" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bin/pyPhewasModel">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="374">
-              <caret line="64" column="48" selection-start-line="64" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
+            <state relative-caret-position="422">
+              <caret line="69" column="0" selection-start-line="69" selection-start-column="0" selection-end-line="71" selection-end-column="9" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="pyPhewasPlot" pinned="false" current-in-tab="true">
+      <file leaf-file-name="pyPhewasPlot" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bin/pyPhewasPlot">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="122">
-              <caret line="69" column="29" selection-start-line="69" selection-start-column="29" selection-end-line="69" selection-end-column="29" />
+            <state relative-caret-position="425">
+              <caret line="91" column="49" selection-start-line="91" selection-start-column="49" selection-end-line="91" selection-end-column="49" />
               <folding>
                 <element signature="e#23#60#0" expanded="true" />
               </folding>
@@ -138,8 +137,8 @@
         <option value="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" />
         <option value="$USER_HOME$/Dropbox/BLSA/run_ted.py" />
         <option value="$USER_HOME$/Dropbox/BLSA/log_pub.py" />
-        <option value="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" />
         <option value="$PROJECT_DIR$/bin/pyPhewasPlot" />
+        <option value="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" />
       </list>
     </option>
   </component>
@@ -802,14 +801,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-345">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="4" selection-end-column="32" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/pyPheWAS/censor_diagnosis.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="135">
@@ -845,28 +836,26 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bin/pyPhewasModel">
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="374">
-          <caret line="64" column="48" selection-start-line="64" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="1" selection-end-column="93" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
+    <entry file="file://$PROJECT_DIR$/bin/pyPhewasModel">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="141">
-          <caret line="493" column="23" selection-start-line="493" selection-start-column="23" selection-end-line="493" selection-end-column="24" />
-          <folding>
-            <element signature="e#0#31#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="422">
+          <caret line="69" column="0" selection-start-line="69" selection-start-column="0" selection-end-line="71" selection-end-column="9" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="437">
-          <caret line="743" column="37" selection-start-line="743" selection-start-column="27" selection-end-line="743" selection-end-column="37" />
+        <state relative-caret-position="152">
+          <caret line="727" column="26" selection-start-line="727" selection-start-column="0" selection-end-line="728" selection-end-column="0" />
           <folding>
             <element signature="e#136#154#0" expanded="true" />
           </folding>
@@ -875,10 +864,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/bin/pyPhewasPlot">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="122">
-          <caret line="69" column="29" selection-start-line="69" selection-start-column="29" selection-end-line="69" selection-end-column="29" />
+        <state relative-caret-position="425">
+          <caret line="91" column="49" selection-start-line="91" selection-start-column="49" selection-end-line="91" selection-end-column="49" />
           <folding>
             <element signature="e#23#60#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="450" column="82" selection-start-line="450" selection-start-column="82" selection-end-line="450" selection-end-column="82" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
           </folding>
         </state>
       </provider>
