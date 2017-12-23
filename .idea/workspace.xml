@@ -4,11 +4,8 @@
     <list default="true" readonly="true" id="12fdf54f-2890-4623-97ce-7bf58ca89403" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/CTONS_3.0/GetMetrics.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/CTONS_3.0/GetMetrics.m" />
       <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/ON_CT_register_v2.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/ON_CT_register_v2.m" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/iih.py" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/iih.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/parse_micdl.py" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/parse_micdl.py" />
-      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_classificationv2.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_classificationv2.m" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MANIFEST" afterPath="$PROJECT_DIR$/MANIFEST" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bin/pyPhewasPlot" afterPath="$PROJECT_DIR$/bin/pyPhewasPlot" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" afterPath="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" afterPath="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" />
     </list>
@@ -30,26 +27,22 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="mySearchPubMed.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/Downloads/Archive/mySearchPubMed.py">
+      <file leaf-file-name="run_blsa.py" pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding>
-                <element signature="e#0#22#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="-345">
+              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="4" selection-end-column="32" />
+              <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="myUpdate.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py">
+      <file leaf-file-name="censor_diagnosis.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pyPheWAS/censor_diagnosis.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding>
-                <element signature="e#0#22#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="135">
+              <caret line="18" column="51" selection-start-line="18" selection-start-column="51" selection-end-line="18" selection-end-column="51" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -57,8 +50,8 @@
       <file leaf-file-name="pyPhewasv2.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="122">
-              <caret line="736" column="0" selection-start-line="736" selection-start-column="0" selection-end-line="736" selection-end-column="0" />
+            <state relative-caret-position="437">
+              <caret line="743" column="37" selection-start-line="743" selection-start-column="27" selection-end-line="743" selection-end-column="37" />
               <folding>
                 <element signature="e#136#154#0" expanded="true" />
               </folding>
@@ -66,11 +59,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="pyPhewasCorev2.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="run_ted.py" pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/Dropbox/BLSA/run_ted.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="285">
+              <caret line="19" column="0" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="pyPhewasCorev2.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="171">
-              <caret line="337" column="8" selection-start-line="337" selection-start-column="4" selection-end-line="337" selection-end-column="8" />
+            <state relative-caret-position="141">
+              <caret line="493" column="23" selection-start-line="493" selection-start-column="23" selection-end-line="493" selection-end-column="24" />
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
               </folding>
@@ -78,34 +81,24 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="convertEventToAge" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/bin/convertEventToAge">
+      <file leaf-file-name="pyPhewasModel" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/bin/pyPhewasModel">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="930">
-              <caret line="62" column="43" selection-start-line="62" selection-start-column="43" selection-end-line="62" selection-end-column="43" />
+            <state relative-caret-position="374">
+              <caret line="64" column="48" selection-start-line="64" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="pyPhewasPlot" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/bin/pyPhewasPlot">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="122">
+              <caret line="69" column="29" selection-start-line="69" selection-start-column="29" selection-end-line="69" selection-end-column="29" />
               <folding>
                 <element signature="e#23#60#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="log_pub.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/Dropbox/BLSA/log_pub.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="45">
-              <caret line="3" column="0" selection-start-line="3" selection-start-column="0" selection-end-line="4" selection-end-column="58" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="run_ad_bag.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/Dropbox/BLSA/run_ad_bag.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="225">
-              <caret line="15" column="10" selection-start-line="15" selection-start-column="10" selection-end-line="15" selection-end-column="10" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -137,19 +130,23 @@
         <option value="$PROJECT_DIR$/pyPheWAS/censor_diagnosis.py" />
         <option value="$USER_HOME$/Dropbox/BLSA/run_bycdate_fixed.py" />
         <option value="$USER_HOME$/Dropbox/BLSA/run_ad_bag.py" />
-        <option value="$USER_HOME$/Dropbox/BLSA/run_blsa.py" />
         <option value="$USER_HOME$/Downloads/Archive/updateSearchPubMed.py" />
         <option value="$PROJECT_DIR$/bin/convertEventToAge" />
-        <option value="$USER_HOME$/Dropbox/BLSA/log_pub.py" />
+        <option value="$PROJECT_DIR$/bin/pyPhewasModel" />
         <option value="$USER_HOME$/Dropbox/BLSA/run_bycdate_bootstrap.py" />
+        <option value="$USER_HOME$/Dropbox/BLSA/run_blsa.py" />
         <option value="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" />
+        <option value="$USER_HOME$/Dropbox/BLSA/run_ted.py" />
+        <option value="$USER_HOME$/Dropbox/BLSA/log_pub.py" />
         <option value="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" />
+        <option value="$PROJECT_DIR$/bin/pyPhewasPlot" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
+    <option name="x" value="27" />
     <option name="y" value="23" />
-    <option name="width" value="1280" />
+    <option name="width" value="1253" />
     <option name="height" value="719" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
@@ -177,7 +174,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scratches" />
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -220,9 +217,23 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="pyPheWAS" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="pyPheWAS" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="bin" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
         </subPane>
       </pane>
-      <pane id="Scope" />
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -427,10 +438,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1280" height="719" extended-state="6" />
+    <frame x="27" y="23" width="1253" height="719" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1546875" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.21149242" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -467,48 +478,61 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py">
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#22#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7950">
-          <caret line="540" column="0" selection-start-line="540" selection-start-column="0" selection-end-line="540" selection-end-column="34" />
-          <folding>
-            <element signature="e#136#154#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/convertEventToAge">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="885">
-          <caret line="62" column="0" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="44" />
-          <folding>
-            <element signature="e#23#60#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/log_pub.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="5" column="24" selection-start-line="5" selection-start-column="24" selection-end-line="5" selection-end-column="24" />
           <folding />
         </state>
       </provider>
     </entry>
+    <entry file="file://$USER_HOME$/Downloads/Archive/fastSearch.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Downloads/Archive/mySearchPubMed.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding>
+            <element signature="e#0#22#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8100">
+          <caret line="540" column="0" selection-start-line="540" selection-start-column="0" selection-end-line="540" selection-end-column="34" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/convertEventToAge">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="885">
+          <caret line="62" column="0" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="44" />
+          <folding>
+            <element signature="e#23#60#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -524,7 +548,7 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#0#22#0" expanded="true" />
+            <element signature="e#0#22#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -533,9 +557,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#22#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -543,9 +564,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="8100">
           <caret line="540" column="0" selection-start-line="540" selection-start-column="0" selection-end-line="540" selection-end-column="34" />
-          <folding>
-            <element signature="e#136#154#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -554,61 +573,7 @@
         <state relative-caret-position="885">
           <caret line="62" column="0" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="44" />
           <folding>
-            <element signature="e#23#60#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/fastSearch.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/mySearchPubMed.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#22#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#22#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8100">
-          <caret line="540" column="0" selection-start-line="540" selection-start-column="0" selection-end-line="540" selection-end-column="34" />
-          <folding>
-            <element signature="e#136#154#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/convertEventToAge">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="885">
-          <caret line="62" column="0" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="44" />
-          <folding>
-            <element signature="e#23#60#0" expanded="true" />
+            <element signature="e#23#60#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -617,6 +582,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1620">
           <caret line="108" column="222" selection-start-line="108" selection-start-column="209" selection-end-line="108" selection-end-column="222" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -632,7 +598,7 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#0#22#0" expanded="true" />
+            <element signature="e#0#22#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -641,9 +607,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#22#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -651,9 +614,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="11115">
           <caret line="741" column="45" selection-start-line="741" selection-start-column="45" selection-end-line="741" selection-end-column="45" />
-          <folding>
-            <element signature="e#136#154#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -662,7 +623,7 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#23#60#0" expanded="true" />
+            <element signature="e#23#60#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -671,7 +632,9 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1215">
           <caret line="81" column="58" selection-start-line="81" selection-start-column="58" selection-end-line="81" selection-end-column="58" />
-          <folding />
+          <folding>
+            <element signature="e#0#19#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -686,6 +649,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="120">
           <caret line="8" column="19" selection-start-line="8" selection-start-column="12" selection-end-line="8" selection-end-column="19" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -803,24 +767,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_bootstrap.py">
+    <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2190">
-          <caret line="170" column="8" selection-start-line="170" selection-start-column="8" selection-end-line="170" selection-end-column="8" />
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
+    <entry file="file://$PROJECT_DIR$/bin/convertEventToAge">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="371">
-          <caret line="91" column="0" selection-start-line="91" selection-start-column="0" selection-end-line="91" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pyPheWAS/censor_diagnosis.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="24" column="0" selection-start-line="24" selection-start-column="0" selection-end-line="24" selection-end-column="0" />
+        <state relative-caret-position="885">
+          <caret line="62" column="43" selection-start-line="62" selection-start-column="43" selection-end-line="62" selection-end-column="43" />
+          <folding>
+            <element signature="e#23#60#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -829,55 +789,96 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#0#22#0" expanded="true" />
+            <element signature="e#0#22#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py">
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_bootstrap.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#22#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="210">
+          <caret line="14" column="77" selection-start-line="14" selection-start-column="21" selection-end-line="14" selection-end-column="77" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-345">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="4" selection-end-column="32" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pyPheWAS/censor_diagnosis.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="18" column="51" selection-start-line="18" selection-start-column="51" selection-end-line="18" selection-end-column="51" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$USER_HOME$/Dropbox/BLSA/log_pub.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="3" column="0" selection-start-line="3" selection-start-column="0" selection-end-line="4" selection-end-column="58" />
+        <state relative-caret-position="-1111">
+          <caret line="228" column="6" selection-start-line="228" selection-start-column="0" selection-end-line="228" selection-end-column="6" />
+          <folding>
+            <element signature="e#0#19#0" expanded="true" />
+            <marker date="1513061825301" expanded="true" signature="13643:13675" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_ted.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="285">
+          <caret line="19" column="0" selection-start-line="19" selection-start-column="0" selection-end-line="19" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bin/convertEventToAge">
+    <entry file="file://$PROJECT_DIR$/bin/pyPhewasLookup">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="930">
-          <caret line="62" column="43" selection-start-line="62" selection-start-column="43" selection-end-line="62" selection-end-column="43" />
+        <state relative-caret-position="374">
+          <caret line="64" column="73" selection-start-line="64" selection-start-column="5" selection-end-line="64" selection-end-column="73" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/pyPhewasModel">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="374">
+          <caret line="64" column="48" selection-start-line="64" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="141">
+          <caret line="493" column="23" selection-start-line="493" selection-start-column="23" selection-end-line="493" selection-end-column="24" />
           <folding>
-            <element signature="e#23#60#0" expanded="true" />
+            <element signature="e#0#31#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="122">
-          <caret line="736" column="0" selection-start-line="736" selection-start-column="0" selection-end-line="736" selection-end-column="0" />
+        <state relative-caret-position="437">
+          <caret line="743" column="37" selection-start-line="743" selection-start-column="27" selection-end-line="743" selection-end-column="37" />
           <folding>
             <element signature="e#136#154#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
+    <entry file="file://$PROJECT_DIR$/bin/pyPhewasPlot">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="171">
-          <caret line="337" column="8" selection-start-line="337" selection-start-column="4" selection-end-line="337" selection-end-column="8" />
+        <state relative-caret-position="122">
+          <caret line="69" column="29" selection-start-line="69" selection-start-column="29" selection-end-line="69" selection-end-column="29" />
           <folding>
-            <element signature="e#0#31#0" expanded="true" />
+            <element signature="e#23#60#0" expanded="true" />
           </folding>
         </state>
       </provider>

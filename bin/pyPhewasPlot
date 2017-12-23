@@ -54,6 +54,15 @@ regressions = pd.read_csv(ff)
 
 y = regressions['"-log(p)"']
 
+try:
+	regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
+	regressions.uplim = regressions.uplim.str.replace(']', '')
+	regressions.lowlim = regressions.lowlim.str.replace('[', '')
+	yb = regressions[['beta', 'lowlim', 'uplim']].as_matrix()
+	yb = y.astype(float)
+except:
+	print 'no corr'
+
 # Check if an imbalanace will be used
 if show_imbalance:
 	imbalances = get_imbalances(regressions)
@@ -71,9 +80,13 @@ elif thresh_type == 1:
 
 if outfile != '':
 	save = path + outfile
+	saveb = path + outfile.replace('.pdf','_beta.pdf')
 	print("Saving plot to %s" % (save))
 else:
 	save = ''
+	saveb=''
 	print("Displaying plot.")
 
+
 plot_data_points(y, -math.log10(thresh), save, imbalances)
+plot_odds_ratio(yb, y, thresh, save='')
