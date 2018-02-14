@@ -1,15 +1,15 @@
-# from collections import Counter
+from collections import Counter
 import getopt
 import math
-# import matplotlib.pyplot as plt
-# from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import os
 import pandas as pd
 import scipy.stats
 import statsmodels.discrete.discrete_model as sm
 import statsmodels.formula.api as smf
-# import matplotlib.lines as mlines
+import matplotlib.lines as mlines
 
 import sys
 

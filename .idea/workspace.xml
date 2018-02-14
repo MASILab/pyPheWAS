@@ -5,12 +5,7 @@
       <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/CTONS_3.0/GetMetrics.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/CTONS_3.0/GetMetrics.m" />
       <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/ON_CT_register_v2.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/ON_CT_register_v2.m" />
       <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_DNN_folds.py" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_DNN_folds.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/MANIFEST" afterPath="$PROJECT_DIR$/MANIFEST" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bin/censorData" afterPath="$PROJECT_DIR$/bin/censorData" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" afterPath="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" afterPath="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/rt_censor_diagnosis.py" afterPath="$PROJECT_DIR$/pyPheWAS/rt_censor_diagnosis.py" />
     </list>
     <ignored path="pyPheWAS.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -38,16 +33,6 @@
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="print_model.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/print_model.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-180">
-              <caret line="13" column="52" selection-start-line="13" selection-start-column="52" selection-end-line="13" selection-end-column="52" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -108,11 +93,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="rt_censor_diagnosis.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="rt_censor_diagnosis.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pyPheWAS/rt_censor_diagnosis.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="360">
-              <caret line="24" column="73" selection-start-line="24" selection-start-column="73" selection-end-line="24" selection-end-column="73" />
+            <state relative-caret-position="165">
+              <caret line="11" column="62" selection-start-line="11" selection-start-column="62" selection-end-line="11" selection-end-column="62" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="pyPhewasCorev2.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="180">
+              <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -183,10 +178,10 @@
         <option value="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" />
         <option value="$USER_HOME$/masimatlab/trunk/users/chagans/DNN/print_model.py" />
         <option value="$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_DNN_folds.py" />
-        <option value="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" />
         <option value="$PROJECT_DIR$/pyPheWAS/censor_diagnosis.py" />
         <option value="$PROJECT_DIR$/bin/censorData" />
         <option value="$PROJECT_DIR$/pyPheWAS/rt_censor_diagnosis.py" />
+        <option value="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" />
       </list>
     </option>
   </component>
@@ -878,16 +873,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="315">
-          <caret line="567" column="26" selection-start-line="567" selection-start-column="26" selection-end-line="567" selection-end-column="26" />
-          <folding>
-            <element signature="e#34#47#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_DNN_folds.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-154">
@@ -928,8 +913,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pyPheWAS/rt_censor_diagnosis.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="24" column="73" selection-start-line="24" selection-start-column="73" selection-end-line="24" selection-end-column="73" />
+        <state relative-caret-position="165">
+          <caret line="11" column="62" selection-start-line="11" selection-start-column="62" selection-end-line="11" selection-end-column="62" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
           <folding />
         </state>
       </provider>
