@@ -1,5 +1,4 @@
-
-def censor_diagnosis(genotype_file,phenotype_file,final_pfile, field ='na',start_time=float('nan'),end_time=float('nan')):
+def censor_diagnosis(genotype_file,phenotype_file,final_pfile, final_gfile,field ='na',start_time=float('nan'),end_time=float('nan')):
         import pandas as pd
         import numpy as np
         genotypes = pd.read_csv(genotype_file)
@@ -24,7 +23,10 @@ def censor_diagnosis(genotype_file,phenotype_file,final_pfile, field ='na',start
                 else:
                         final = mg[(mg['diff']>=start_time)&(mg['diff']<=end_time)|(np.isnan(mg['diff']))]
         final[['id','icd9','AgeAtICD']].to_csv(final_pfile)
-
+        final_gp = final.drop_duplicates('id')
+        del final_gp['icd9']
+        del final_gp['AgeAtICD']
+        final_gp.to_csv(final_gfile)
         
 
 
