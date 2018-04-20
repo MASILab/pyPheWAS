@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+from pyPheWAS.pyPhewasCorev2 import *
+import sys, os
+import pandas as pd
+
+optargs = {
+	'--phenotype': 'phenotype_file',
+	'--groupout':'final_gfile',
+	'--path':'path',
+	'--code':'code',
+	'--code_freq':'cf'
+}
+
+args = sys.argv[1:]
+
+# Define any default arguments
+kwargs = {'path':'.'}
+
+kwargs = process_args(kwargs, optargs, *args)
+
+# Change path to absolute path
+kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
+
+print(kwargs)
+
+# Assert that valid files were given
+assert kwargs['phenotype_file'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotypes'])
+
+# Assert that the output file is valid
+assert kwargs['final_gfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenout'])
+
+# Print Arguments
+display_kwargs(kwargs)
+
+# Fill paths
+kwargs['phenotype_file'] = os.sep.join([kwargs['path'], kwargs['phenotype_file']])
+kwargs['final_gfile'] = os.sep.join([kwargs['path'], kwargs['final_gfile']])
+
+# Make precision an integer
+kwargs['cf'] = int(kwargs['cf'])
+
+# Make all arguments local variables
+locals().update(kwargs)
+
+phen = pd.read_csv(phenotype_file)
+phen['gen']=phen['icd9'].str.contains(code)
+phen['gen']=phen['gen']*1
+phen['genc']=phen.groupby('id')['gen'].transform('sum')
+phen['genotype']=(phen['genc']>cf)*1
+phen[['id','genotype']].drop_duplicates().to_csv(final_gfile,index=False)
