@@ -4,6 +4,7 @@ setup.cfg
 setup.py
 bin/censorData
 bin/convertEventToAge
+bin/createGenotypeFile
 bin/generateGroups
 bin/maximizeControls
 bin/pyPhewasLookup

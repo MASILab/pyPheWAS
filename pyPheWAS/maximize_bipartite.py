@@ -66,8 +66,8 @@ def output_matches(path, outputfile, data, all_used, success, matched):
 
 def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype',goal=1):
     # Reformat arguments into Python format
-    keys = keys.split('+')
-    deltas = deltas.split(',')
+    keys = keys.replace(" ","").split('+')
+    deltas = deltas.replace(" ","").split(',')
     deltas = [CATEGORICAL_DATA if x == '' else float(x) for x in deltas]
 
     # Read data from the provided input file

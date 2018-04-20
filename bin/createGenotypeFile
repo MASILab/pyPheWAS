@@ -41,9 +41,9 @@ kwargs['cf'] = int(kwargs['cf'])
 
 # Make all arguments local variables
 locals().update(kwargs)
-
+code = code.replace(" ","").split(',')
 phen = pd.read_csv(phenotype_file)
-phen['gen']=phen['icd9'].str.contains(code)
+phen['gen']=phen['icd9'].str.match('|'.join(code))
 phen['gen']=phen['gen']*1
 phen['genc']=phen.groupby('id')['gen'].transform('sum')
 phen['genotype']=(phen['genc']>cf)*1
