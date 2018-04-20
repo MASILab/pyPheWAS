@@ -68,7 +68,7 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
     # Reformat arguments into Python format
     keys = keys.split('+')
     deltas = deltas.split(',')
-    deltas = [CATEGORICAL_DATA if x == '' else int(x) for x in deltas]
+    deltas = [CATEGORICAL_DATA if x == '' else float(x) for x in deltas]
 
     # Read data from the provided input file
     data = pd.read_csv(path + inputfile)

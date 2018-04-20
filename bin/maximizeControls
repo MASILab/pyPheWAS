@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from pyPheWAS.pyPhewasCorev2 import process_args
-from pyPheWAS.maximize_control_matching import *
+from pyPheWAS.maximize_bipartite import *
 import sys, os
 
 optargs = {
@@ -9,7 +9,7 @@ optargs = {
 	'--output':'outputfile',
 	'--deltas':'deltas',
 	'--keys':'keys',
-	'--cond':'condition',
+	'--condition':'condition',
 	'--goal' : 'goal',
 	'--path' : 'path'
 }

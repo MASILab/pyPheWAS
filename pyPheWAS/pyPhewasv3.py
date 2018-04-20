@@ -6,15 +6,15 @@
 # v2.0
 
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
+# import matplotlib.pyplot as plt
+# from matplotlib.backends.backend_pdf import PdfPages
 from collections import Counter
 import time, math, scipy.stats
 import pandas as pd
-from matplotlib import rcParams
+# from matplotlib import rcParams
 import os
 import statsmodels.formula.api as smf
-import matplotlib.lines as mlines
+# import matplotlib.lines as mlines
 import statsmodels.discrete.discrete_model as sm
 
 """

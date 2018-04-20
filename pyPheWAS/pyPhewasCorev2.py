@@ -203,8 +203,10 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 			conf = logreg.conf_int()
 			od = [-math.log10(p), p, logreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
 		elif lr == 1:
-			logit = sm.Logit(data['genotype'], data[['y', 'MaxAgeAtVisit', 'sex']])
-			lf = logit.fit_regularized(method='l1', alpha=1, disp=0, trim_mode='size', qc_verbose=0)
+			f1 = f.split(' ~ ')
+			f1[1]=f1[1].replace(" ", "")
+			logit = sm.Logit(data[f1[0].strip()], data[f1[1].split('+')])
+			lf = logit.fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
 			p = lf.pvalues.y
 			odds = 0
 			conf = lf.conf_int()
@@ -245,7 +247,7 @@ def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): 
 		phen_vector3 = fm[2][:, index]
 		if np.where(phen_vector1 > 0)[0].shape[0] > 5:
 			if index in inds:
-				# print index
+				print get_phewas_info(index)
 				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=1,
 										   response=response,
 										   phen_vector3=phen_vector3)
