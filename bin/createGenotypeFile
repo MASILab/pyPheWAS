@@ -46,5 +46,5 @@ phen = pd.read_csv(phenotype_file)
 phen['gen']=phen['icd9'].str.match('|'.join(code))
 phen['gen']=phen['gen']*1
 phen['genc']=phen.groupby('id')['gen'].transform('sum')
-phen['genotype']=(phen['genc']>cf)*1
+phen['genotype']=(phen['genc']>=cf)*1
 phen[['id','genotype']].drop_duplicates().to_csv(final_gfile,index=False)
