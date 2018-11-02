@@ -39,8 +39,8 @@
       <file leaf-file-name="pyPhewasCorev2.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="195">
-              <caret line="13" column="31" selection-start-line="13" selection-start-column="31" selection-end-line="13" selection-end-column="31" />
+            <state relative-caret-position="134">
+              <caret line="250" column="36" selection-start-line="250" selection-start-column="0" selection-end-line="251" selection-end-column="0" />
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
               </folding>
@@ -48,11 +48,33 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="pyPhewasModel" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/bin/pyPhewasModel">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="324">
+              <caret line="64" column="24" selection-start-line="64" selection-start-column="14" selection-end-line="64" selection-end-column="24" />
+              <folding>
+                <element signature="e#23#60#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="setup.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/setup.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="360">
+              <caret line="24" column="0" selection-start-line="24" selection-start-column="0" selection-end-line="33" selection-end-column="1" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="pyPhewasLookup" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bin/pyPhewasLookup">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="941">
-              <caret line="72" column="0" selection-start-line="55" selection-start-column="0" selection-end-line="72" selection-end-column="0" />
+            <state relative-caret-position="324">
+              <caret line="65" column="17" selection-start-line="65" selection-start-column="0" selection-end-line="66" selection-end-column="0" />
               <folding>
                 <element signature="e#23#60#0" expanded="true" />
               </folding>
@@ -113,8 +135,8 @@
   </component>
   <component name="ProjectFrameBounds">
     <option name="y" value="23" />
-    <option name="width" value="1280" />
-    <option name="height" value="701" />
+    <option name="width" value="1024" />
+    <option name="height" value="669" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <OptionsSetting value="true" id="Add" />
@@ -350,7 +372,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1280" height="701" extended-state="6" />
+    <frame x="0" y="23" width="1024" height="669" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20625" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
@@ -390,13 +412,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/bin/convertEventToAge">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="885">
-          <caret line="62" column="0" selection-start-line="62" selection-start-column="0" selection-end-line="62" selection-end-column="44" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py" />
     <entry file="file://$USER_HOME$/Downloads/Archive/fastSearch.py" />
     <entry file="file://$USER_HOME$/Downloads/Archive/mySearchPubMed.py" />
@@ -527,20 +542,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bin/pyPhewasModel">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="566">
-          <caret line="64" column="81" selection-start-line="64" selection-start-column="71" selection-end-line="64" selection-end-column="81" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_relearn_both.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="4365">
           <caret line="314" column="0" selection-start-line="314" selection-start-column="0" selection-end-line="314" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#9#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -548,27 +553,14 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="165">
           <caret line="47" column="36" selection-start-line="47" selection-start-column="36" selection-end-line="47" selection-end-column="36" />
-          <folding>
-            <element signature="e#0#37#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/PHOTON_phedas/run_nature.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2370">
-          <caret line="158" column="45" selection-start-line="158" selection-start-column="31" selection-end-line="158" selection-end-column="45" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/PHOTON_phedas/run_nature.py" />
     <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/EMR_DNN.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="15">
           <caret line="137" column="0" selection-start-line="137" selection-start-column="0" selection-end-line="138" selection-end-column="42" />
-          <folding>
-            <element signature="e#0#9#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -576,17 +568,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="165">
           <caret line="11" column="27" selection-start-line="11" selection-start-column="27" selection-end-line="11" selection-end-column="27" />
-          <folding>
-            <element signature="e#23#60#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/setup.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="510">
-          <caret line="34" column="0" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -594,14 +575,39 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-10909">
           <caret line="27" column="7" selection-start-line="27" selection-start-column="7" selection-end-line="27" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/docs/index.rst">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-184">
+          <caret line="12" column="31" selection-start-line="5" selection-start-column="23" selection-end-line="12" selection-end-column="31" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/bin/pyPhewasLookup">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="941">
-          <caret line="72" column="0" selection-start-line="55" selection-start-column="0" selection-end-line="72" selection-end-column="0" />
+        <state relative-caret-position="324">
+          <caret line="65" column="17" selection-start-line="65" selection-start-column="0" selection-end-line="66" selection-end-column="0" />
+          <folding>
+            <element signature="e#23#60#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="24" column="0" selection-start-line="24" selection-start-column="0" selection-end-line="33" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/pyPhewasModel">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="324">
+          <caret line="64" column="24" selection-start-line="64" selection-start-column="14" selection-end-line="64" selection-end-column="24" />
           <folding>
             <element signature="e#23#60#0" expanded="true" />
           </folding>
@@ -610,8 +616,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="13" column="31" selection-start-line="13" selection-start-column="31" selection-end-line="13" selection-end-column="31" />
+        <state relative-caret-position="134">
+          <caret line="250" column="36" selection-start-line="250" selection-start-column="0" selection-end-line="251" selection-end-column="0" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
           </folding>

@@ -10,8 +10,7 @@ import scipy.stats
 import statsmodels.discrete.discrete_model as sm
 import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
-import warnings
-warnings.filterwarnings("ignore")
+
 
 import sys
 
@@ -249,7 +248,7 @@ def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): 
 		phen_vector3 = fm[2][:, index]
 		if np.where(phen_vector1 > 0)[0].shape[0] > 5:
 			if index in inds:
-				print get_phewas_info(index)
+				# print get_phewas_info(index)
 				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=1,
 										   response=response,
 										   phen_vector3=phen_vector3)
