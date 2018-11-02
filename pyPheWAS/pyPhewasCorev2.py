@@ -10,6 +10,8 @@ import scipy.stats
 import statsmodels.discrete.discrete_model as sm
 import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
+import warnings
+warnings.filterwarnings("ignore")
 
 import sys
 
