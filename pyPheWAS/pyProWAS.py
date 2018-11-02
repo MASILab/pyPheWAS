@@ -428,6 +428,106 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
     # Clear the plot in case another plot is to be made.
     plt.clf()
 
+def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
+    """
+	Plots the data with a variety of different options.
+
+	This function is the primary plotting function for pyPhewas.
+
+	:param x: an array of indices
+	:param y: an array of p-values
+	:param thresh: the threshold power
+	:param save: the output file to save to (if empty, display the plot)
+	:param imbalances: a list of imbalances
+	:type x: numpy array
+	:type y: numpy array
+	:type thresh: float
+	:type save: str
+	:type imbalances: numpy array
+
+	"""
+
+    # Determine whether or not to show the imbalance.
+    fig = plt.figure()
+    ax = plt.subplot(111)
+    show_imbalance = imbalances.size != 0
+
+    # Sort the phewas codes by category.
+    c = codes.loc[prowas_codes['index']]
+    c = c.reset_index()
+    # idx = c.sort_values(by='category').index
+    idx = p.sort_values().index
+
+    # Get the position of the lines and of the labels
+    # linepos = get_x_label_positions(c['category'].tolist(), False)
+    # x_label_positions = get_x_label_positions(c['category'].tolist(), True)
+    # x_labels = c.sort_values('category').category_string.drop_duplicates().tolist()
+
+    # Plot each of the points, if necessary, label the points.
+    e = 1
+    artists = []
+    frame1 = plt.gca()
+    # ax.xticks(x_label_positions, x_labels, rotation=70, fontsize=10)
+    plt.xlabel('Log odds ratio')
+
+    # if thresh_type == 0:
+    #     thresh = thresh0
+    # elif thresh_type == 1:
+    #     thresh = thresh1
+    # else:
+    #     thresh = thresh2
+
+    # plt.xlim(xmin=min(y[p>thresh,1]), xmax=max(y[p>thresh,2]))
+
+    for i in idx:
+        if p[i] > thresh:
+            e += 15
+            if show_imbalance:  # and imbalances[i]>0:
+                if imbalances[i] > 0:
+                    artists.append(ax.text(y[i][0], e, c['CCS Label'][i], rotation=0, ha='left', fontsize=6))
+                else:
+                    artists.append(ax.text(y[i][0], e, c['CCS Label'][i], rotation=0, ha='right', fontsize=6))
+            elif not show_imbalance:
+                artists.append(ax.text(e, y[i][0], c['CCS Label'][i], rotation=40, va='bottom'))
+        else:
+            e += 0
+
+        if show_imbalance:
+            if p[i] > thresh:
+                ax.plot(y[i][0], e, 'o', color=imbalance_colors[imbalances[i]], fillstyle='full',
+                        markeredgewidth=0.0)
+                ax.plot([y[i, 1], y[i, 2]], [e, e], color=imbalance_colors[imbalances[i]])
+            # else:
+            # ax.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
+            #	ax.plot(e,-y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
+        else:
+            ax.plot(e, y[i], 'o', color=imbalance_colors[imbalances[i]], fillstyle='full',
+                    markeredgewidth=0.0)
+    # line1 = []
+    # box = ax.get_position()
+    # ax.set_position([box.x0, box.y0 + box.height*0.05, box.width, box.height*0.95])
+    # for lab in plot_colors.keys():
+    #     line1.append(
+    #         mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
+    # artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.15), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
+    ax.axvline(x=0, color='black')
+    frame1.axes.get_yaxis().set_visible(False)
+
+    # If the imbalance is to be shown, draw lines to show the categories.
+    # if show_imbalance:
+    # 	for pos in linepos:
+    # 		ax.axvline(x=pos, color='black', ls='dotted')
+    # Determine the type of output desired (saved to a plot or displayed on the screen)
+    if save:
+        pdf = PdfPages(save)
+        pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
+        pdf.close()
+    else:
+        ax.subplots_adjust(left=0.05, right=0.85)
+        ax.show()
+
+    # Clear the plot in case another plot is to be made.
+    plt.clf()
 
 def process_args(kwargs, optargs, *args):
     clean = np.vectorize(lambda x: x[x.rfind('-') + 1:] + '=')

@@ -2,10 +2,82 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" readonly="true" id="12fdf54f-2890-4623-97ce-7bf58ca89403" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_DNN_folds.py" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_DNN_folds.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="NEW" beforePath="" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/get_onevall_gps.py" />
+      <change type="NEW" beforePath="" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/parse_data_group.py" />
+      <change type="NEW" beforePath="" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/scholar.py" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/.buildinfo" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/.doctrees/api.doctree" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/.doctrees/environment.pickle" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/.doctrees/index.doctree" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/.doctrees/tutorial.doctree" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/.doctrees/tutorial/agematch.doctree" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/.doctrees/tutorial/analysis.doctree" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/.doctrees/tutorial/basic.doctree" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/.doctrees/tutorial/other.doctree" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/.doctrees/tutorial/tutorial.doctree" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_modules/index.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_modules/pyPheWAS/pyPhewasv2.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_sources/api.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_sources/index.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_sources/tutorial.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_sources/tutorial/agematch.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_sources/tutorial/analysis.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_sources/tutorial/basic.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_sources/tutorial/other.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_sources/tutorial/tutorial.txt" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/ajax-loader.gif" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/alabaster.css" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/basic.css" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/comment-bright.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/comment-close.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/comment.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/doctools.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/down-pressed.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/down.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/file.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/jquery-1.11.1.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/jquery.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/minus.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/plus.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/pygments.css" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/searchtools.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/underscore-1.3.1.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/underscore.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/up-pressed.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/up.png" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/_static/websupport.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/api.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/genindex.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/index.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/objects.inv" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/py-modindex.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/search.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/searchindex.js" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/tutorial.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/tutorial/agematch.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/tutorial/analysis.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/tutorial/basic.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/tutorial/other.html" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/docs/docs/tutorial/tutorial.html" afterPath="" />
       <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/CTONS_3.0/GetMetrics.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/CTONS_3.0/GetMetrics.m" />
       <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/ON_CT_register_v2.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/CTON_segmentation/ON_CT_register_v2.m" />
+      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/DNN/get_plots.py" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/DNN/get_plots.py" />
+      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/get_bootstrapped_scores.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/get_bootstrapped_scores.m" />
+      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_classification_bootstrap.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_classification_bootstrap.m" />
+      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_classificationv4.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_classificationv4.m" />
+      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_classificationv5.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_classificationv5.m" />
+      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_fixedal.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_fixedal.m" />
+      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_fixedal2.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_fixedal2.m" />
+      <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/run_bycensordate.py" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/run_bycensordate.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/pyPheWAS.iml" afterPath="$PROJECT_DIR$/.idea/pyPheWAS.iml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bin/.idea/workspace.xml" afterPath="$PROJECT_DIR$/bin/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/bin/pyPhewasLookup" afterPath="$PROJECT_DIR$/bin/pyPhewasLookup" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/index.rst" afterPath="$PROJECT_DIR$/docs/index.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/docs/tutorial/researchtools.rst" afterPath="$PROJECT_DIR$/docs/tutorial/researchtools.rst" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/maximize_bipartite.py" afterPath="$PROJECT_DIR$/pyPheWAS/maximize_bipartite.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" afterPath="$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/pyProWAS.py" afterPath="$PROJECT_DIR$/pyPheWAS/pyProWAS.py" />
     </list>
     <ignored path="pyPheWAS.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -25,37 +97,25 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="EMR_DNN.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/EMR_DNN.py">
+      <file leaf-file-name="pyPhewasCorev2.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1725">
-              <caret line="137" column="0" selection-start-line="137" selection-start-column="0" selection-end-line="138" selection-end-column="42" />
+            <state relative-caret-position="6270">
+              <caret line="418" column="53" selection-start-line="418" selection-start-column="53" selection-end-line="418" selection-end-column="53" />
               <folding>
-                <element signature="e#0#9#0" expanded="true" />
+                <element signature="e#0#31#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="CT_DNN_folds.py" pinned="false" current-in-tab="true">
-        <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_DNN_folds.py">
+      <file leaf-file-name="pyPhewasLookup" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/bin/pyPhewasLookup">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="15">
-              <caret line="47" column="36" selection-start-line="47" selection-start-column="36" selection-end-line="47" selection-end-column="36" />
+            <state relative-caret-position="300">
+              <caret line="20" column="30" selection-start-line="20" selection-start-column="30" selection-end-line="20" selection-end-column="30" />
               <folding>
-                <element signature="e#0#37#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="CT_relearn_both.py" pinned="false" current-in-tab="false">
-        <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_relearn_both.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="219">
-              <caret line="314" column="0" selection-start-line="314" selection-start-column="0" selection-end-line="314" selection-end-column="0" />
-              <folding>
-                <element signature="e#0#9#0" expanded="true" />
+                <element signature="e#23#60#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -107,14 +167,15 @@
         <option value="$PROJECT_DIR$/pyPheWAS/rt_censor_diagnosis.py" />
         <option value="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" />
         <option value="$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_relearn_both.py" />
+        <option value="$USER_HOME$/Dropbox/PHOTON_phedas/run_nature.py" />
+        <option value="$PROJECT_DIR$/bin/pyPhewasLookup" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="22" />
     <option name="y" value="23" />
-    <option name="width" value="803" />
-    <option name="height" value="719" />
+    <option name="width" value="1280" />
+    <option name="height" value="701" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <OptionsSetting value="true" id="Add" />
@@ -141,34 +202,17 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="ProjectPane">
-        <subPane>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="pyPheWAS" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="pyPheWAS" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="chagans" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-        </subPane>
-      </pane>
       <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane />
+      </pane>
       <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
-    <property name="last_opened_file_path" value="$USER_HOME$/masimatlab/trunk/users/bermuc1" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/bin/pyPhewasLookup" />
   </component>
   <component name="RunManager" selected="Python.pyPhewasv2">
     <configuration default="false" name="pyPhewasv2" type="PythonConfigurationType" factoryName="Python" temporary="true">
@@ -367,10 +411,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="22" y="23" width="803" height="719" extended-state="0" />
+    <frame x="0" y="23" width="1280" height="701" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.20672478" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20625" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32852563" sideWeight="0.5" order="0" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -407,20 +451,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8100">
-          <caret line="540" column="0" selection-start-line="540" selection-start-column="0" selection-end-line="540" selection-end-column="34" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/bin/convertEventToAge">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="885">
@@ -428,34 +458,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1620">
-          <caret line="108" column="222" selection-start-line="108" selection-start-column="209" selection-end-line="108" selection-end-column="222" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/fastSearch.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/mySearchPubMed.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py" />
+    <entry file="file://$USER_HOME$/Downloads/Archive/fastSearch.py" />
+    <entry file="file://$USER_HOME$/Downloads/Archive/mySearchPubMed.py" />
+    <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py" />
     <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="11115">
@@ -470,13 +476,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/log_pub.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1215">
-          <caret line="81" column="58" selection-start-line="81" selection-start-column="58" selection-end-line="81" selection-end-column="58" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/log_pub.py" />
     <entry file="file://$PROJECT_DIR$/pyPheWAS/censor_diagnosis.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -484,20 +484,8 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="8" column="19" selection-start-line="8" selection-start-column="12" selection-end-line="8" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_ad_bag.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="465">
-          <caret line="31" column="51" selection-start-line="31" selection-start-column="51" selection-end-line="31" selection-end-column="51" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py" />
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_ad_bag.py" />
     <entry file="file://$PROJECT_DIR$/pyPheWAS/censor_diagnosis.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -512,13 +500,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_AD.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="480">
-          <caret line="32" column="78" selection-start-line="32" selection-start-column="78" selection-end-line="32" selection-end-column="78" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_AD.py" />
     <entry file="file://$USER_HOME$/Dropbox/PHOTON/run_cpt_codes.py" />
     <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/parse_data_mic.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -527,13 +509,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_noreg.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="10" column="3" selection-start-line="10" selection-start-column="3" selection-end-line="10" selection-end-column="3" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_noreg.py" />
     <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv3.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="9030">
@@ -548,13 +524,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/get_featurematrix.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1590">
-          <caret line="106" column="48" selection-start-line="106" selection-start-column="48" selection-end-line="106" selection-end-column="48" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/get_featurematrix.py" />
     <entry file="file://$PROJECT_DIR$/pyPheWAS/maximize_bipartite.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="450">
@@ -562,48 +532,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_fixed.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-53">
-          <caret line="59" column="0" selection-start-line="59" selection-start-column="0" selection-end-line="61" selection-end-column="46" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/fastSearch.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/updateSearchPubMed.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="142">
-          <caret line="19" column="29" selection-start-line="19" selection-start-column="29" selection-end-line="19" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Downloads/Archive/mySearchPubMed.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_bootstrap.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="14" column="77" selection-start-line="14" selection-start-column="21" selection-end-line="14" selection-end-column="77" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_fixed.py" />
+    <entry file="file://$USER_HOME$/Downloads/Archive/fastSearch.py" />
+    <entry file="file://$USER_HOME$/Downloads/Archive/updateSearchPubMed.py" />
+    <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py" />
+    <entry file="file://$USER_HOME$/Downloads/Archive/mySearchPubMed.py" />
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_bootstrap.py" />
     <entry file="file://$PROJECT_DIR$/bin/pyPhewasPlot">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="506">
@@ -611,27 +545,8 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bin/convertEventToAge">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="885">
-          <caret line="62" column="43" selection-start-line="62" selection-start-column="43" selection-end-line="62" selection-end-column="43" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_ad_bag.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1815">
-          <caret line="121" column="0" selection-start-line="121" selection-start-column="0" selection-end-line="121" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/pubmed_search.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-679">
-          <caret line="91" column="43" selection-start-line="91" selection-start-column="43" selection-end-line="91" selection-end-column="43" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_ad_bag.py" />
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/pubmed_search.py" />
     <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/get_plots.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="675">
@@ -639,34 +554,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_AD.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="416">
-          <caret line="175" column="0" selection-start-line="175" selection-start-column="0" selection-end-line="175" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/log_pub.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1065">
-          <caret line="25" column="22" selection-start-line="25" selection-start-column="22" selection-end-line="25" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/spline_age_AD.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="675">
-          <caret line="45" column="0" selection-start-line="45" selection-start-column="0" selection-end-line="45" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="10" column="31" selection-start-line="10" selection-start-column="31" selection-end-line="10" selection-end-column="31" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate_AD.py" />
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/log_pub.py" />
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/spline_age_AD.py" />
     <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/print_model.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-180">
@@ -674,38 +564,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1991">
-          <caret line="201" column="0" selection-start-line="201" selection-start-column="0" selection-end-line="202" selection-end-column="15" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="690">
-          <caret line="46" column="0" selection-start-line="46" selection-start-column="0" selection-end-line="46" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/bin/pyPhewasLookup">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="960">
-          <caret line="64" column="27" selection-start-line="64" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_bycdate.py" />
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py" />
     <entry file="file://$PROJECT_DIR$/pyPheWAS/rt_censor_diagnosis.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="165">
           <caret line="11" column="62" selection-start-line="11" selection-start-column="62" selection-end-line="11" selection-end-column="62" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="12" column="0" selection-start-line="12" selection-start-column="0" selection-end-line="12" selection-end-column="0" />
         </state>
       </provider>
     </entry>
@@ -716,23 +580,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/EMR_DNN.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1725">
-          <caret line="137" column="0" selection-start-line="137" selection-start-column="0" selection-end-line="138" selection-end-column="42" />
-          <folding>
-            <element signature="e#0#9#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_ted.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="15" column="84" selection-start-line="15" selection-start-column="84" selection-end-line="15" selection-end-column="84" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_ted.py" />
     <entry file="file://$PROJECT_DIR$/bin/censorData">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="566">
@@ -749,20 +597,86 @@
     </entry>
     <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_relearn_both.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="219">
+        <state relative-caret-position="4365">
           <caret line="314" column="0" selection-start-line="314" selection-start-column="0" selection-end-line="314" selection-end-column="0" />
           <folding>
-            <element signature="e#0#9#0" expanded="true" />
+            <element signature="e#0#9#0" expanded="false" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/CT_DNN_folds.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="15">
+        <state relative-caret-position="165">
           <caret line="47" column="36" selection-start-line="47" selection-start-column="36" selection-end-line="47" selection-end-column="36" />
           <folding>
-            <element signature="e#0#37#0" expanded="true" />
+            <element signature="e#0#37#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Dropbox/PHOTON_phedas/run_nature.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2370">
+          <caret line="158" column="45" selection-start-line="158" selection-start-column="31" selection-end-line="158" selection-end-column="45" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasv2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="27" column="7" selection-start-line="27" selection-start-column="7" selection-end-line="27" selection-end-column="7" />
+          <folding>
+            <element signature="e#136#154#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/EMR_DNN.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="137" column="0" selection-start-line="137" selection-start-column="0" selection-end-line="138" selection-end-column="42" />
+          <folding>
+            <element signature="e#0#9#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/convertEventToAge">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="11" column="27" selection-start-line="11" selection-start-column="27" selection-end-line="11" selection-end-column="27" />
+          <folding>
+            <element signature="e#23#60#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/setup.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="510">
+          <caret line="34" column="0" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="6270">
+          <caret line="418" column="53" selection-start-line="418" selection-start-column="53" selection-end-line="418" selection-end-column="53" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bin/pyPhewasLookup">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="300">
+          <caret line="20" column="30" selection-start-line="20" selection-start-column="30" selection-end-line="20" selection-end-column="30" />
+          <folding>
+            <element signature="e#23#60#0" expanded="true" />
           </folding>
         </state>
       </provider>

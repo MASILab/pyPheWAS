@@ -53,8 +53,9 @@ display_kwargs(kwargs)
 # Make all arguments local variables
 locals().update(kwargs)
 
-# Perform the Phewas code lookup
-
+"""
+Calculate feature matrix
+"""
 print("Retrieving phenotype data...")
 phenotypes = get_input(path, phenotypefile, reg_type)
 

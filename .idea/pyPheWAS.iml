@@ -9,6 +9,7 @@
     <orderEntry type="module" module-name="chagans" />
     <orderEntry type="module" module-name="Archive" />
     <orderEntry type="module" module-name="BLSA" />
+    <orderEntry type="module" module-name="BLSA" />
   </component>
   <component name="TestRunnerService">
     <option name="PROJECT_TEST_RUNNER" value="Unittests" />

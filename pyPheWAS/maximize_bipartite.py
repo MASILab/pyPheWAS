@@ -100,7 +100,6 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
             rem_ids = set(targets.index).difference(tid)
             targets=targets.ix[rem_ids]
             goal=goal-1
-
     else:
         cid = set()
         tid = set()

@@ -40,9 +40,9 @@ The options:
 .. note:: the outfile parameter is not required. If it is left off, the default output file will be "feature_matrix_[group file name]" So if "group.csv" is entered as the group file and the outfile parameter is not specified, the feature matrix will be placed in "feature_matrix_group.csv"
 
 The valid options for reg_type:
- * log: logarithmic regression
- * lin: linear regression
- * dur: linear regression on the duration of diseases
+ * log: for binary aggregates
+ * lin: for count aggregates
+ * dur: for duration aggregates
 
 A sample execution of *pyPhewasLookup*::
 
@@ -72,11 +72,11 @@ The valid regression types are listed above under *pyPhewasLookup*
 
 .. note:: the outfile parameter is not required. If it is left off, the default output file will be "regressions_[group file name]" So if "group.csv" is entered as the group file and the outfile parameter is not specified, the feature matrix will be placed in "regressions_group.csv"
 
-.. note:: If multiple covariates are to be used, it is necessary to specify them in one string with a *+* in between them. For example, if you would like to use "genotype" and "age" as covariates, the argument would be ``--covariates="genotype+age"``
+.. note:: If multiple covariates are to be used, it is necessary to specify them in one string with a *+* in between them. For example, if you would like to use "MaxAgeAtICD" and "SEX" as covariates, the argument would be ``--covariates="MaxAgeAtICD+SEX"``
 
 A sample execution of *pyPhewasModel*::
 
-		pyPhewasModel --path="/Users/me/Documents/EMRdata/" --feature_matrix="feature_matrix_group.csv" --group="group.csv" --covariates="genotype" --reg_type="log" --outfile="regressions_group.csv"
+		pyPhewasModel --path="/Users/me/Documents/EMRdata/" --feature_matrix="feature_matrix_group.csv" --group="group.csv" --covariates="MaxAgeAtICD" --reg_type="log" --outfile="regressions_group.csv"
 
 The "EMRdata" folder before the command:
 

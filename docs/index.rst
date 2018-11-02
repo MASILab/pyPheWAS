@@ -8,17 +8,10 @@ Welcome to pyPheWAS's documentation!
 
 The pyPhewas module is used to execute a variety of different analyses on large sets of patient phenotype data.
 
-Getting started::
-	
-	from pyPhewas import Phewas # imports the Phewas object
-	# define phenotype file, genotype file, or any other desired options
-	p = Phewas(phenotypes, genotypes)
-	p.run_lin() # generates a linear regression for the given data
-
 Features
 --------
-
-* Run linear/logarithmic regrssions on patient data
+* Data cleaning and preparation
+* Run logarithmic regressions on patient data
 * Plot results
 
 Installation
@@ -37,7 +30,9 @@ Online
 Support
 -------
 
-If you are having issues, please let us know!
+If you are having issues, please let us know! Email me at:
+
+firstname.lastname@vanderbilt.edu, where firstname=shikha and lastname=chaganti
 
 License
 -------

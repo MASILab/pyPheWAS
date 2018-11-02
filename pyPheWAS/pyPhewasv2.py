@@ -6,15 +6,17 @@
 # v2.0
 
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
+# import matplotlib.pyplot as plt
+# from matplotlib.backends.backend_pdf import PdfPages
+# from matplotlib import rcParams
+# import matplotlib.lines as mlines
+
 from collections import Counter
 import time, math, scipy.stats
 import pandas as pd
-from matplotlib import rcParams
+
 import os
 import statsmodels.formula.api as smf
-import matplotlib.lines as mlines
 import statsmodels.discrete.discrete_model as sm
 
 """
@@ -67,7 +69,9 @@ def get_input(path, filename,reg_type):  # diff -done - add duration
     phenotypes['count'] = 0
     phenotypes['count'] = phenotypes.groupby(['id', 'phewas_code'])['count'].transform('count')
     phenotypes['MaxAgeAtICD'] = 0
-    phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD9'].transform('max')
+    phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'icd9'])['AgeAtICD9'].transform('max')
+    phenotypes['MaxAgeAtPhe'] = 0
+    phenotypes['MaxAgeAtPhe'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD9'].transform('max')
     phenotypes['duration'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD9'].transform('max') - \
                              phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD9'].transform('min') + 1
     phenotypes['lor'] = phenotypes.groupby('id')['AgeAtICD9'].transform('max') - \
@@ -90,6 +94,23 @@ def get_phewas_info(p_index):  # same
 
     p_name = corresponding.iloc[0].phewas_string
     p_rollup = ','.join(codes[codes.phewas_code == p_code].icd9.tolist())
+    return [p_code, p_name, p_rollup]
+
+def get_icd_info(i_index):  # same
+    """
+	Returns all of the info of the phewas code at the given index.
+
+	:param p_index: The index of the desired phewas code
+	:type p_index: int
+
+	:returns: A list including the code, the name, and the rollup of the phewas code. The rollup is a list of all of the ICD-9 codes that are grouped into this phewas code.
+	:rtype: list of strings
+	"""
+    p_code = icd_codes.loc[i_index].icd9
+    corresponding = codes[codes.icd9 == p_code]
+
+    p_name = corresponding.iloc[0].icd9_string
+    p_rollup = ','.join(codes[codes.icd9 == p_code].icd9.tolist())
     return [p_code, p_name, p_rollup]
 
 
@@ -155,14 +176,14 @@ def generate_feature_matrix(genotypes, phenotypes, reg_type,phewas_cov=''):  # d
     count = 0
     for i in genotypes['id']:
         if reg_type == 0:
-            temp = pd.DataFrame(phenotypes[phenotypes['id'] == i][['phewas_code', 'MaxAgeAtICD','count']]).drop_duplicates()
+            temp = pd.DataFrame(phenotypes[phenotypes['id'] == i][['phewas_code', 'MaxAgeAtPhe','count']]).drop_duplicates()
             match = phewas_codes['phewas_code'].isin(list(phenotypes[phenotypes['id'] == i]['phewas_code']))
             cts = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['count']
             cts[np.isnan(cts)] = 0
             match = (match)&(cts>0)
             feature_matrix[0][count, match[match == True].index] = 1
 
-            age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+            age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtPhe']
             #assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
             age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeBeforeDx']
             feature_matrix[1][count, :] = age
@@ -173,13 +194,13 @@ def generate_feature_matrix(genotypes, phenotypes, reg_type,phewas_cov=''):  # d
         else:
             if reg_type == 1:
                 temp = pd.DataFrame(
-                    phenotypes[phenotypes['id'] == i][['phewas_code', 'MaxAgeAtICD', 'count','lor']]).drop_duplicates()
+                    phenotypes[phenotypes['id'] == i][['phewas_code', 'MaxAgeAtPhe', 'count','lor']]).drop_duplicates()
                 cts = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['count']
                 cts[np.isnan(cts)] = 0
-                if temp.empty!=1:
-                    cts=cts/temp['lor'].iloc[0]
+                # if temp.empty!=1:
+                #     cts=cts/temp['lor'].iloc[0]
                 feature_matrix[0][count, :] = cts
-                age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+                age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtPhe']
                 #assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
                 age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeBeforeDx']
                 feature_matrix[1][count, :] = age
@@ -188,19 +209,86 @@ def generate_feature_matrix(genotypes, phenotypes, reg_type,phewas_cov=''):  # d
                         phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
             elif reg_type == 2:
                 temp = pd.DataFrame(
-                    phenotypes[phenotypes['id'] == i][['phewas_code', 'MaxAgeAtICD', 'duration','lor']]).drop_duplicates()
+                    phenotypes[phenotypes['id'] == i][['phewas_code', 'MaxAgeAtPhe', 'duration','lor']]).drop_duplicates()
                 dura = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['duration']
                 dura[np.isnan(dura)] = 0
-                if temp.empty!=1:
-                    dura=dura/temp['lor'].iloc[0]
+                # if temp.empty!=1:
+                #     dura=dura/temp['lor'].iloc[0]
                 feature_matrix[0][count, :] = dura
-                age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+                age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtPhe']
                 #assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
                 age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeBeforeDx']
                 feature_matrix[1][count, :] = age
                 if phewas_cov:
                     feature_matrix[2][count, :] = int(
                         phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
+
+        count += 1
+    return feature_matrix
+
+def generate_icdfeature_matrix(genotypes, phenotypes, reg_type,phewas_cov=''):  # diff - done
+    """
+	Generates the feature matrix that will be used to run the regressions.
+
+	:param genotypes:
+	:param phenotypes:
+	:type genotypes:
+	:type phenotypes:
+
+	:returns:
+	:rtype:
+
+	"""
+    feature_matrix = np.zeros((3, genotypes.shape[0], icd_codes.shape[0]), dtype=float)
+    count = 0
+    for i in genotypes['id']:
+        if reg_type == 0:
+            temp = pd.DataFrame(phenotypes[phenotypes['id'] == i][['icd9', 'MaxAgeAtICD','count']]).drop_duplicates()
+            match = icd_codes['icd9'].isin(list(phenotypes[phenotypes['id'] == i]['icd9']))
+            cts = pd.merge(icd_codes, temp, on='icd9', how='left')['count']
+            cts[np.isnan(cts)] = 0
+            match = (match)&(cts>0)
+            feature_matrix[0][count, match[match == True].index] = 1
+
+            age = pd.merge(icd_codes, temp, on='icd9', how='left')['MaxAgeAtICD']
+            #assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
+            age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeBeforeDx']
+            feature_matrix[1][count, :] = age
+            if phewas_cov:
+                feature_matrix[2][count, :] = int(phewas_cov in list(phenotypes[phenotypes['id'] == i]['icd9']))
+
+
+        else:
+            if reg_type == 1:
+                temp = pd.DataFrame(
+                    phenotypes[phenotypes['id'] == i][['icd9', 'MaxAgeAtICD', 'count','lor']]).drop_duplicates()
+                cts = pd.merge(icd_codes, temp, on='icd9', how='left')['count']
+                cts[np.isnan(cts)] = 0
+                # if temp.empty!=1:
+                #     cts=cts/temp['lor'].iloc[0]
+                feature_matrix[0][count, :] = cts
+                age = pd.merge(icd_codes, temp, on='icd9', how='left')['MaxAgeAtICD']
+                #assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
+                age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeBeforeDx']
+                feature_matrix[1][count, :] = age
+                if phewas_cov:
+                    feature_matrix[2][count, :] = int(
+                        phewas_cov in list(phenotypes[phenotypes['id'] == i]['icd9']))
+            elif reg_type == 2:
+                temp = pd.DataFrame(
+                    phenotypes[phenotypes['id'] == i][['icd9', 'MaxAgeAtICD', 'duration','lor']]).drop_duplicates()
+                dura = pd.merge(icd_codes, temp, on='icd9', how='left')['duration']
+                dura[np.isnan(dura)] = 0
+                # if temp.empty!=1:
+                #     dura=dura/temp['lor'].iloc[0]
+                feature_matrix[0][count, :] = dura
+                age = pd.merge(icd_codes, temp, on='icd9', how='left')['MaxAgeAtICD']
+                #assert np.all(np.isfinite(age)), "make sure MaxAgeAtVisit is filled"
+                age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeBeforeDx']
+                feature_matrix[1][count, :] = age
+                if phewas_cov:
+                    feature_matrix[2][count, :] = int(
+                        phewas_cov in list(phenotypes[phenotypes['id'] == i]['icd9']))
 
         count += 1
     return feature_matrix
@@ -268,6 +356,55 @@ def get_bhy_thresh(p_values, power):
 
 
 
+def run_icd_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):  # same
+    """
+	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
+
+	:param fm: The phewas feature matrix.
+	:param genotypes: A pandas DataFrame of the genotype file.
+	:param covariates: The covariates that the function is to be run on.
+
+	:returns: A tuple containing indices, p-values, and all the regression data.
+	"""
+    m = len(fm[0, 0])
+    p_values = np.zeros(m, dtype=float)
+    icodes = []
+    # store all of the pertinent data from the regressions
+    regressions = pd.DataFrame(columns=output_columns)
+    control = fm[0][genotypes.genotype == 0, :]
+    disease = fm[0][genotypes.genotype == 1, :]
+    inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
+    # genotypes.loc[genotypes['sex'] == 'M', 'sex'] = 1
+    # genotypes.loc[genotypes['sex'] == 'F', 'sex'] = 0
+    for index in range(m):
+        phen_vector1 = fm[0][:, index]
+        phen_vector2 = fm[1][:, index]
+        phen_vector3 = fm[2][:, index]
+        if np.where(phen_vector1>0)[0].shape[0]>5:
+            # if index in inds:
+            #     # print index
+            #     res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=1, response=response,
+            #                        phen_vector3=phen_vector3)
+            # else:
+            res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=0,
+                                           response=response,
+                                           phen_vector3=phen_vector3)
+        else:
+            odds = 0
+            p = 1
+            od = [-0.0, 1.0, 0.0, np.nan]
+            res = (odds, p, od)
+
+        # save all of the regression data
+
+        phewas_info = get_icd_info(index)
+        stat_info = res[2]
+        info = phewas_info[0:2] +stat_info + [phewas_info[2]]
+        regressions.loc[index] = info
+
+        p_values[index] = res[1]
+    return (np.array(range(m)), p_values, regressions)
+
 def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):  # same
     """
 	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
@@ -314,6 +451,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 
         p_values[index] = res[1]
     return (np.array(range(m)), p_values, regressions)
+
 
 
 """
@@ -612,7 +750,7 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covari
         #elif reg_type > 3:
         elif lr == 1:
             # linreg = smf.logit(f, data).fit(disp=False)
-            logit = sm.Logit(data['genotype'], data[['y', 'MaxAgeAtVisit', 'sex']])
+            logit = sm.Logit(data['genotype'], data[['y', 'MaxAgeAtICD', 'sex']])
             lf = logit.fit_regularized(method='l1', alpha=1, disp=0,trim_mode='size',qc_verbose=0)
             # p = linreg.pvalues.y
             p = lf.pvalues.y
@@ -646,6 +784,10 @@ test = 1
 codes = get_codes()
 phewas_codes = pd.DataFrame(codes['phewas_code'].drop_duplicates());
 phewas_codes = phewas_codes.reset_index()
+
+icd_codes = pd.DataFrame(codes['icd9'].drop_duplicates());
+icd_codes = icd_codes.reset_index()
+
 
 output_columns = ['PheWAS Code',
                   'PheWAS Name',
@@ -707,7 +849,7 @@ def phewas(path, filename, groupfile, covariates, response='', phewas_cov='', re
 	:type show_imbalance: bool
 	"""
     start_time = time.time()
-    global codes, phewas_codes, gen_ftype, neglogp
+    global codes, phewas_codes, icd_codes, gen_ftype, neglogp
 
     print("reading in data")
 
