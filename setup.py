@@ -1,4 +1,4 @@
-ifrom distutils.core import setup
+from distutils.core import setup
 setup(
   name = 'pyPheWAS',
   packages = ['pyPheWAS'], # this must be the same as the name above
