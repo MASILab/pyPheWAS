@@ -195,9 +195,14 @@ Create a group file (createGenotypeFile)
 ---------
 Create a group file by defining ICD-9 codes in the case group and the minimum frequency required to be included in the study.
 The options:
-* ``--path``:			the path to all input files and destination of output 
-* ``--phenotype``:		phenotype file name
-* ``--groupout``:		output group file name
-* ``--code``:			list of ICD-9 codes separated by comma
-* ``--code_freq``:		minimum frequency of codes
+
+* ``--path``: the path to all input files and destination of output
+
+* ``--phenotype``: phenotype file name
+
+* ``--groupout``: output group file name
+
+* ``--code``: list of ICD-9 codes separated by comma
+
+* ``--code_freq``: minimum frequency of codes
 
