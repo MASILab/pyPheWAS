@@ -1,3 +1,14 @@
+"""
+PyPheWAS Core version 2 (main PyPheWAS code)
+Developed by:
+    Shikha Chaganti, PhD
+	Cailey Kerley
+
+MASI Lab
+Department of Electrical Engineering and Computer Science
+Vanderbilt University
+"""
+
 from collections import Counter
 import getopt
 import math
@@ -31,7 +42,7 @@ def get_codes(): #same
 def get_group_file(path, filename): #same
 	"""
 	Read all of the genotype data from the given file and load it into a pandas DataFrame.
-	
+
 	:param path: The path to the file that contains the phenotype data
 	:param filename: The name of the file that contains the phenotype data.
 	:type path: string
@@ -49,7 +60,7 @@ def get_group_file(path, filename): #same
 def get_input(path, filename, reg_type): #diff -done - add duration
 	"""
 	Read all of the phenotype data from the given file and load it into a pandas DataFrame.
-	
+
 	:param path: The path to the file that contains the phenotype data
 	:param filename: The name of the file that contains the phenotype data.
 	:type path: string
@@ -68,13 +79,13 @@ def get_input(path, filename, reg_type): #diff -done - add duration
 	else:
 		"""
 		This needs to be changed, need to adjust for a variety of different naming conventions
-		in the phenotype file, not simply 'AgeAtICD', 'id', 'icd9', etc. 
-		Either we need to adjust for different names in the code, or state explicitly in the 
+		in the phenotype file, not simply 'AgeAtICD', 'id', 'icd9', etc.
+		Either we need to adjust for different names in the code, or state explicitly in the
 		documentation that we cannot do things like this.
 		"""
-		phenotypes = pd.merge(icdfile,codes,on='icd9')	
+		phenotypes = pd.merge(icdfile,codes,on='icd9')
 		phenotypes['count']=0
-		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')					
+		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')
 		phenotypes['duration']=phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('max')-phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('min')+1
 		phenotypes['MaxAgeAtICD'] = 0
 		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
@@ -89,7 +100,7 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 	:type genotypes:
 	:type phenotypes:
 
-	:returns: 
+	:returns:
 	:rtype:
 
 	"""
@@ -278,7 +289,7 @@ def get_bon_thresh(normalized,power): #same
 	Calculate the bonferroni correction threshold.
 
 	Divide the power by the sum of all finite values (all non-nan values).
-	
+
 	:param normalized: an array of all normalized p-values. Normalized p-values are -log10(p) where p is the p-value.
 	:param power: the threshold power being used (usually 0.05)
 	:type normalized: numpy array
@@ -294,7 +305,7 @@ def get_bon_thresh(normalized,power): #same
 def get_fdr_thresh(p_values, power):
 	"""
 	Calculate the false discovery rate threshold.
-	
+
 	:param p_values: a list of p-values obtained by executing the regression
 	:param power: the thershold power being used (usually 0.05)
 	:type p_values: numpy array
@@ -341,7 +352,7 @@ def get_imbalances(regressions):
 
 	========= ====== =======================================================
 	*x* < 0   **-1** The regression had a negative beta value
-	*x* = nan **0**  The regression had a nan beta value (and a nan p-value) 
+	*x* = nan **0**  The regression had a nan beta value (and a nan p-value)
 	*x* > 0   **+1** The regression had a positive beta value
 	========= ====== =======================================================
 
@@ -660,5 +671,3 @@ threshold_map = {
 codes = get_codes()
 phewas_codes =  pd.DataFrame(codes['phewas_code'].drop_duplicates());
 phewas_codes = phewas_codes.reset_index()
-
-
