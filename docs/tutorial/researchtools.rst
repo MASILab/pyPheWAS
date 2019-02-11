@@ -171,7 +171,6 @@ A sample execution of *censorData*::
 Age matching (maximizeControls)
 ---------
 Match the subjects in case and control groups based on a criteria such as age ('key'), and on an interval condition ('delta'). The default option for matching groups is genotype (condition='genotype'). The default matching group can be changed to other options such as sex or race.
-
 The options:
 * ``--path``:			the path to all input files and destination of output 
 * ``--input``:			input group file name
@@ -188,7 +187,6 @@ A sample execution of * maximizeControls*::
 Create a group file (createGenotypeFile)
 ---------
 Create a group file by defining ICD-9 codes in the case group and the minimum frequency required to be included in the study.
-
 The options:
 * ``--path``:			the path to all input files and destination of output 
 * ``--phenotype``:		phenotype file name
