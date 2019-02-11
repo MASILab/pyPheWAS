@@ -16,7 +16,6 @@
       <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_fixedal2.m" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/photon_fixedal2.m" />
       <change type="MODIFICATION" beforePath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/run_bycensordate.py" afterPath="$USER_HOME$/masimatlab/trunk/users/chagans/PHOTON/run_bycensordate.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" afterPath="$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py" />
     </list>
     <ignored path="pyPheWAS.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -36,10 +35,10 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="pyPhewasCorev2.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="pyPhewasCorev2.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="134">
+            <state relative-caret-position="15">
               <caret line="250" column="36" selection-start-line="250" selection-start-column="0" selection-end-line="251" selection-end-column="0" />
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
@@ -48,10 +47,20 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="EMR_Img_CNN4.py" pinned="false" current-in-tab="true">
+        <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/EMR_Img_CNN4.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-345">
+              <caret line="146" column="53" selection-start-line="146" selection-start-column="53" selection-end-line="146" selection-end-column="53" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="pyPhewasModel" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bin/pyPhewasModel">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="324">
+            <state relative-caret-position="945">
               <caret line="64" column="24" selection-start-line="64" selection-start-column="14" selection-end-line="64" selection-end-column="24" />
               <folding>
                 <element signature="e#23#60#0" expanded="true" />
@@ -73,7 +82,7 @@
       <file leaf-file-name="pyPhewasLookup" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bin/pyPhewasLookup">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="324">
+            <state relative-caret-position="960">
               <caret line="65" column="17" selection-start-line="65" selection-start-column="0" selection-end-line="66" selection-end-column="0" />
               <folding>
                 <element signature="e#23#60#0" expanded="true" />
@@ -135,8 +144,8 @@
   </component>
   <component name="ProjectFrameBounds">
     <option name="y" value="23" />
-    <option name="width" value="1024" />
-    <option name="height" value="669" />
+    <option name="width" value="1280" />
+    <option name="height" value="777" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <OptionsSetting value="true" id="Add" />
@@ -149,7 +158,7 @@
     <ConfirmationsSetting value="0" id="Remove" />
   </component>
   <component name="ProjectView">
-    <navigator currentView="ProjectPane" proportions="" version="1">
+    <navigator proportions="" version="1">
       <flattenPackages />
       <showMembers />
       <showModules />
@@ -162,18 +171,12 @@
       <manualOrder />
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes>
-      <pane id="Scope" />
-      <pane id="ProjectPane">
-        <subPane />
-      </pane>
-      <pane id="Scratches" />
-    </panes>
+    <panes />
   </component>
   <component name="PropertiesComponent">
     <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/bin/pyPhewasLookup" />
+    <property name="last_opened_file_path" value="$USER_HOME$/masimatlab/trunk/users/chagans/DNN/EMR_Img_CNN4.py" />
   </component>
   <component name="RunManager" selected="Python.pyPhewasv2">
     <configuration default="false" name="pyPhewasv2" type="PythonConfigurationType" factoryName="Python" temporary="true">
@@ -372,7 +375,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1024" height="669" extended-state="6" />
+    <frame x="0" y="23" width="1280" height="777" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20625" sideWeight="0.5" order="1" side_tool="false" content_ui="combo" />
@@ -412,7 +415,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/Dropbox/BLSA/run_blsa.py" />
     <entry file="file://$USER_HOME$/Downloads/Archive/fastSearch.py" />
     <entry file="file://$USER_HOME$/Downloads/Archive/mySearchPubMed.py" />
     <entry file="file://$USER_HOME$/Downloads/Archive/myUpdate.py" />
@@ -582,13 +584,12 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-184">
           <caret line="12" column="31" selection-start-line="5" selection-start-column="23" selection-end-line="12" selection-end-column="31" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/bin/pyPhewasLookup">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="324">
+        <state relative-caret-position="960">
           <caret line="65" column="17" selection-start-line="65" selection-start-column="0" selection-end-line="66" selection-end-column="0" />
           <folding>
             <element signature="e#23#60#0" expanded="true" />
@@ -606,7 +607,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/bin/pyPhewasModel">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="324">
+        <state relative-caret-position="945">
           <caret line="64" column="24" selection-start-line="64" selection-start-column="14" selection-end-line="64" selection-end-column="24" />
           <folding>
             <element signature="e#23#60#0" expanded="true" />
@@ -616,11 +617,19 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/pyPheWAS/pyPhewasCorev2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="134">
+        <state relative-caret-position="15">
           <caret line="250" column="36" selection-start-line="250" selection-start-column="0" selection-end-line="251" selection-end-column="0" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/masimatlab/trunk/users/chagans/DNN/EMR_Img_CNN4.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-345">
+          <caret line="146" column="53" selection-start-line="146" selection-start-column="53" selection-end-line="146" selection-end-column="53" />
+          <folding />
         </state>
       </provider>
     </entry>

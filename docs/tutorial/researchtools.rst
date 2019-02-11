@@ -168,3 +168,31 @@ A sample execution of *censorData*::
 
 		censorData --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" —field=“AgeAtDx” —-phenotypeout="icd9_data_cen.csv" —groupout="group_cen.csv" -—start="0" —-end="2"
 
+Age matching (maximizeControls)
+---------
+Match the subjects in case and control groups based on a criteria such as age ('key'), and on an interval condition ('delta'). The default option for matching groups is genotype (condition='genotype'). The default matching group can be changed to other options such as sex or race.
+
+The options:
+* ``--path``:			the path to all input files and destination of output 
+* ``--input``:			input group file name
+* ``--output``:			output group file name
+* ``--deltas``:			the intervals for the matching criteria
+* ``--keys``:			the fields on which the matching criteria is applied
+* ``-—condition``:		the field which denotes the groups to be matched
+* ``-—goal``:			n, indicating the ratio of control and case groups that are being matched
+	
+A sample execution of * maximizeControls*::
+
+		maximizeControls --path="/Users/me/Documents/EMRdata" --input="group.csv" --output="group__am.csv" --deltas='1,0' --keys="MaxAgeAtVisit+SEX" --condition="genotype" --goal="2"
+
+Create a group file (createGenotypeFile)
+---------
+Create a group file by defining ICD-9 codes in the case group and the minimum frequency required to be included in the study.
+
+The options:
+* ``--path``:			the path to all input files and destination of output 
+* ``--phenotype``:		phenotype file name
+* ``--groupout``:		output group file name
+* ``--code``:			list of ICD-9 codes separated by comma
+* ``--code_freq``:		minimum frequency of codes
+
