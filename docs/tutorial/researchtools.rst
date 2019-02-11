@@ -172,13 +172,20 @@ Age matching (maximizeControls)
 ---------
 Match the subjects in case and control groups based on a criteria such as age ('key'), and on an interval condition ('delta'). The default option for matching groups is genotype (condition='genotype'). The default matching group can be changed to other options such as sex or race.
 The options:
-* ``--path``:			the path to all input files and destination of output 
-* ``--input``:			input group file name
-* ``--output``:			output group file name
-* ``--deltas``:			the intervals for the matching criteria
-* ``--keys``:			the fields on which the matching criteria is applied
-* ``-—condition``:		the field which denotes the groups to be matched
-* ``-—goal``:			n, indicating the ratio of control and case groups that are being matched
+
+* ``--path``: the path to all input files and destination of output
+
+* ``--input``:	input group file name
+
+* ``--output``:	output group file name
+
+* ``--deltas``:	the intervals for the matching criteria
+
+* ``--keys``: the fields on which the matching criteria is applied
+
+* ``-—condition``: the field which denotes the groups to be matched
+
+* ``-—goal``: n, indicating the ratio of control and case groups that are being matched
 	
 A sample execution of * maximizeControls*::
 
