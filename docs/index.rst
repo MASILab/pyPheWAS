@@ -24,15 +24,15 @@ Install pyPhewas through pip by running::
 Online
 ------
 
-* Issue Tracker: github.com/BennettLandman/pyPheWAS/issues
-* Source Code: github.com/BennettLandman/pyPheWAS
+* Issue Tracker: github.com/MASILab/pyPheWAS/issues
+* Source Code: github.com/MASILab/pyPheWAS
 
 Support
 -------
 
 If you are having issues, please let us know! Email me at:
 
-firstname.lastname@vanderbilt.edu, where firstname=shikha and lastname=chaganti
+cailey.i.kerley@vanderbilt.edu
 
 License
 -------
