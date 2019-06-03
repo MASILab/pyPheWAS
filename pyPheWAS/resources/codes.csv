@@ -3725,7 +3725,7 @@ icd9,icd9_string,phewas_code,phewas_string,exclude_range,rollup_bool,Ignore_bool
 307.80,Psychogenic pain NOS,303.4,Somatoform disorder,295-306.99,1,0,Both,0,5,mental disorders
 307.81,Tension headache,306.9,Tension headache,295-306.99,1,0,Both,0,5,mental disorders
 307.89,Other pain disorders related to psychological factors,303.4,Somatoform disorder,295-306.99,1,0,Both,0,5,mental disorders
-307.9,"Other and unspecified special symptoms or syndromes, not elsewhere classified",315,Develomental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
+307.9,"Other and unspecified special symptoms or syndromes, not elsewhere classified",315,Developmental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
 308,Acute reaction to stress,300.8,Acute reaction to stress,295-306.99,1,0,Both,0,5,mental disorders
 308.0,Predominant disturbance of emotions,300.8,Acute reaction to stress,295-306.99,1,0,Both,0,5,mental disorders
 308.1,Predominant disturbance of consciousness,300.8,Acute reaction to stress,295-306.99,1,0,Both,0,5,mental disorders
@@ -3812,7 +3812,7 @@ icd9,icd9_string,phewas_code,phewas_string,exclude_range,rollup_bool,Ignore_bool
 314.2,Hyperkinetic conduct disorder of childhood,313.1,Attention deficit hyperactivity disorder,312-315.99,1,0,Both,0,5,mental disorders
 314.8,Other specified manifestations of hyperkinetic syndrome of childhood,313.1,Attention deficit hyperactivity disorder,312-315.99,1,0,Both,0,5,mental disorders
 314.9,Unspecified hyperkinetic syndrome of childhood,313.1,Attention deficit hyperactivity disorder,312-315.99,1,0,Both,0,5,mental disorders
-315,Specific delays in development,315,Develomental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
+315,Specific delays in development,315,Developmental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
 315.0,Developmental reading disorder,315.1,Learning disorder,312-315.99,0,0,Both,0,5,mental disorders
 315.00,Reading disorder NOS,315.1,Learning disorder,312-315.99,0,0,Both,0,5,mental disorders
 315.01,Alexia,315.1,Learning disorder,312-315.99,0,0,Both,0,5,mental disorders
@@ -3826,10 +3826,10 @@ icd9,icd9_string,phewas_code,phewas_string,exclude_range,rollup_bool,Ignore_bool
 315.34,Speech and language developmental delay due to hearing loss,315.2,Speech and language disorder,312-315.99,1,0,Both,0,5,mental disorders
 315.35,Childhood onset fluency disorder,315.2,Speech and language disorder,312-315.99,1,0,Both,0,5,mental disorders
 315.39,Other developmental speech disorder,315.2,Speech and language disorder,312-315.99,1,0,Both,0,5,mental disorders
-315.4,Developmental coordination disorder,315,Develomental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
-315.5,Mixed development disorder,315,Develomental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
-315.8,Other specified delays in development,315,Develomental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
-315.9,Unspecified delay in development,315,Develomental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
+315.4,Developmental coordination disorder,315,Developmental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
+315.5,Mixed development disorder,315,Developmental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
+315.8,Other specified delays in development,315,Developmental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
+315.9,Unspecified delay in development,315,Developmental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
 316,Psychic factors associated with diseases classified elsewhere,306,Other mental disorder,295-306.99,1,0,Both,0,5,mental disorders
 317,Mild intellectual disabilities,315.3,Mental retardation,312-315.99,1,0,Both,0,5,mental disorders
 318,Other specified mental retardation,315.3,Mental retardation,312-315.99,1,0,Both,0,5,mental disorders
@@ -15358,7 +15358,7 @@ V37.00,"Other multiple, unspecified, born in hospital, delivered without mention
 V37.01,"Other multiple, unspecified, born in hospital, delivered by cesarean section",651,Multiple gestation,651-651.99,1,1,Female,1,12,pregnancy complications
 V37.1,"Other multiple birth (three or more), unspecified whether mates liveborn or stillborn, born before admission to hospital",651,Multiple gestation,651-651.99,1,1,Female,1,12,pregnancy complications
 V37.2,"Other multiple birth (three or more), unspecified whether mates liveborn or stillborn, born outside of hospital",651,Multiple gestation,651-651.99,1,1,Female,1,12,pregnancy complications
-V40,Mental and behavioral problems,315,Develomental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
+V40,Mental and behavioral problems,315,Developmental delays and disorders,312-315.99,1,0,Both,0,5,mental disorders
 V40.0,Mental and behavioral problems with learning,315.1,Learning disorder,312-315.99,0,0,Both,0,5,mental disorders
 V40.1,Mental and behavioral problems with communication [including speech],315.2,Speech and language disorder,312-315.99,1,0,Both,0,5,mental disorders
 V40.2,Other mental problems,306,Other mental disorder,295-306.99,1,0,Both,0,5,mental disorders
