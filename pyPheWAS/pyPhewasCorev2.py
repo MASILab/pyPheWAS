@@ -21,6 +21,7 @@ import scipy.stats
 import statsmodels.discrete.discrete_model as sm
 import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
+from tqdm import tqdm
 
 
 import sys
@@ -91,7 +92,7 @@ def get_input(path, filename, reg_type): #diff -done - add duration
 		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
 	return phenotypes
 
-def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff - done
+def generate_feature_matrix(genotypes,icds,reg_type,phewas_cov=''): #diff - done
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -104,50 +105,85 @@ def generate_feature_matrix(genotypes,phenotypes, reg_type,phewas_cov=''): #diff
 	:rtype:
 
 	"""
-	feature_matrix = np.zeros((3,genotypes.shape[0],phewas_codes.shape[0]), dtype=float)
-	count = 0
+	# feature_matrix = np.zeros((3,genotypes.shape[0],phewas_codes.shape[0]), dtype=float)
+    # count = 0
+    feature_matrix = {}
+    feature_matrix['agg_measures'] = {}
+    feature_matrix['icd_age'] = {}
+    feature_matrix['phewas_cov'] = {}
 
-	for i in genotypes['id']:
-		if reg_type == 0:
-			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD']]).drop_duplicates()
-			match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
-			feature_matrix[0][count,match[match==True].index]=1
-			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-			#change this to a warning
-			assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is filled"
-			age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeAtVisit']
-			feature_matrix[1][count, :] = age
-			if phewas_cov:
-				feature_matrix[2][count, :] = int(phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
+    # use phewas_codes dataframe to make a dictionary of phewascode keys with zero values
+    empty_phewas_df = phewas_codes.set_index('phewas_code')
+    empty_phewas_df['empty_col'] = 0 # initialize all values to zero
+    empty_phewas_dict = empty_phewas_df['empty_col'].to_dict()
 
-		else:
-			if reg_type == 1:
-				temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD','count']]).drop_duplicates()
-				cts = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['count']
-				cts[np.isnan(cts)]=0
-				feature_matrix[0][count,:]=cts
-				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-				assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is filled"
-				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
-				feature_matrix[1][count, :] = age
-				if phewas_cov:
-					feature_matrix[2][count, :] = int(
-						phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
+    for index,data in tqdm(icds.iterrows(),desc="Processing ICDs"):
+        if reg_type == 0:
+            # make sure subject is in feature matrix
+            if not data['id'] in feature_matrix['agg_measures']:
+                feature_matrix['agg_measures'][data['id']] = empty_phewas_df['empty_col']
+                empty_phewas_df['max_age'] = genotypes[data['id']]['MaxAgeAtVisit']
+                feature_matrix['icd_age'][data['id']] = empty_phewas_df['max_age'].to_dict()
+                feature_matrix['phewas_cov'][data['id']] = empty_phewas_dict
 
-			elif reg_type==2:
-				temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD','duration']]).drop_duplicates()
-				dura = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['duration']
-				dura[np.isnan(dura)]=0
-				feature_matrix[0][count,:]=dura
-				age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-				assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is filled"
-				age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
-				feature_matrix[1][count, :] = age
-				if phewas_cov:
-					feature_matrix[2][count, :] = int(
-						phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
+            # aggregate measures feature matrix
+            feature_matrix['agg_measures'][data['id']][data['phewas_code']] = 1
+            # icd age feature matrix
+            feature_matrix['icd_age'][data['id']][data['phewas_code']] = data['MaxAgeAtICD']
+            # phewas covariates
+            if phewas_cov:
+                #TODO: add phewas_cov
+                continue
 
-		count+=1
+        elif reg_type ==1:
+            print("reg_type 1 is not currently supported")
+            return -1
+        else:
+            print("reg_type 2 is not currently supported")
+            return -1
+
+
+	# for i in genotypes['id']:
+	# 	if reg_type == 0:
+	# 		temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD']]).drop_duplicates()
+	# 		match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
+	# 		feature_matrix[0][count,match[match==True].index]=1
+	# 		age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+	# 		#change this to a warning
+	# 		assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is filled"
+	# 		age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeAtVisit']
+	# 		feature_matrix[1][count, :] = age
+	# 		if phewas_cov:
+	# 			feature_matrix[2][count, :] = int(phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
+    #
+	# 	else:
+	# 		if reg_type == 1:
+	# 			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD','count']]).drop_duplicates()
+	# 			cts = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['count']
+	# 			cts[np.isnan(cts)]=0
+	# 			feature_matrix[0][count,:]=cts
+	# 			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+	# 			assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is filled"
+	# 			age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
+	# 			feature_matrix[1][count, :] = age
+	# 			if phewas_cov:
+	# 				feature_matrix[2][count, :] = int(
+	# 					phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
+    #
+	# 		elif reg_type==2:
+	# 			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD','duration']]).drop_duplicates()
+	# 			dura = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['duration']
+	# 			dura[np.isnan(dura)]=0
+	# 			feature_matrix[0][count,:]=dura
+	# 			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
+	# 			assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is filled"
+	# 			age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
+	# 			feature_matrix[1][count, :] = age
+	# 			if phewas_cov:
+	# 				feature_matrix[2][count, :] = int(
+	# 					phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
+    #
+	# 	count+=1
 	return feature_matrix
 
 """
