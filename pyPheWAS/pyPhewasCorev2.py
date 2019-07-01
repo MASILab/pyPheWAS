@@ -52,8 +52,10 @@ def get_group_file(path, filename): #same
 	wholefname = path + filename
 	genotypes_df = pd.read_csv(wholefname)
 	genotypes_df = genotypes_df.dropna(subset=['id'])
-	genotypes_dict = genotypes_df.set_index('id').to_dict('index')
-	return genotypes_dict
+	genotypes_df.sort_values(by='id',inplace=True)
+	# TODO: uncomment following line after all functions have been updated
+	# genotypes_dict = genotypes_df.set_index('id').to_dict('index')
+	return genotypes_df
 
 
 def get_input(path, filename, reg_type): #diff -done - add duration
@@ -97,7 +99,7 @@ def get_input(path, filename, reg_type): #diff -done - add duration
 	return phenotypes
 
 
-def generate_feature_matrix(genotypes,icds,reg_type,phewas_cov=''):
+def generate_feature_matrix(genotypes_df,icds,reg_type,phewas_cov=''):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -117,13 +119,23 @@ def generate_feature_matrix(genotypes,icds,reg_type,phewas_cov=''):
 	feature_matrix['icd_age'] = {}
 	feature_matrix['phewas_cov'] = {}
 
+	# TODO: remove following line after other functions have been updated
+	genotypes = genotypes_df.set_index('id').to_dict('index')
 	# use phewas_codes dataframe to make a dictionary of phewascode keys with zero values
 	empty_phewas_df = phewas_codes.set_index('phewas_code')
 	empty_phewas_df['empty_col'] = 0 # initialize all values to zero
 	empty_phewas_dict = empty_phewas_df['empty_col'].to_dict()
 
+	# list of ids to exclude (not in genotype list)
+	exclude = []
+
 	for index,data in tqdm(icds.iterrows(),desc="Processing ICDs",total=icds.shape[0]):
 		if reg_type == 0:
+			if not data['id'] in genotypes:
+				if not data['id'] in exclude:
+					print('%s has records in icd file but is not in group file - excluding from study' %(data['id']))
+					exclude.append(data['id'])
+				continue
 			# make sure subject is in feature matrix
 			if not data['id'] in feature_matrix['agg_measures']:
 				feature_matrix['agg_measures'][data['id']] = empty_phewas_dict.copy()
@@ -296,7 +308,7 @@ def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): 
 	control = fm[0][genotypes.genotype == 0, :]
 	disease = fm[0][genotypes.genotype == 1, :]
 	inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
-	for index in range(m):
+	for index in tqdm(range(m),desc='Running Regressions'):
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
@@ -713,4 +725,5 @@ threshold_map = {
 
 codes = get_codes()
 phewas_codes =  pd.DataFrame(codes['phewas_code'].drop_duplicates());
-phewas_codes = phewas_codes.reset_index()
+phewas_codes.sort_values(by=['phewas_code'],inplace=True)
+phewas_codes.reset_index(inplace=True)
