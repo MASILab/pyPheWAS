@@ -23,7 +23,7 @@ import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
 from tqdm import tqdm
 import time
-
+import csv
 
 def get_codes(): #same
 	"""
@@ -74,15 +74,17 @@ def get_input(path, filename, reg_type): #diff -done - add duration
 	start = time.time()
 	icdfile = pd.read_csv(wholefname)
 	check1 = time.time()
-	print(check1-start)
+	print("%0.3f: Read ICD file" %((check1-start)/60))
 	icdfile['icd9'] = icdfile['icd9'].str.strip()
 	if reg_type == 0:
 		check2 = time.time()
 		phenotypes = pd.merge(icdfile,codes,on='icd9')
 		check3 = time.time()
-		print(check3-check2)
+		print("%0.3f: Merge ICD file with PheWAS table" %((check3-check2)/60))
 		phenotypes['MaxAgeAtICD'] = 0
 		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
+		check4 = time.time()
+		phenotypes.sort_values(by='id',inplace=True)
 	else:
 		"""
 		This needs to be changed, need to adjust for a variety of different naming conventions
@@ -99,7 +101,35 @@ def get_input(path, filename, reg_type): #diff -done - add duration
 	return phenotypes
 
 
-def generate_feature_matrix(genotypes_df,icds,reg_type,phewas_cov=''):
+def print_fm(path,outfile,agg,icd_age,phewas_cov):
+	"""
+        Prints feature matrix data for one subject. 
+
+        :param path: path to working directory
+        :param outfile: file name for feature matrix output files
+	:param fm: feature matrix
+	:type path: string
+        :type outfile: string
+	:type fm: dictionary
+
+        :returns: None
+        """
+	agg_out = os.path.join(path,'agg_measures_'+outfile)
+	with open(agg_out,'a') as f:
+		w = csv.DictWriter(f, agg.keys())
+		w.writerow(agg)
+        icd_age_out = os.path.join(path,'icd_age_'+outfile)
+        with open(icd_age_out,'a') as f:
+                w = csv.DictWriter(f, icd_age.keys())
+                w.writerow(icd_age)
+        phewas_cov_out = os.path.join(path,'phewas_cov_'+outfile)
+        with open(phewas_cov_out,'a') as f:
+                w = csv.DictWriter(f, phewas_cov.keys())
+                w.writerow(phewas_cov)
+	return
+
+
+def generate_feature_matrix(genotypes_df,icds,reg_type,path,outfile,phewas_cov=''):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -112,14 +142,8 @@ def generate_feature_matrix(genotypes_df,icds,reg_type,phewas_cov=''):
 	:rtype:
 
 	"""
-	# feature_matrix = np.zeros((3,genotypes.shape[0],phewas_codes.shape[0]), dtype=float)
-	# count = 0
-	feature_matrix = {}
-	feature_matrix['agg_measures'] = {}
-	feature_matrix['icd_age'] = {}
-	feature_matrix['phewas_cov'] = {}
-
-	# TODO: remove following line after other functions have been updated
+	
+	# make genotype a dictionary for faster access time
 	genotypes = genotypes_df.set_index('id').to_dict('index')
 	# use phewas_codes dataframe to make a dictionary of phewascode keys with zero values
 	empty_phewas_df = phewas_codes.set_index('phewas_code')
@@ -127,7 +151,9 @@ def generate_feature_matrix(genotypes_df,icds,reg_type,phewas_cov=''):
 	empty_phewas_dict = empty_phewas_df['empty_col'].to_dict()
 
 	# list of ids to exclude (not in genotype list)
-	exclude = []
+	exclude = [] # list of ids to exclude (in icd list but not in genotype list)
+	last_id = '' # track last id seen in icd list
+	agg, icd_age, phewas_cov = '' # initialize feature matrices
 
 	for index,data in tqdm(icds.iterrows(),desc="Processing ICDs",total=icds.shape[0]):
 		if reg_type == 0:
@@ -136,18 +162,21 @@ def generate_feature_matrix(genotypes_df,icds,reg_type,phewas_cov=''):
 					print('%s has records in icd file but is not in group file - excluding from study' %(data['id']))
 					exclude.append(data['id'])
 				continue
-			# make sure subject is in feature matrix
-			if not data['id'] in feature_matrix['agg_measures']:
-				feature_matrix['agg_measures'][data['id']] = empty_phewas_dict.copy()
+			# check id to see if a new subject has been found
+			if data['id'] != last_id:
+				# print last subject's info before moving on to next subject
+				# if last_id == '' it will skip printing
+				print_fm(path,outfile,data['id'], agg, icd_age, phewas_cov)
+				last_id = data['id'] # reset last_id
+				# clear feature matrices
+				agg = empty_phewas_dict.copy() 
 				empty_phewas_df['max_age'] = genotypes[data['id']]['MaxAgeAtVisit']
-				feature_matrix['icd_age'][data['id']] = empty_phewas_df['max_age'].to_dict()
-				feature_matrix['phewas_cov'][data['id']] = empty_phewas_dict.copy()
-
-			# aggregate measures feature matrix
-			feature_matrix['agg_measures'][data['id']][data['phewas_code']] = 1
-			# icd age feature matrix
-			feature_matrix['icd_age'][data['id']][data['phewas_code']] = data['MaxAgeAtICD']
-			# phewas covariates
+				icd_age = empty_phewas_df['max_age'].to_dict()
+				phewas_cov = empty_phewas_dict.copy()
+	
+			# add data to feature matrices
+			agg[data['phewas_code']] = 1
+			icd_age[data['phewas_code']] = data['MaxAgeAtICD']
 			if phewas_cov:
 				#TODO: add phewas_cov
 				continue
@@ -160,7 +189,8 @@ def generate_feature_matrix(genotypes_df,icds,reg_type,phewas_cov=''):
 			# TODO: add duration regression
 			print("duration regression is not currently supported")
 			return -1
-
+	# print last subject's info
+	print_fm(path,outfile,data['id'], agg, icd_age, phewas_cov)
 	# TODO: Remove old code once conversion is finished
 	# for i in genotypes['id']:
 	# 	if reg_type == 0:
@@ -203,7 +233,26 @@ def generate_feature_matrix(genotypes_df,icds,reg_type,phewas_cov=''):
 	# 					phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
 	#
 	# 	count+=1
-	return feature_matrix
+	
+	"""
+	temp_df = pd.DataFrame.from_dict(fm_agg, orient='index')
+	temp_df.sort_index(axis='columns',inplace=True)
+	temp_df.sort_index(axis='index',inplace=True)
+	temp_df.to_csv(path + 'agg_measures_' + outfile,index=False,header=False)
+	del fm_agg
+
+	temp_df = pd.DataFrame.from_dict(fm_icd_age, orient='index') 
+	temp_df.sort_index(axis='columns',inplace=True)
+	temp_df.sort_index(axis='index',inplace=True)
+	temp_df.to_csv(path + 'icd_age_' + outfile,index=False,header=False)
+	del fm_icd_age
+
+	temp_df = pd.DataFrame.from_dict(fm_phewas_cov, orient='index')
+	temp_df.sort_index(axis='columns',inplace=True)
+	temp_df.sort_index(axis='index',inplace=True)
+	temp_df.to_csv(path + 'phewas_cov_' + outfile,index=False,header=False)
+	"""
+	return
 
 """
 
