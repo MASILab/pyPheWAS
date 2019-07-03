@@ -1,8 +1,8 @@
 """
 PyPheWAS Core version 2 (main PyPheWAS code)
 Developed by:
-	Shikha Chaganti, PhD
-	Cailey Kerley
+    Shikha Chaganti, PhD
+    Cailey Kerley
 
 MASI Lab
 Department of Electrical Engineering and Computer Science
@@ -23,9 +23,10 @@ import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
 from tqdm import tqdm
 import time
-import csv
+from fm_writer import FM_Writer
 
-def get_codes(): #same
+
+def get_codes():  # same
 	"""
 	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
 
@@ -34,10 +35,11 @@ def get_codes(): #same
 
 	"""
 	path = os.path.dirname(os.path.abspath(__file__))
-	filename = os.sep.join([path,'resources','codes.csv'])
+	filename = os.sep.join([path, 'resources', 'codes.csv'])
 	return pd.read_csv(filename)
 
-def get_group_file(path, filename): #same
+
+def get_group_file(path, filename):  # same
 	"""
 	Read all of the genotype data from the given file and load it into a pandas DataFrame.
 
@@ -52,13 +54,13 @@ def get_group_file(path, filename): #same
 	wholefname = path + filename
 	genotypes_df = pd.read_csv(wholefname)
 	genotypes_df = genotypes_df.dropna(subset=['id'])
-	genotypes_df.sort_values(by='id',inplace=True)
+	genotypes_df.sort_values(by='id', inplace=True)
 	# TODO: uncomment following line after all functions have been updated
 	# genotypes_dict = genotypes_df.set_index('id').to_dict('index')
 	return genotypes_df
 
 
-def get_input(path, filename, reg_type): #diff -done - add duration
+def get_input(path, filename, reg_type):  # diff -done - add duration
 	"""
 	Read all of the phenotype data from the given file and load it into a pandas DataFrame.
 
@@ -74,17 +76,19 @@ def get_input(path, filename, reg_type): #diff -done - add duration
 	start = time.time()
 	icdfile = pd.read_csv(wholefname)
 	check1 = time.time()
-	print("%0.3f: Read ICD file" %((check1-start)/60))
+	print("%0.3f: Read ICD file" % ((check1 - start) / 60))
 	icdfile['icd9'] = icdfile['icd9'].str.strip()
 	if reg_type == 0:
 		check2 = time.time()
-		phenotypes = pd.merge(icdfile,codes,on='icd9')
+		phenotypes = pd.merge(icdfile, codes, on='icd9')
 		check3 = time.time()
-		print("%0.3f: Merge ICD file with PheWAS table" %((check3-check2)/60))
+		print("%0.3f: Merge ICD file with PheWAS table" % ((check3 - check2) / 60))
 		phenotypes['MaxAgeAtICD'] = 0
 		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
 		check4 = time.time()
-		phenotypes.sort_values(by='id',inplace=True)
+		phenotypes.sort_values(by='id', inplace=True)
+		check5 = time.time()
+		print("%0.3f: Sorted merged table" % ((check5 - check4) / 60))
 	else:
 		"""
 		This needs to be changed, need to adjust for a variety of different naming conventions
@@ -92,44 +96,17 @@ def get_input(path, filename, reg_type): #diff -done - add duration
 		Either we need to adjust for different names in the code, or state explicitly in the
 		documentation that we cannot do things like this.
 		"""
-		phenotypes = pd.merge(icdfile,codes,on='icd9')
-		phenotypes['count']=0
-		phenotypes['count']=phenotypes.groupby(['id','phewas_code'])['count'].transform('count')
-		phenotypes['duration']=phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('max')-phenotypes.groupby(['id','phewas_code'])['AgeAtICD'].transform('min')+1
+		phenotypes = pd.merge(icdfile, codes, on='icd9')
+		phenotypes['count'] = 0
+		phenotypes['count'] = phenotypes.groupby(['id', 'phewas_code'])['count'].transform('count')
+		phenotypes['duration'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max') - \
+								 phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('min') + 1
 		phenotypes['MaxAgeAtICD'] = 0
 		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
 	return phenotypes
 
 
-def print_fm(path,outfile,agg,icd_age,phewas_cov):
-	"""
-        Prints feature matrix data for one subject. 
-
-        :param path: path to working directory
-        :param outfile: file name for feature matrix output files
-	:param fm: feature matrix
-	:type path: string
-        :type outfile: string
-	:type fm: dictionary
-
-        :returns: None
-        """
-	agg_out = os.path.join(path,'agg_measures_'+outfile)
-	with open(agg_out,'a') as f:
-		w = csv.DictWriter(f, agg.keys())
-		w.writerow(agg)
-        icd_age_out = os.path.join(path,'icd_age_'+outfile)
-        with open(icd_age_out,'a') as f:
-                w = csv.DictWriter(f, icd_age.keys())
-                w.writerow(icd_age)
-        phewas_cov_out = os.path.join(path,'phewas_cov_'+outfile)
-        with open(phewas_cov_out,'a') as f:
-                w = csv.DictWriter(f, phewas_cov.keys())
-                w.writerow(phewas_cov)
-	return
-
-
-def generate_feature_matrix(genotypes_df,icds,reg_type,path,outfile,phewas_cov=''):
+def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, phewas_cov=''):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -142,46 +119,62 @@ def generate_feature_matrix(genotypes_df,icds,reg_type,path,outfile,phewas_cov='
 	:rtype:
 
 	"""
-	
+
 	# make genotype a dictionary for faster access time
 	genotypes = genotypes_df.set_index('id').to_dict('index')
 	# use phewas_codes dataframe to make a dictionary of phewascode keys with zero values
 	empty_phewas_df = phewas_codes.set_index('phewas_code')
-	empty_phewas_df['empty_col'] = 0 # initialize all values to zero
+	empty_phewas_df['empty_col'] = 0  # initialize all values to zero
 	empty_phewas_dict = empty_phewas_df['empty_col'].to_dict()
 
 	# list of ids to exclude (not in genotype list)
-	exclude = [] # list of ids to exclude (in icd list but not in genotype list)
-	last_id = '' # track last id seen in icd list
-	agg, icd_age, phewas_cov = '' # initialize feature matrices
+	exclude = []  # list of ids to exclude (in icd list but not in genotype list)
+	last_id = ''  # track last id seen in icd list
+	count = 0  # number of subjects processed - used to trigger print
+	# subject_limit = 1000  # number of subjects to process before writing
+	# initialize feature matrices
+	agg = [None for _ in range(genotypes_df.shape[0])]
+	icd_age = [None for _ in range(genotypes_df.shape[0])]
+	phewas_cov = [None for _ in range(genotypes_df.shape[0])]
 
-	for index,data in tqdm(icds.iterrows(),desc="Processing ICDs",total=icds.shape[0]):
+	for index, data in tqdm(icds.iterrows(), desc="Processing ICDs", total=icds.shape[0]):
 		if reg_type == 0:
 			if not data['id'] in genotypes:
 				if not data['id'] in exclude:
-					print('%s has records in icd file but is not in group file - excluding from study' %(data['id']))
+					print('%s has records in icd file but is not in group file - excluding from study' % (data['id']))
 					exclude.append(data['id'])
 				continue
 			# check id to see if a new subject has been found
 			if data['id'] != last_id:
-				# print last subject's info before moving on to next subject
-				# if last_id == '' it will skip printing
-				print_fm(path,outfile,data['id'], agg, icd_age, phewas_cov)
-				last_id = data['id'] # reset last_id
-				# clear feature matrices
-				agg = empty_phewas_dict.copy() 
+				# skip if on first loop
+				if last_id != '':
+					# add last subject to feature matrices
+					agg[count] = agg_i
+					icd_age[count] = icd_age_i
+					phewas_cov[count] = phewas_cov_i
+					count += 1
+				# print feature matrices if subject limit is reached
+				# if count > subject_limit:
+				# 	fm_w.print_fm(agg, icd_age, phewas_cov)
+				# 	agg, icd_age, phewas_cov = [], [], []  # reset feature matrices
+				# 	count = 0  # reset count
+				# if last_id != '': # skip if on first loop
+				# 	fm_w.print_fm(agg_i, icd_age_i, phewas_cov_i)
+				last_id = data['id']  # reset last_id
+				# add new row to feature matrices
+				agg_i = empty_phewas_dict.copy()
 				empty_phewas_df['max_age'] = genotypes[data['id']]['MaxAgeAtVisit']
-				icd_age = empty_phewas_df['max_age'].to_dict()
-				phewas_cov = empty_phewas_dict.copy()
-	
+				icd_age_i = empty_phewas_df['max_age'].to_dict()
+				phewas_cov_i = empty_phewas_dict.copy()
+
 			# add data to feature matrices
-			agg[data['phewas_code']] = 1
-			icd_age[data['phewas_code']] = data['MaxAgeAtICD']
+			agg_i[data['phewas_code']] = 1
+			icd_age_i[data['phewas_code']] = data['MaxAgeAtICD']
 			if phewas_cov:
-				#TODO: add phewas_cov
+				# TODO: add phewas_cov
 				continue
 
-		elif reg_type ==1:
+		elif reg_type == 1:
 			# TODO: add linear regression
 			print("linear (count) regression is not currently supported")
 			return -1
@@ -189,8 +182,18 @@ def generate_feature_matrix(genotypes_df,icds,reg_type,path,outfile,phewas_cov='
 			# TODO: add duration regression
 			print("duration regression is not currently supported")
 			return -1
-	# print last subject's info
-	print_fm(path,outfile,data['id'], agg, icd_age, phewas_cov)
+	# print last batch of info
+	agg[count] = agg_i
+	icd_age[count] = icd_age_i
+	phewas_cov[count] = phewas_cov_i
+	print('Writing Output')
+	start = time.time()
+	# make instance of feature matrix writer
+	sorted_keys = list(phewas_codes['phewas_code'])  # list of sorted phewas codes for printing
+	fm_w = FM_Writer(path, outfile, sorted_keys)
+	fm_w.print_fm(agg, icd_age, phewas_cov)
+	end = time.time()
+	print("%0.3f: Output Written " % ((end - start) / 60))
 	# TODO: Remove old code once conversion is finished
 	# for i in genotypes['id']:
 	# 	if reg_type == 0:
@@ -233,33 +236,18 @@ def generate_feature_matrix(genotypes_df,icds,reg_type,path,outfile,phewas_cov='
 	# 					phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
 	#
 	# 	count+=1
-	
-	"""
-	temp_df = pd.DataFrame.from_dict(fm_agg, orient='index')
-	temp_df.sort_index(axis='columns',inplace=True)
-	temp_df.sort_index(axis='index',inplace=True)
-	temp_df.to_csv(path + 'agg_measures_' + outfile,index=False,header=False)
-	del fm_agg
 
-	temp_df = pd.DataFrame.from_dict(fm_icd_age, orient='index') 
-	temp_df.sort_index(axis='columns',inplace=True)
-	temp_df.sort_index(axis='index',inplace=True)
-	temp_df.to_csv(path + 'icd_age_' + outfile,index=False,header=False)
-	del fm_icd_age
-
-	temp_df = pd.DataFrame.from_dict(fm_phewas_cov, orient='index')
-	temp_df.sort_index(axis='columns',inplace=True)
-	temp_df.sort_index(axis='index',inplace=True)
-	temp_df.to_csv(path + 'phewas_cov_' + outfile,index=False,header=False)
-	"""
 	return
+
 
 """
 
 Statistical Modeling
 
 """
-def get_phewas_info(p_index): #same
+
+
+def get_phewas_info(p_index):  # same
 	"""
 	Returns all of the info of the phewas code at the given index.
 
@@ -276,7 +264,9 @@ def get_phewas_info(p_index): #same
 	p_rollup = ','.join(codes[codes.phewas_code == p_code].icd9.tolist())
 	return [p_code, p_name, p_rollup]
 
-def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariates,lr=0,response='',phen_vector3=''): #diff - done
+
+def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=0, response='',
+						 phen_vector3=''):  # diff - done
 	"""
 	Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
 
@@ -298,11 +288,11 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 	"""
 
 	data = genotypes
-	data['y']=phen_vector1
+	data['y'] = phen_vector1
 	data['MaxAgeAtICD'] = phen_vector2
-	#f='y~'+covariates
+	# f='y~'+covariates
 	if response:
-		f = response+'~ y + genotype +' + covariates
+		f = response + '~ y + genotype +' + covariates
 		if phen_vector3.any():
 			data['phe'] = phen_vector3
 			f = response + '~ y + phe + genotype' + covariates
@@ -320,7 +310,7 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 			od = [-math.log10(p), p, logreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
 		elif lr == 1:
 			f1 = f.split(' ~ ')
-			f1[1]=f1[1].replace(" ", "")
+			f1[1] = f1[1].replace(" ", "")
 			logit = sm.Logit(data[f1[0].strip()], data[f1[1].split('+')])
 			lf = logit.fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
 			p = lf.pvalues.y
@@ -334,12 +324,13 @@ def calculate_odds_ratio(genotypes, phen_vector1,phen_vector2,reg_type,covariate
 			conf = linreg.conf_int()
 			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
 	except:
-		odds=0
-		p=np.nan
-		od = [np.nan,np.nan,np.nan,np.nan]
-	return (odds,p,od)
+		odds = 0
+		p = np.nan
+		od = [np.nan, np.nan, np.nan, np.nan]
+	return (odds, p, od)
 
-def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): #same
+
+def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):  # same
 	"""
 	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
 
@@ -357,7 +348,7 @@ def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): 
 	control = fm[0][genotypes.genotype == 0, :]
 	disease = fm[0][genotypes.genotype == 1, :]
 	inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
-	for index in tqdm(range(m),desc='Running Regressions'):
+	for index in tqdm(range(m), desc='Running Regressions'):
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
@@ -388,7 +379,8 @@ def run_phewas(fm, genotypes ,covariates, reg_type, response='',phewas_cov=''): 
 		p_values[index] = res[1]
 	return regressions
 
-def get_bon_thresh(normalized,power): #same
+
+def get_bon_thresh(normalized, power):  # same
 	"""
 	Calculate the bonferroni correction threshold.
 
@@ -403,7 +395,7 @@ def get_bon_thresh(normalized,power): #same
 	:rtype: float
 
 	"""
-	return power/sum(np.isfinite(normalized))
+	return power / sum(np.isfinite(normalized))
 
 
 def get_fdr_thresh(p_values, power):
@@ -427,6 +419,7 @@ def get_fdr_thresh(p_values, power):
 			break
 	return sn[i]
 
+
 def get_bhy_thresh(p_values, power):
 	"""
 	Calculate the false discovery rate threshold.
@@ -443,10 +436,11 @@ def get_bhy_thresh(p_values, power):
 	sn = sn[np.isfinite(sn)]
 	sn = sn[::-1]
 	for i in range(len(sn)):
-		thresh = power * i / (8.1*len(sn))
+		thresh = power * i / (8.1 * len(sn))
 		if sn[i] <= thresh:
 			break
 	return sn[i]
+
 
 def get_imbalances(regressions):
 	"""
@@ -475,7 +469,8 @@ def get_imbalances(regressions):
 	imbalance[imbalance < 0] = -1
 	return imbalance
 
-def get_x_label_positions(categories, lines=True): #same
+
+def get_x_label_positions(categories, lines=True):  # same
 	"""
 	This method is used get the position of the x-labels and the lines between the columns
 
@@ -491,14 +486,15 @@ def get_x_label_positions(categories, lines=True): #same
 	tt = Counter(categories)
 	s = 0
 	label_positions = []
-	for _,v in tt.items():
+	for _, v in tt.items():
 		if lines:
-			inc = v//2
+			inc = v // 2
 		else:
 			inc = v
 		label_positions.append(s + inc)
 		s += v
 	return label_positions
+
 
 def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 	"""
@@ -585,11 +581,12 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 					markeredgewidth=0.0)
 	line1 = []
 	box = ax.get_position()
-	ax.set_position([box.x0, box.y0 + box.height*0.05, box.width, box.height*0.95])
+	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
 	for lab in plot_colors.keys():
 		line1.append(
 			mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
-	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
+	artists.append(
+		ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
 	ax.axhline(y=0, color='black')
 	frame1.axes.get_xaxis().set_visible(False)
 
@@ -678,19 +675,20 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
 				ax.plot(y[i][0], e, 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
 						markeredgewidth=0.0)
 				ax.plot([y[i, 1], y[i, 2]], [e, e], color=plot_colors[c[i:i + 1].category_string.values[0]])
-			# else:
-			# ax.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
-			#	ax.plot(e,-y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
+		# else:
+		# ax.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
+		#	ax.plot(e,-y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
 		else:
 			ax.plot(e, y[i], 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
 					markeredgewidth=0.0)
 	line1 = []
 	box = ax.get_position()
-	ax.set_position([box.x0, box.y0 + box.height*0.05, box.width, box.height*0.95])
+	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
 	for lab in plot_colors.keys():
 		line1.append(
 			mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
-	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.15), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
+	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.15), loc='upper center', fancybox=True, ncol=4,
+							 prop={'size': 6}))
 	ax.axvline(x=0, color='black')
 	frame1.axes.get_yaxis().set_visible(False)
 
@@ -711,23 +709,23 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
 	plt.clf()
 
 
-
-def process_args(kwargs,optargs,*args):
-	clean = np.vectorize(lambda x: x[x.rfind('-')+1:] + '=')
+def process_args(kwargs, optargs, *args):
+	clean = np.vectorize(lambda x: x[x.rfind('-') + 1:] + '=')
 	searchfor = clean(list(optargs.keys()))
-	opts, rem = getopt.getopt(args, '',searchfor)
+	opts, rem = getopt.getopt(args, '', searchfor)
 	assert len(rem) == 0, 'Unknown arguments included %s' % (str(rem))
 	for option in opts:
-		k,v = option
+		k, v = option
 		kwargs[optargs[k]] = v
 
 	return kwargs
 
+
 def display_kwargs(kwargs):
-	print ("Arguments: ")
-	for k,v in kwargs.items():
-		left = str(k).ljust(30,'.')
-		right = str(v).rjust(50,'.')
+	print("Arguments: ")
+	for k, v in kwargs.items():
+		left = str(k).ljust(30, '.')
+		right = str(v).rjust(50, '.')
 		print(left + right)
 
 
@@ -739,33 +737,33 @@ output_columns = ['PheWAS Code',
 				  'Conf-interval beta',
 				  'ICD-9']
 
-plot_colors = {'-' : 'gold',
- 'circulatory system' : 'red',
- 'congenital anomalies': 'mediumspringgreen',
- 'dermatologic' : 'maroon',
- 'digestive' : 'green',
- 'endocrine/metabolic' : 'darkred',
- 'genitourinary' : 'black',
- 'hematopoietic' : 'orange',
- 'infectious diseases' : 'blue',
- 'injuries & poisonings' : 'slategray',
- 'mental disorders' : 'fuchsia',
- 'musculoskeletal' : 'darkgreen',
- 'neoplasms' : 'teal',
- 'neurological' : 'midnightblue',
- 'pregnancy complications' : 'gold',
- 'respiratory' : 'brown',
- 'sense organs' : 'darkviolet',
- 'symptoms' : 'darkviolet'}
+plot_colors = {'-': 'gold',
+			   'circulatory system': 'red',
+			   'congenital anomalies': 'mediumspringgreen',
+			   'dermatologic': 'maroon',
+			   'digestive': 'green',
+			   'endocrine/metabolic': 'darkred',
+			   'genitourinary': 'black',
+			   'hematopoietic': 'orange',
+			   'infectious diseases': 'blue',
+			   'injuries & poisonings': 'slategray',
+			   'mental disorders': 'fuchsia',
+			   'musculoskeletal': 'darkgreen',
+			   'neoplasms': 'teal',
+			   'neurological': 'midnightblue',
+			   'pregnancy complications': 'gold',
+			   'respiratory': 'brown',
+			   'sense organs': 'darkviolet',
+			   'symptoms': 'darkviolet'}
 imbalance_colors = {
 	0: 'white',
 	1: 'deepskyblue',
 	-1: 'red'
 }
 regression_map = {
-	'log':0,
-	'lin':1,
-	'lind':2
+	'log': 0,
+	'lin': 1,
+	'lind': 2
 }
 threshold_map = {
 	'bon': 0,
@@ -773,6 +771,6 @@ threshold_map = {
 }
 
 codes = get_codes()
-phewas_codes =  pd.DataFrame(codes['phewas_code'].drop_duplicates());
-phewas_codes.sort_values(by=['phewas_code'],inplace=True)
+phewas_codes = pd.DataFrame(codes['phewas_code'].drop_duplicates());
+phewas_codes.sort_values(by=['phewas_code'], inplace=True)
 phewas_codes.reset_index(inplace=True)
