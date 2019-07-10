@@ -23,7 +23,6 @@ import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
 from tqdm import tqdm
 import time
-from fm_writer import FM_Writer
 from collections import OrderedDict
 
 
@@ -107,7 +106,11 @@ def get_input(path, filename, reg_type):  # diff -done - add duration
 	return phenotypes
 
 
-def write_dict(fid1,fid2,fid3,dict1,dict2,dict3):
+def write_dict(fid1,fid2,fid3,dict1,dict2,dict3,subj_id,print_header=False):
+	if print_header:
+		fid1.write(subj_id + ',')
+		fid2.write(subj_id + ',')
+		fid3.write(subj_id + ',')
 	fid1.write(str(dict1.popitem(last=False)[1]))
 	fid2.write(str(dict2.popitem(last=False)[1]))
 	fid3.write(str(dict3.popitem(last=False)[1]))
@@ -119,8 +122,20 @@ def write_dict(fid1,fid2,fid3,dict1,dict2,dict3):
 	fid2.write('\n')
 	fid3.write('\n')
 
+def write_header(fid1, fid2, fid3, keys):
+	header = ','.join(map(str, keys))
+	fid1.write('id,')
+	fid2.write('id,')
+	fid3.write('id,')
+	fid1.write(header)
+	fid2.write(header)
+	fid3.write(header)
+	fid1.write('\n')
+	fid2.write('\n')
+	fid3.write('\n')
 
-def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, phewas_cov=''):
+
+def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, print_header=False, phewas_cov=''):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -151,6 +166,7 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, phewas_
 	icd_age_f = open(icd_age_out, 'w')
 	phewas_cov_out = os.path.join(path, 'phewas_cov_' + outfile)
 	phewas_cov_f = open(phewas_cov_out,'w')
+	if print_header: write_header(agg_f, icd_age_f, phewas_cov_f,list(empty_phewas_dict.keys()))
 
 	for index, data in tqdm(icds.iterrows(), desc="Processing ICDs", total=icds.shape[0]):
 		if reg_type == 0:
@@ -165,7 +181,7 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, phewas_
 				# skip if on first loop
 				if last_id != '':
 					# print last subject to feature matrices
-					write_dict(agg_f,icd_age_f,phewas_cov_f,agg_fm,icd_age_fm,phewas_cov_fm)
+					write_dict(agg_f,icd_age_f,phewas_cov_f,agg_fm,icd_age_fm,phewas_cov_fm,curr_id,print_header)
 				last_id = curr_id  # reset last_id
 				# clear working feature matrices
 				agg_fm = empty_phewas_dict.copy()
@@ -191,11 +207,13 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, phewas_
 			print("duration regression is not currently supported")
 			return -1
 	# print last batch of info
-	write_dict(agg_f, icd_age_f, phewas_cov_f, agg_fm, icd_age_fm, phewas_cov_fm)
+	write_dict(agg_f, icd_age_f, phewas_cov_f, agg_fm, icd_age_fm, phewas_cov_fm,curr_id,print_header)
 
 	agg_f.close()
 	icd_age_f.close()
 	phewas_cov_f.close()
+
+	print("Feature matrices saved to %s" %path)
 
 	# TODO: Remove old code once conversion is finished
 	# for i in genotypes['id']:
