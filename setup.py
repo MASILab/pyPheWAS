@@ -18,8 +18,7 @@ setup(
         'numexpr',
         'bottleneck',
         'hopcroftkarp',
-        'tqdm',
-        'time'
+        'tqdm'
 	],
   package_data={
     '':['resources/*.csv']
