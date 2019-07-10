@@ -107,6 +107,19 @@ def get_input(path, filename, reg_type):  # diff -done - add duration
 	return phenotypes
 
 
+def write_dict(fid1,fid2,fid3,dict1,dict2,dict3):
+	fid1.write(str(dict1.popitem(last=False)[1]))
+	fid2.write(str(dict2.popitem(last=False)[1]))
+	fid3.write(str(dict3.popitem(last=False)[1]))
+	for key,value in dict1.items():
+		fid1.write(',' + str(value))
+		fid2.write(',' + str(dict2[key]))
+		fid3.write(',' + str(dict3[key]))
+	fid1.write('\n')
+	fid2.write('\n')
+	fid3.write('\n')
+
+
 def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, phewas_cov=''):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
@@ -129,21 +142,15 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, phewas_
 	tmp_dict = empty_phewas_df['empty_col'].to_dict()
 	empty_phewas_dict = OrderedDict(sorted(tmp_dict.items(), key=lambda t: t[0]))
 
-	# list of ids to exclude (not in genotype list)
 	exclude = []  # list of ids to exclude (in icd list but not in genotype list)
 	last_id = ''  # track last id seen in icd list
-	count = 0  # number of subjects processed - used to trigger print
-	subject_limit = 10000  # number of subjects to process before writing
-	# initialize feature matrices
-	sorted_keys = list(phewas_codes['phewas_code'])  # list of sorted phewas codes for printing
-	ids = genotypes.keys().sort()
-	agg_fm = {}
-	icd_age_fm = {}
-	phewas_cov_fm = {}
-	df_initialized = False
-	# agg = [None for _ in range(genotypes_df.shape[0])]
-	# icd_age = [None for _ in range(genotypes_df.shape[0])]
-	# phewas_cov = [None for _ in range(genotypes_df.shape[0])]
+
+	agg_out = os.path.join(path, 'agg_measures_' + outfile)
+	agg_f = open(agg_out,'w')
+	icd_age_out = os.path.join(path, 'icd_age_' + outfile)
+	icd_age_f = open(icd_age_out, 'w')
+	phewas_cov_out = os.path.join(path, 'phewas_cov_' + outfile)
+	phewas_cov_f = open(phewas_cov_out,'w')
 
 	for index, data in tqdm(icds.iterrows(), desc="Processing ICDs", total=icds.shape[0]):
 		if reg_type == 0:
@@ -156,46 +163,21 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, phewas_
 			# check id to see if a new subject has been found
 			if curr_id != last_id:
 				# skip if on first loop
-				# if last_id != '':
-					# add last subject to feature matrices
-					# agg_df.loc[last_id] = agg_i
-					# icd_age_df.loc[last_id] = icd_age_i
-					# phewas_cov_df.loc[last_id] = phewas_cov_i
-					# count += 1
-				# convert feature matrices to dataframes when subject limit is reached
-				if count > subject_limit:
-					start = time.time()
-					print("Starting Conversion")
-					if not df_initialized:
-						agg_df = pd.DataFrame.from_dict(agg_fm, orient='index')
-						icd_age_df = pd.DataFrame.from_dict(icd_age_fm, orient='index')
-						phewas_cov_df = pd.DataFrame.from_dict(phewas_cov_fm, orient='index')
-						df_initialized = True
-					else:
-						tmp_df = pd.DataFrame.from_dict(agg_fm, orient='index')
-						agg_df.append(tmp_df,sort=False)
-						tmp_df = pd.DataFrame.from_dict(icd_age_fm, orient='index')
-						icd_age_df.append(tmp_df,sort=False)
-						tmp_df = pd.DataFrame.from_dict(phewas_cov_fm, orient='index')
-						phewas_cov_df.append(tmp_df,sort=False)
-					agg_fm, icd_age_fm, phewas_cov_fm = {}, {}, {}  # reset feature matrices
-					end = time.time()
-					print("%0.3f: Converted Dicts to dataframes" % ((end - start) / 60))
-					count = 0  # reset count
-				# if last_id != '': # skip if on first loop
-				# 	fm_w.print_fm(agg_i, icd_age_i, phewas_cov_i)
+				if last_id != '':
+					# print last subject to feature matrices
+					write_dict(agg_f,icd_age_f,phewas_cov_f,agg_fm,icd_age_fm,phewas_cov_fm)
 				last_id = curr_id  # reset last_id
-				count += 1
 				# clear working feature matrices
-				agg_fm[curr_id] = empty_phewas_dict.copy()
+				agg_fm = empty_phewas_dict.copy()
 				empty_phewas_df['max_age'] = genotypes[curr_id]['MaxAgeAtVisit']
-				icd_age_fm[curr_id] = empty_phewas_df['max_age'].to_dict()
-				phewas_cov_fm[curr_id] = empty_phewas_dict.copy()
+				tmp = empty_phewas_df['max_age'].to_dict()
+				icd_age_fm = OrderedDict(sorted(tmp.items(), key=lambda t: t[0]))
+				phewas_cov_fm = empty_phewas_dict.copy()
 
 			# add data to feature matrices
 			phecode = data['phewas_code']
-			agg_fm[curr_id][phecode] = 1
-			icd_age_fm[curr_id][phecode] = data['MaxAgeAtICD']
+			agg_fm[phecode] = 1
+			icd_age_fm[phecode] = data['MaxAgeAtICD']
 			if phewas_cov:
 				# TODO: add phewas_cov
 				continue
@@ -209,33 +191,12 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, phewas_
 			print("duration regression is not currently supported")
 			return -1
 	# print last batch of info
-	# agg_df.loc[last_id] = agg_i
-	# icd_age_df.loc[last_id] = icd_age_i
-	# phewas_cov_df.loc[last_id] = phewas_cov_i
-	if not df_initialized:
-		agg_df = pd.DataFrame.from_dict(agg_fm, orient='index')
-		icd_age_df = pd.DataFrame.from_dict(icd_age_fm, orient='index')
-		phewas_cov_df = pd.DataFrame.from_dict(phewas_cov_fm, orient='index')
-	else:
-		tmp_df = pd.DataFrame.from_dict(agg_fm, orient='index')
-		agg_df.append(tmp_df, sort=False)
-		tmp_df = pd.DataFrame.from_dict(icd_age_fm, orient='index')
-		icd_age_df.append(tmp_df, sort=False)
-		tmp_df = pd.DataFrame.from_dict(phewas_cov_fm, orient='index')
-		phewas_cov_df.append(tmp_df, sort=False)
-	print('Writing Output')
-	start = time.time()
-	agg_out = os.path.join(path, 'agg_measures_' + outfile)
-	agg_df.to_csv(agg_out,index=False,header=False)
-	icd_age_out = os.path.join(path, 'agg_measures_' + outfile)
-	icd_age_df.to_csv(icd_age_out,index=False,header=False)
-	phewas_cov_out = os.path.join(path, 'agg_measures_' + outfile)
-	phewas_cov_df.to_csv(phewas_cov_out,index=False,header=False)
-	# make instance of feature matrix writer
-	# fm_w = FM_Writer(path, outfile, sorted_keys)
-	# fm_w.print_fm(agg, icd_age, phewas_cov)
-	end = time.time()
-	print("%0.3f: Output Written " % ((end - start) / 60))
+	write_dict(agg_f, icd_age_f, phewas_cov_f, agg_fm, icd_age_fm, phewas_cov_fm)
+
+	agg_f.close()
+	icd_age_f.close()
+	phewas_cov_f.close()
+
 	# TODO: Remove old code once conversion is finished
 	# for i in genotypes['id']:
 	# 	if reg_type == 0:
