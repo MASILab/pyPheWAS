@@ -71,22 +71,17 @@ def get_input(path, filename, reg_type):  # diff -done - add duration
 	:rtype: pandas DataFrame
 	"""
 	wholefname = path + filename
-	start = time.time()
 	icdfile = pd.read_csv(wholefname)
-	check1 = time.time()
-	print("%0.3fs: Read ICD file" % (check1 - start))
 	icdfile['icd9'] = icdfile['icd9'].str.strip()
+	print("...")
 	if reg_type == 0:
-		check2 = time.time()
 		phenotypes = pd.merge(icdfile, codes, on='icd9')
-		check3 = time.time()
-		print("%0.3fs: Merge ICD file with PheWAS table" % (check3 - check2))
+		print("...")
 		phenotypes['MaxAgeAtICD'] = 0
 		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
-		check4 = time.time()
+		print("...")
 		phenotypes.sort_values(by='id', inplace=True)
-		check5 = time.time()
-		print("%0.3fs: Sorted merged table" % (check5 - check4))
+		print("...")
 	else:
 		"""
 		This needs to be changed, need to adjust for a variety of different naming conventions
@@ -104,36 +99,7 @@ def get_input(path, filename, reg_type):  # diff -done - add duration
 	return phenotypes
 
 
-def write_dict(fid1,fid2,fid3,dict1,dict2,dict3,subj_id,print_header=False):
-	if print_header:
-		fid1.write(subj_id + ',')
-		fid2.write(subj_id + ',')
-		fid3.write(subj_id + ',')
-	fid1.write(str(dict1.popitem(last=False)[1]))
-	fid2.write(str(dict2.popitem(last=False)[1]))
-	fid3.write(str(dict3.popitem(last=False)[1]))
-	for key,value in dict1.items():
-		fid1.write(',' + str(value))
-		fid2.write(',' + str(dict2[key]))
-		fid3.write(',' + str(dict3[key]))
-	fid1.write('\n')
-	fid2.write('\n')
-	fid3.write('\n')
-
-def write_header(fid1, fid2, fid3, keys):
-	header = ','.join(map(str, keys))
-	fid1.write('id,')
-	fid2.write('id,')
-	fid3.write('id,')
-	fid1.write(header)
-	fid2.write(header)
-	fid3.write(header)
-	fid1.write('\n')
-	fid2.write('\n')
-	fid3.write('\n')
-
-
-def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, print_header=False, phewas_cov=''):
+def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov=''):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -158,11 +124,6 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, print_h
 	empty_phewas_df['np_index'] = range(0,empty_phewas_df.shape[0])
 	np_index = empty_phewas_df['np_index'].to_dict()
 
-	fid1 = open(path + 'phewas_codes.csv','w')
-	for key,value in np_index.items():
-		fid1.write(str(key) + ',' + str(value) + '\n')
-	fid1.close()
-
 	exclude = []  # list of ids to exclude (in icd list but not in genotype list)
 	last_id = ''  # track last id seen in icd list
 	count = -1
@@ -179,7 +140,6 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, print_h
 			if last_id != curr_id:
 				count += 1
 				last_id = curr_id  # reset last_id
-				print(last_id)
 				feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
 
 			# add data to feature matrices
