@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
   name = 'pyPheWAS',
   packages = ['pyPheWAS'], # this must be the same as the name above
-  version = '2.0.1',
+  version = '2.1.0',
   description = 'MASI Lab Port of PheWAS into Python',
   author = 'MASI Lab',
   author_email = 'bennett.landman@vanderbilt.edu',
@@ -27,6 +27,7 @@ setup(
   'bin/pyPhewasLookup',
   'bin/pyPhewasModel',
   'bin/pyPhewasPlot',
+  'bin/pyPhewasPipeline',
   'bin/generateGroups',
   'bin/censorData',
   'bin/convertEventToAge',
