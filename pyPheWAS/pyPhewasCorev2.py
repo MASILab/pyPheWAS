@@ -55,8 +55,6 @@ def get_group_file(path, filename):  # same
 	genotypes_df = pd.read_csv(wholefname)
 	genotypes_df = genotypes_df.dropna(subset=['id'])
 	genotypes_df.sort_values(by='id', inplace=True)
-	# TODO: uncomment following line after all functions have been updated
-	# genotypes_dict = genotypes_df.set_index('id').to_dict('index')
 	return genotypes_df
 
 
@@ -73,22 +71,17 @@ def get_input(path, filename, reg_type):  # diff -done - add duration
 	:rtype: pandas DataFrame
 	"""
 	wholefname = path + filename
-	start = time.time()
 	icdfile = pd.read_csv(wholefname)
-	check1 = time.time()
-	print("%0.3f: Read ICD file" % ((check1 - start) / 60))
 	icdfile['icd9'] = icdfile['icd9'].str.strip()
+	print("...")
 	if reg_type == 0:
-		check2 = time.time()
 		phenotypes = pd.merge(icdfile, codes, on='icd9')
-		check3 = time.time()
-		print("%0.3f: Merge ICD file with PheWAS table" % ((check3 - check2) / 60))
+		print("...")
 		phenotypes['MaxAgeAtICD'] = 0
 		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
-		check4 = time.time()
+		print("...")
 		phenotypes.sort_values(by='id', inplace=True)
-		check5 = time.time()
-		print("%0.3f: Sorted merged table" % ((check5 - check4) / 60))
+		print("...")
 	else:
 		"""
 		This needs to be changed, need to adjust for a variety of different naming conventions
@@ -106,36 +99,7 @@ def get_input(path, filename, reg_type):  # diff -done - add duration
 	return phenotypes
 
 
-def write_dict(fid1,fid2,fid3,dict1,dict2,dict3,subj_id,print_header=False):
-	if print_header:
-		fid1.write(subj_id + ',')
-		fid2.write(subj_id + ',')
-		fid3.write(subj_id + ',')
-	fid1.write(str(dict1.popitem(last=False)[1]))
-	fid2.write(str(dict2.popitem(last=False)[1]))
-	fid3.write(str(dict3.popitem(last=False)[1]))
-	for key,value in dict1.items():
-		fid1.write(',' + str(value))
-		fid2.write(',' + str(dict2[key]))
-		fid3.write(',' + str(dict3[key]))
-	fid1.write('\n')
-	fid2.write('\n')
-	fid3.write('\n')
-
-def write_header(fid1, fid2, fid3, keys):
-	header = ','.join(map(str, keys))
-	fid1.write('id,')
-	fid2.write('id,')
-	fid3.write('id,')
-	fid1.write(header)
-	fid2.write(header)
-	fid3.write(header)
-	fid1.write('\n')
-	fid2.write('\n')
-	fid3.write('\n')
-
-
-def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, print_header=False, phewas_cov=''):
+def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov=''):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -149,24 +113,20 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, print_h
 
 	"""
 
+	feature_matrix = np.zeros((3, genotypes_df.shape[0], phewas_codes.shape[0]), dtype=float)
+
 	# make genotype a dictionary for faster access time
 	genotypes = genotypes_df.set_index('id').to_dict('index')
-	# use phewas_codes dataframe to make a dictionary of phewascode keys with zero values
+
+	# use phewascodes to make a dictionary of indices in the np array
 	empty_phewas_df = phewas_codes.set_index('phewas_code')
-	empty_phewas_df['empty_col'] = 0  # initialize all values to zero
-	tmp_dict = empty_phewas_df['empty_col'].to_dict()
-	empty_phewas_dict = OrderedDict(sorted(tmp_dict.items(), key=lambda t: t[0]))
+	empty_phewas_df.sort_index(inplace=True)
+	empty_phewas_df['np_index'] = range(0,empty_phewas_df.shape[0])
+	np_index = empty_phewas_df['np_index'].to_dict()
 
 	exclude = []  # list of ids to exclude (in icd list but not in genotype list)
 	last_id = ''  # track last id seen in icd list
-
-	agg_out = os.path.join(path, 'agg_measures_' + outfile)
-	agg_f = open(agg_out,'w')
-	icd_age_out = os.path.join(path, 'icd_age_' + outfile)
-	icd_age_f = open(icd_age_out, 'w')
-	phewas_cov_out = os.path.join(path, 'phewas_cov_' + outfile)
-	phewas_cov_f = open(phewas_cov_out,'w')
-	if print_header: write_header(agg_f, icd_age_f, phewas_cov_f,list(empty_phewas_dict.keys()))
+	count = -1
 
 	for index, data in tqdm(icds.iterrows(), desc="Processing ICDs", total=icds.shape[0]):
 		if reg_type == 0:
@@ -177,23 +137,15 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, print_h
 					exclude.append(curr_id)
 				continue
 			# check id to see if a new subject has been found
-			if curr_id != last_id:
-				# skip if on first loop
-				if last_id != '':
-					# print last subject to feature matrices
-					write_dict(agg_f,icd_age_f,phewas_cov_f,agg_fm,icd_age_fm,phewas_cov_fm,curr_id,print_header)
+			if last_id != curr_id:
+				count += 1
 				last_id = curr_id  # reset last_id
-				# clear working feature matrices
-				agg_fm = empty_phewas_dict.copy()
-				empty_phewas_df['max_age'] = genotypes[curr_id]['MaxAgeAtVisit']
-				tmp = empty_phewas_df['max_age'].to_dict()
-				icd_age_fm = OrderedDict(sorted(tmp.items(), key=lambda t: t[0]))
-				phewas_cov_fm = empty_phewas_dict.copy()
+				feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
 
 			# add data to feature matrices
-			phecode = data['phewas_code']
-			agg_fm[phecode] = 1
-			icd_age_fm[phecode] = data['MaxAgeAtICD']
+			phecode_ix = np_index[data['phewas_code']]
+			feature_matrix[0][count][phecode_ix] = 1
+			feature_matrix[1][count][phecode_ix] = data['MaxAgeAtICD']
 			if phewas_cov:
 				# TODO: add phewas_cov
 				continue
@@ -206,59 +158,9 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, path, outfile, print_h
 			# TODO: add duration regression
 			print("duration regression is not currently supported")
 			return -1
-	# print last batch of info
-	write_dict(agg_f, icd_age_f, phewas_cov_f, agg_fm, icd_age_fm, phewas_cov_fm,curr_id,print_header)
 
-	agg_f.close()
-	icd_age_f.close()
-	phewas_cov_f.close()
+	return feature_matrix
 
-	print("Feature matrices saved to %s" %path)
-
-	# TODO: Remove old code once conversion is finished
-	# for i in genotypes['id']:
-	# 	if reg_type == 0:
-	# 		temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD']]).drop_duplicates()
-	# 		match=phewas_codes['phewas_code'].isin(list( phenotypes[phenotypes['id']==i]['phewas_code']))
-	# 		feature_matrix[0][count,match[match==True].index]=1
-	# 		age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-	# 		#change this to a warning
-	# 		assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is filled"
-	# 		age[np.isnan(age)] = genotypes[genotypes['id'] == i].iloc[0]['MaxAgeAtVisit']
-	# 		feature_matrix[1][count, :] = age
-	# 		if phewas_cov:
-	# 			feature_matrix[2][count, :] = int(phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
-	#
-	# 	else:
-	# 		if reg_type == 1:
-	# 			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD','count']]).drop_duplicates()
-	# 			cts = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['count']
-	# 			cts[np.isnan(cts)]=0
-	# 			feature_matrix[0][count,:]=cts
-	# 			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-	# 			assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is filled"
-	# 			age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
-	# 			feature_matrix[1][count, :] = age
-	# 			if phewas_cov:
-	# 				feature_matrix[2][count, :] = int(
-	# 					phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
-	#
-	# 		elif reg_type==2:
-	# 			temp=pd.DataFrame(phenotypes[phenotypes['id']==i][['phewas_code','MaxAgeAtICD','duration']]).drop_duplicates()
-	# 			dura = pd.merge(phewas_codes,temp,on='phewas_code',how='left')['duration']
-	# 			dura[np.isnan(dura)]=0
-	# 			feature_matrix[0][count,:]=dura
-	# 			age = pd.merge(phewas_codes, temp, on='phewas_code', how='left')['MaxAgeAtICD']
-	# 			assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is filled"
-	# 			age[np.isnan(age)] = genotypes[genotypes['id']==i].iloc[0]['MaxAgeAtVisit']
-	# 			feature_matrix[1][count, :] = age
-	# 			if phewas_cov:
-	# 				feature_matrix[2][count, :] = int(
-	# 					phewas_cov in list(phenotypes[phenotypes['id'] == i]['phewas_code']))
-	#
-	# 	count+=1
-
-	return
 
 
 """

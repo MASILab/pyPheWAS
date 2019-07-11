@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+
+from pyPheWAS.pyPhewasCorev2 import *
+import sys, os
+import time
+
+optargs = {
+	'--phenotype': 'phenotypefile',
+	'--group':'groupfile',
+	'--path':'path',
+	'--covariates':'covariates',
+	'--response': 'response',
+	'--postfix': 'postfix',
+	'--reg_type':'reg_type',
+	'--phewas_cov':'phewas_cov',
+	'--imbalance': 'show_imbalance',
+	'--thresh_type':'thresh_type'
+}
+
+"""
+Retrieve and validate all arguments.
+"""
+start = time.time()
+
+args = sys.argv[1:]
+
+# Define any default arguments
+kwargs = {'postfix' : None, 'path':'.','phewas_cov':'','response':'','covariates':''}
+
+kwargs = process_args(kwargs, optargs, *args)
+
+# Change path to absolute path
+kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
+
+print(kwargs)
+
+# Assert that a valid regression type was used
+assert kwargs['reg_type'] in regression_map.keys(), "%s is not a valid regression type" % (kwargs['reg_type'])
+str_reg_type = kwargs['reg_type']
+kwargs['reg_type'] = regression_map[kwargs['reg_type']]
+
+
+# Assert that valid files were given
+assert kwargs['phenotypefile'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotypefile'])
+assert kwargs['groupfile'].endswith('.csv'), "%s is not a valid group file, must be a .csv file" % (kwargs['groupfile'])
+
+# Assign the output file if none was assigned
+if kwargs['postfix'] == None:
+	kwargs['postfix'] = os.path.splitext(kwargs['groupfile'])[0]
+else:
+	kwargs['postfix'] =  os.path.splitext(kwargs['postfix'])[0]
+
+# Check phewas_cov
+if kwargs['phewas_cov']:
+	kwargs['phewas_cov'] = float(kwargs['phewas_cov'])
+
+if kwargs['response'] == None:
+	kwargs['response'] = ""
+
+# Check covariates
+assert len(kwargs['covariates']) != 0, "No covariates provided"
+
+# Assert that a valid threshold type was used
+assert kwargs['thresh_type'] in threshold_map.keys(), "%s is not a valid regression type" % (kwargs['thresh_type'])
+str_thresh_type = kwargs['thresh_type']
+kwargs['thresh_type'] = threshold_map[kwargs['thresh_type']]
+
+# Evaluate the imbalance string
+kwargs['show_imbalance'] = eval(kwargs['show_imbalance'])
+
+# Print Arguments
+display_kwargs(kwargs)
+
+# Make all arguments local variables
+locals().update(kwargs)
+
+
+""" 
+pyPhewasLookup 
+"""
+
+print("Retrieving phenotype data...")
+phenotypes = get_input(path, phenotypefile, reg_type)
+
+print("Retrieving group data...")
+genotypes = get_group_file(path, groupfile)
+
+print("Generating feature matrix...")
+fm = generate_feature_matrix(genotypes,phenotypes,reg_type,phewas_cov)
+
+print("Saving feature matrices to %s" % path)
+
+np.savetxt(path + 'agg_measures_feature_matrix_' + postfix + '.csv', fm[0],delimiter=',')
+print("...")
+np.savetxt(path + 'icd_age_feature_matrix_' + postfix + '.csv', fm[1],delimiter=',')
+print("...")
+np.savetxt(path + 'phewas_cov_feature_matrix_' + postfix + '.csv', fm[2],delimiter=',')
+
+
+""" 
+pyPhewasModel 
+"""
+
+print("Running PheWAS regressions...")
+regressions = run_phewas(fm, genotypes,covariates, reg_type, response, phewas_cov)
+
+reg_outfile = "regressions_" + postfix + ".csv"
+print("Saving regression data to %s" % (path + reg_outfile))
+header = ','.join(['str_reg_type', str_reg_type, 'group', groupfile]) + '\n'
+f = open(os.sep.join([path, reg_outfile]), 'w')
+f.write(header)
+regressions.to_csv(f)
+f.close()
+
+
+""" 
+pyPhewasPlot 
+"""
+
+y = regressions['"-log(p)"']
+
+try:
+	regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
+	regressions.uplim = regressions.uplim.str.replace(']', '')
+	regressions.lowlim = regressions.lowlim.str.replace('[', '')
+	yb = regressions[['beta', 'lowlim', 'uplim']].as_matrix()
+	yb = yb.astype(float)
+except:
+	print 'no corr'
+
+# Check if an imbalanace will be used
+if show_imbalance:
+	imbalances = get_imbalances(regressions)
+else:
+	imbalances = np.array([])
+
+# Get the regular p-values using a numpy vectorized function
+regpvalues = np.vectorize(lambda x: 10**(-x))(y)
+
+# Get the threshold type
+if thresh_type == 0:
+		thresh = get_bon_thresh(y,0.05)
+elif thresh_type == 1:
+		thresh = get_fdr_thresh(regpvalues,0.05)
+
+save = path + postfix + '.pdf'
+saveb = path + postfix + '_beta.pdf'
+print("Saving plots to %s" % (save))
+
+plot_data_points(y, -math.log10(thresh), save, imbalances)
+plot_odds_ratio(yb, y, -math.log10(thresh), saveb, imbalances)
+
+end = time.time()
+print("pyPhewasPipeline Complete: Runtime %0.2f min" %((end-start)/60))

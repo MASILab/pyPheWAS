@@ -9,8 +9,7 @@ optargs = {
 	'--path':'path',
 	'--outfile': 'outfile',
 	'--reg_type':'reg_type',
-	'--phewas_cov':'phewas_cov',
-	'--header':'header'
+	'--phewas_cov':'phewas_cov'
 }
 
 """
@@ -20,7 +19,7 @@ Retrieve and validate all arguments.
 args = sys.argv[1:]
 
 # Define any default arguments
-kwargs = {'outfile' : None, 'path':'.','phewas_cov':'','header':False}
+kwargs = {'outfile' : None, 'path':'.','phewas_cov':''}
 
 kwargs = process_args(kwargs, optargs, *args)
 
@@ -64,6 +63,13 @@ print("Retrieving group data...")
 genotypes = get_group_file(path, groupfile)
 
 print("Generating feature matrix...")
-generate_feature_matrix(genotypes,phenotypes,reg_type,path,outfile,header,phewas_cov)
+print("Generating feature matrix...")
+fm = generate_feature_matrix(genotypes,phenotypes,reg_type,phewas_cov)
 
-print('pyPhewasLookup Complete')
+print("Saving feature matrices to %s" % (path + outfile))
+
+np.savetxt(path + 'agg_measures_' + outfile, fm[0],delimiter=',')
+print("...")
+np.savetxt(path + 'icd_age_' + outfile, fm[1],delimiter=',')
+print("...")
+np.savetxt(path + 'phewas_cov_' + outfile, fm[2],delimiter=',')
