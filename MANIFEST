@@ -9,6 +9,7 @@ bin/generateGroups
 bin/maximizeControls
 bin/pyPhewasLookup
 bin/pyPhewasModel
+bin/pyPhewasPipeline
 bin/pyPhewasPlot
 pyPheWAS/__init__.py
 pyPheWAS/censor_diagnosis.py
@@ -22,7 +23,6 @@ pyPheWAS/pyPhewasv2.py
 pyPheWAS/pyPhewasv3.py
 pyPheWAS/pyProWAS.py
 pyPheWAS/rt_censor_diagnosis.py
-pyPheWAS/setup.py
 pyPheWAS/resources/codes.csv
 pyPheWAS/resources/phecode_exclude.csv
 pyPheWAS/resources/prowas_codes.csv
