@@ -22,12 +22,12 @@ import statsmodels.discrete.discrete_model as sm
 import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
 from tqdm import tqdm
+import sys
 import warnings
 import time
 
 
-
-def get_codes():  # same
+def get_codes(version):  # same
 	"""
 	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
 
@@ -36,8 +36,23 @@ def get_codes():  # same
 
 	"""
 	path = os.path.dirname(os.path.abspath(__file__))
-	filename = os.sep.join([path, 'resources', 'codes.csv'])
-	return pd.read_csv(filename)
+	filename = os.sep.join([path, 'resources', 'phecode_map_'+ version + '.csv'])
+	if '9' in version:
+		icd_col = 'ICD9'
+	elif '10' in version:
+		icd_col = 'ICD10'
+	else:
+		# TODO: add an actual exception here
+		print('Error in phecode map version name: exiting pyPheWAS')
+		sys.exit()
+	try:
+		phecode_map = pd.read_csv(filename, dtype={icd_col: str, 'PheCode': str})
+	except Exception as e:
+		print(e)
+		print('Error in phecode map version name: exiting pyPheWAS')
+		sys.exit()
+
+	return phecode_map
 
 
 def get_group_file(path, filename):  # same
@@ -79,7 +94,7 @@ def get_input(path, filename, reg_type):  # diff -done - add duration
 		phenotypes = pd.merge(icdfile, codes, on='icd9')
 		print("...")
 		phenotypes['MaxAgeAtICD'] = 0
-		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
+		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max')
 		print("...")
 		phenotypes.sort_values(by='id', inplace=True)
 		print("...")
@@ -92,11 +107,11 @@ def get_input(path, filename, reg_type):  # diff -done - add duration
 		"""
 		phenotypes = pd.merge(icdfile, codes, on='icd9')
 		phenotypes['count'] = 0
-		phenotypes['count'] = phenotypes.groupby(['id', 'phewas_code'])['count'].transform('count')
-		phenotypes['duration'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max') - \
-								 phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('min') + 1
+		phenotypes['count'] = phenotypes.groupby(['id', 'PheCode'])['count'].transform('count')
+		phenotypes['duration'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max') - \
+								 phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('min') + 1
 		phenotypes['MaxAgeAtICD'] = 0
-		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
+		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max')
 	return phenotypes
 
 
@@ -120,7 +135,7 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov=''):
 	genotypes = genotypes_df.set_index('id').to_dict('index')
 
 	# use phewascodes to make a dictionary of indices in the np array
-	empty_phewas_df = phewas_codes.set_index('phewas_code')
+	empty_phewas_df = phewas_codes.set_index('PheCode')
 	empty_phewas_df.sort_index(inplace=True)
 	empty_phewas_df['np_index'] = range(0,empty_phewas_df.shape[0])
 	np_index = empty_phewas_df['np_index'].to_dict()
@@ -144,7 +159,7 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov=''):
 				feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
 
 			# add data to feature matrices
-			phecode_ix = np_index[data['phewas_code']]
+			phecode_ix = np_index[data['PheCode']]
 			feature_matrix[0][count][phecode_ix] = 1
 			feature_matrix[1][count][phecode_ix] = data['MaxAgeAtICD']
 			if phewas_cov:
@@ -181,11 +196,11 @@ def get_phewas_info(p_index):  # same
 	:returns: A list including the code, the name, and the rollup of the phewas code. The rollup is a list of all of the ICD-9 codes that are grouped into this phewas code.
 	:rtype: list of strings
 	"""
-	p_code = phewas_codes.loc[p_index].phewas_code
-	corresponding = codes[codes.phewas_code == p_code]
+	p_code = phewas_codes.loc[p_index].PheCode
+	corresponding = codes[codes.PheCode == p_code]
 
 	p_name = corresponding.iloc[0].phewas_string
-	p_rollup = ','.join(codes[codes.phewas_code == p_code].icd9.tolist())
+	p_rollup = ','.join(codes[codes.PheCode == p_code].icd9.tolist())
 	return [p_code, p_name, p_rollup]
 
 
@@ -706,7 +721,8 @@ threshold_map = {
 	'fdr': 1
 }
 
-codes = get_codes()
-phewas_codes = pd.DataFrame(codes['phewas_code'].drop_duplicates());
-phewas_codes.sort_values(by=['phewas_code'], inplace=True)
+icd9_codes = get_codes(version='v1_2_icd9')
+icd10_codes = get_codes(version='v1_2_icd10_beta')
+phewas_codes = pd.DataFrame(icd9_codes['PheCode'].drop_duplicates())
+phewas_codes.sort_values(by=['PheCode'], inplace=True)
 phewas_codes.reset_index(inplace=True)
