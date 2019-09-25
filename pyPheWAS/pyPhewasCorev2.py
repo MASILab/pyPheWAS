@@ -22,8 +22,9 @@ import statsmodels.discrete.discrete_model as sm
 import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
 from tqdm import tqdm
+import warnings
 import time
-from collections import OrderedDict
+
 
 
 def get_codes():  # same
@@ -71,7 +72,7 @@ def get_input(path, filename, reg_type):  # diff -done - add duration
 	:rtype: pandas DataFrame
 	"""
 	wholefname = path + filename
-	icdfile = pd.read_csv(wholefname)
+	icdfile = pd.read_csv(wholefname,dtype={'icd9':str})
 	icdfile['icd9'] = icdfile['icd9'].str.strip()
 	print("...")
 	if reg_type == 0:
@@ -225,13 +226,13 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covari
 			data['phe'] = phen_vector3
 			f = 'genotype ~ y + phe +' + covariates
 	try:
-		if lr == 0:
+		if lr == 0: # fit logit without regulatization
 			logreg = smf.logit(f, data).fit(disp=False)
 			p = logreg.pvalues.y
 			odds = 0  #
 			conf = logreg.conf_int()
 			od = [-math.log10(p), p, logreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
-		elif lr == 1:
+		elif lr == 1: # fit logit with regularization
 			f1 = f.split(' ~ ')
 			f1[1] = f1[1].replace(" ", "")
 			logit = sm.Logit(data[f1[0].strip()], data[f1[1].split('+')])
@@ -246,7 +247,14 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covari
 			odds = 0
 			conf = linreg.conf_int()
 			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
-	except:
+	except ValueError as ve:
+		print(ve)
+		print('lr = % d' %lr)
+		odds = 0
+		p = np.nan
+		od = [np.nan, np.nan, np.nan, np.nan]
+	except Exception as e:	
+		print(e)
 		odds = 0
 		p = np.nan
 		od = [np.nan, np.nan, np.nan, np.nan]
@@ -266,16 +274,21 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 	m = len(fm[0, 0])
 	p_values = np.zeros(m, dtype=float)
 	icodes = []
+	if genotypes.shape[0] < 500:
+		thresh = math.ceil(genotypes.shape[0] * 0.05)
+	else:
+		thresh = math.ceil(genotypes.shape[0] * 0.01)
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
 	control = fm[0][genotypes.genotype == 0, :]
 	disease = fm[0][genotypes.genotype == 1, :]
+	# find all phecodes that only present for a single genotype (ie only controls or only diseased show the phecode) -- have to use regularization!
 	inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
 	for index in tqdm(range(m), desc='Running Regressions'):
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
-		if np.where(phen_vector1 > 0)[0].shape[0] > 5:
+		if np.where(phen_vector1 > 0)[0].shape[0] > thresh:
 			if index in inds:
 				# print get_phewas_info(index)
 				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=1,
