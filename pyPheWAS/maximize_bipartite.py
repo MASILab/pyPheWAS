@@ -5,6 +5,7 @@ import numpy as np
 import sys
 import getopt
 from hopcroftkarp import HopcroftKarp
+from tqdm import tqdm
 
 """
 
@@ -48,11 +49,12 @@ def get_options(targets, controls, keys, deltas):
 
     return matching
 
-def output_matches(path, outputfile, data, all_used, success, matched):
+def output_matches(path, outputfile, data, all_used, success, goal, matched):
     new_data = data[data.index.isin(all_used)]
 
     if not success:
-        print("Could not match 1-1, using the maximum number of matches found by the approximation algorithm")
+        print("Could not match 1-%d, using the maximum number of matches found by the approximation algorithm" %goal)
+        print("Matched data 1-%0.3f" %matched)
         if '%s' in outputfile:
             outputfile = outputfile % ('max')
     else:
@@ -69,6 +71,9 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
     keys = keys.replace(" ","").split('+')
     deltas = deltas.replace(" ","").split(',')
     deltas = [CATEGORICAL_DATA if x == '' else float(x) for x in deltas]
+
+    # save original goal value
+    orig_goal = goal
 
     # Read data from the provided input file
     data = pd.read_csv(path + inputfile)
@@ -87,34 +92,51 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 
     match_by_control = len(targets) > len(controls)
 
-    if match_by_control:
+    if match_by_control: # more targets than controls
+        print('There are more targets (1) than controls (0) -- matching by controls')
         cid = set()
         tid = set()
+        set_num = 0
         while goal>0:
+            set_num += 1
+            print('Getting match set %d' %set_num)
             matching = get_options(targets, controls, keys, deltas)
             matched = HopcroftKarp(matching).maximum_matching()
-            for i in controls.index:
+            for i in tqdm(controls.index,total=len(controls),desc="Checking matches"):
                 if i in matched:
                     tid.add(matched[i])
                     cid.add(i)
             rem_ids = set(targets.index).difference(tid)
             targets=targets.ix[rem_ids]
             goal=goal-1
-    else:
+        final_ratio = float(len(tid)) / float(len(cid))
+    else: # more controls than targets
+        print('There are more controls (0) than targets (1) -- matching by targets')
         cid = set()
         tid = set()
+        set_num = 0
         while goal>0:
+            set_num += 1
+            print('Getting match set %d' % set_num)
             matching = get_options(targets, controls, keys, deltas)
             matched = HopcroftKarp(matching).maximum_matching()
-            for i in targets.index:
+            for i in tqdm(targets.index,total=len(targets),desc="Checking matches"):
                 if i in matched:
                     cid.add(matched[i])
                     tid.add(i)
+                else:
+                    print(data.loc[i,'id'])
             rem_ids = set(controls.index).difference(cid)
             controls=controls.ix[rem_ids]
             goal=goal-1
+        final_ratio = float(len(cid)) / float(len(tid))
     all_used=cid.union(tid)
 
-    output_matches(path, outputfile, data, all_used, 1, 1)
+    if final_ratio == orig_goal:
+        matching_success = 1
+    else:
+        matching_success = 0
+
+    output_matches(path, outputfile, data, all_used, matching_success, orig_goal,final_ratio)
 
 
