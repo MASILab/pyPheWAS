@@ -8,4 +8,4 @@ Bennett Landman, PhD
 
 Shikha Chaganti, PhD
 
-Cailey Kerley (Graduate Student)
+Cailey Kerley
