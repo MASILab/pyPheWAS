@@ -1,6 +1,7 @@
 import pandas as pd
 from hopcroftkarp import HopcroftKarp
 from tqdm import tqdm
+import numpy as np
 
 CATEGORICAL_DATA = '675161f1c87ff2648c61ff1c57c780f2'
 
@@ -45,7 +46,7 @@ def output_matches(path, outputfile, data, all_used, success, goal, matched):
 	new_data = data[data.index.isin(all_used)]
 
 	if not success:
-		print("Could not match 1-%d, using the maximum number of matches found by the approximation algorithm" % goal)
+		print("Could not match data 1-%d, using the maximum number of matches found by the approximation algorithm" % goal)
 		print("Matched data 1-%0.3f" % matched)
 		if '%s' in outputfile:
 			outputfile = outputfile % ('max')
@@ -55,10 +56,10 @@ def output_matches(path, outputfile, data, all_used, success, goal, matched):
 			outputfile = outputfile % (matched)
 
 	new_data.to_csv(path + outputfile, index=False)
-	print("Data in %s" % (path + outputfile))
+	print("New group file in %s" % (path + outputfile))
 
 
-def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype', goal=1):
+def control_match(path, inputfile, outputfile, keys, deltas, save_matches=False, condition='genotype', goal=1):
 	# Reformat arguments into Python format
 	keys = keys.replace(" ", "").split('+')
 	deltas = deltas.replace(" ", "").split(',')
@@ -72,79 +73,84 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 
 	# Assert that all of the provided keys are present in the data
 	for key in keys:
-		assert key in data.columns, '%s not a column in the input file (%s)' % (key, inputfile)
+		assert key in data.columns, '%s is not a column in the input file (%s)' % (key, inputfile)
+	# Assert that condition column is present in the data
+	assert condition in data.columns, 'Specified condition (%s) is not a column in the input file (%s)' % (condition, inputfile)
+	# Assert that condition column contains only '1' and '0'
+	condition_vals = np.unique(data[condition])
+	assert len(condition_vals) == 2, 'There are %d values (should only be 2) in the specified condition column (%s) in the input file (%s)' % (len(condition_vals), condition, inputfile)
+	for val in [0, 1]:
+		assert val in condition_vals, 'The value %d is missing from the condition column (%s) in the input file (%s)' % (val, condition, inputfile)
 
 	# Assign new value for outputfile
 	if not outputfile:
 		outputfile = '1-%s_' + inputfile
 
 	# Separate patients and controls
-	targets = data[data[condition] == 1].copy()
-	controls = data[data[condition] == 0].copy()
+	match_by_group0 = len(data[data[condition] == 1]) > len(data[data[condition] == 0])
+	if match_by_group0:
+		print('There are more targets (condition=1) than controls (condition=0) -- matching by controls')
+		targets = data[data[condition] == 0].copy()
+		controls = data[data[condition] == 1].copy()
+	else:
+		print('There are more controls (condition=0) than targets (condition=1) -- matching by targets')
+		targets = data[data[condition] == 1].copy()
+		controls = data[data[condition] == 0].copy()
 
-	match_by_control = len(targets) > len(controls)
+	# create dictionary to store matching pairs
+	targets['matching_ix'] = [[] for _ in range(targets.shape[0])]
+	pairing = targets[['matching_ix']].to_dict(orient='index')
 
-	if match_by_control:  # more targets than controls
-		print('There are more targets (1) than controls (0) -- matching by controls')
-		# create dictionary to store matching pairs
-		controls['matching_ix'] = [[] for _ in range(controls.shape[0])]
-		pairing = controls[['matching_ix']].to_dict(orient='index')
-		cid = set()
-		tid = set()
-		set_num = 0
-		while goal > 0:
-			set_num += 1
-			print('Getting match set %d' % set_num)
-			matching = get_options(targets, controls, keys, deltas)
-			matched = HopcroftKarp(matching).maximum_matching()
-			for i in tqdm(controls.index, total=len(controls), desc="Checking matches"):
-				if i in matched:
-					tid.add(matched[i])
-					cid.add(i)
-					pairing[i]['matching_ix'].append(matched[i])
-			rem_ids = set(targets.index).difference(tid)
-			targets = targets.ix[rem_ids]
-			goal = goal - 1
-		final_ratio = float(len(tid)) / float(len(cid))
+	cid = set()
+	tid = set()
+	set_num = 0
+	while goal > 0:
+		set_num += 1
+		print('Getting match set %d' % set_num)
+		matching = get_options(targets, controls, keys, deltas) # get all possible matches for each target
+		matched = HopcroftKarp(matching).maximum_matching() # find optimal pairings
+		# store matches
+		print('...')
+		for i in targets.index:
+			if i in matched:
+				cid.add(matched[i])
+				tid.add(i)
+				if save_matches: pairing[i]['matching_ix'].append(matched[i])
+		# remove matched IDs from control pool
+		rem_ids = set(controls.index).difference(cid)
+		controls = controls.ix[rem_ids]
+		goal = goal - 1
+
+	final_ratio = float(len(cid)) / float(len(tid))
+	all_used = cid.union(tid)
+
+	if save_matches:
+		print('Formatting matches')
 		# convert pairing to dataframe & get matching ids from ix
 		pairing_df = pd.DataFrame.from_dict(pairing, orient='index')
-		controls.loc[pairing_df.index, 'matching_ix'] = pairing_df['matching_ix']
-		get_ids = lambda i: list(data.loc[i['matching_ix'], 'id'].values)
-		controls['matching_ids'] = controls.apply(get_ids, axis=1)
-		# export matching pairs
-		controls.to_csv(path + 'matching_pairs.csv',index=False,columns = ['id','matching_ids'])
-	else:  # more controls than targets
-		print('There are more controls (0) than targets (1) -- matching by targets')
-		# create dictionary to store matching pairs
-		targets['matching_ix'] = [[] for _ in range(targets.shape[0])]
-		pairing = targets[['matching_ix']].to_dict(orient='index')
-		cid = set()
-		tid = set()
-		set_num = 0
-		while goal > 0:
-			set_num += 1
-			print('Getting match set %d' % set_num)
-			matching = get_options(targets, controls, keys, deltas)
-			matched = HopcroftKarp(matching).maximum_matching()
-			for i in tqdm(targets.index, total=len(targets), desc="Checking matches"):
-				if i in matched:
-					cid.add(matched[i])
-					tid.add(i)
-					pairing[i]['matching_ix'].append(matched[i])
-			# else:
-			#     print(data.loc[i,'id'])
-			rem_ids = set(controls.index).difference(cid)
-			controls = controls.ix[rem_ids]
-			goal = goal - 1
-		final_ratio = float(len(cid)) / float(len(tid))
-		# convert pairing to dataframe & get matching ids from ix
-		pairing_df = pd.DataFrame.from_dict(pairing, orient='index')
+		# copy matching ix and remove extra columns
 		targets.loc[pairing_df.index, 'matching_ix'] = pairing_df['matching_ix']
+		# get match IDs from index
 		get_ids = lambda i: list(data.loc[i['matching_ix'], 'id'].values)
 		targets['matching_ids'] = targets.apply(get_ids, axis=1)
+		# separate list of subject IDs & get matching subject's info
+		cols = keys[:]
+		for i in range(0,orig_goal):
+			match_col = 'match'+str(i+1)
+			cols.append(match_col)
+			expand = lambda x: pd.Series(x['matching_ids'])
+			targets[match_col] = targets.apply(expand, axis=1)[i]
+			for key in keys:
+				match_info = pd.merge(targets[[match_col]], data[['id', key]], left_on=match_col, right_on='id')
+				match_info.rename(columns={key: match_col + '_' + key}, inplace=True)
+				targets = pd.merge(targets, match_info.drop(columns='id'), on=match_col,how='left')
+				cols.append(match_col + '_' + key)
+
+		cols.insert(0,'id')
+		cols.insert(1, 'genotype')
 		# export matching pairs
-		targets.to_csv(path + 'matching_pairs.csv',index=False,columns = ['id','matching_ids'])
-	all_used = cid.union(tid)
+		print('Saving target/control mapping to ' + path + 'matches__' + outputfile)
+		targets.to_csv(path + 'matches__' + outputfile,index=False, columns=cols)
 
 	if final_ratio == orig_goal:
 		matching_success = 1
