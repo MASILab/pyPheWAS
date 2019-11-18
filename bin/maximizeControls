@@ -11,7 +11,8 @@ optargs = {
 	'--keys':'keys',
 	'--condition':'condition',
 	'--goal' : 'goal',
-	'--path' : 'path'
+	'--path' : 'path',
+	'--save_matches' : 'save_matches'
 }
 
 """
@@ -21,8 +22,8 @@ Retrieve and validate all arguments.
 # Retrieve Arguments
 args = sys.argv[1:]
 
-# No Default Arguments
-kwargs = {}
+# Default Arguments
+kwargs = {'save_matches' : False}
 
 # Process the arguments
 kwargs = process_args(kwargs, optargs, *args)
