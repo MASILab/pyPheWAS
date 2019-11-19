@@ -742,7 +742,7 @@ imbalance_colors = {
 regression_map = {
 	'log': 0,
 	'lin': 1,
-	'lind': 2
+	'dur': 2
 }
 threshold_map = {
 	'bon': 0,
