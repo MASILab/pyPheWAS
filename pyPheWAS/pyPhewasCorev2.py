@@ -17,14 +17,11 @@ from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import os
 import pandas as pd
-import scipy.stats
 import statsmodels.discrete.discrete_model as sm
 import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
 from tqdm import tqdm
 import sys
-import warnings
-import time
 
 
 def get_codes(version):  # same
@@ -230,16 +227,18 @@ def get_phewas_info(p_index):  # same
 	return [p_code, p_name, p_icd9_rollup,p_icd10_rollup]
 
 
-def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=0, response='',
+def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0, response='',
 						 phen_vector3=''):  # diff - done
 	"""
 	Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
 
 	:param genotypes: a DataFrame containing the genotype information
-	:param phen_vector: a array containing the phenotype vector
+	:param phen_vector1: a array containing the phenotype vector
+	:param phen_vector2: a array containing the phenotype vector
 	:param covariates: a string containing all desired covariates
 	:type genotypes: pandas DataFrame
-	:type phen_vector: numpy array
+	:type phen_vector1: numpy array
+	:type phen_vector2: numpy array
 	:type covariates: string
 
 	.. note::
@@ -256,16 +255,18 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covari
 	data['y'] = phen_vector1
 	data['MaxAgeAtICD'] = phen_vector2
 	# f='y~'+covariates
+	if covariates is not '':
+		covariates = '+' + covariates
 	if response:
-		f = response + '~ y + genotype +' + covariates
+		f = response + '~ y + genotype' + covariates
 		if phen_vector3.any():
 			data['phe'] = phen_vector3
 			f = response + '~ y + phe + genotype' + covariates
 	else:
-		f = 'genotype ~ y +' + covariates
+		f = 'genotype ~ y' + covariates
 		if phen_vector3.any():
 			data['phe'] = phen_vector3
-			f = 'genotype ~ y + phe +' + covariates
+			f = 'genotype ~ y + phe' + covariates
 	try:
 		if lr == 0: # fit logit without regulatization
 			logreg = smf.logit(f, data).fit(disp=False)
@@ -309,16 +310,16 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 	:param fm: The phewas feature matrix.
 	:param genotypes: A pandas DataFrame of the genotype file.
 	:param covariates: The covariates that the function is to be run on.
+	:param reg_type: The covariates that the function is to be run on.
+	:param response: The covariates that the function is to be run on.
+	:param phewas_cov: The covariates that the function is to be run on.
 
 	:returns: A tuple containing indices, p-values, and all the regression data.
 	"""
-	#TODO: figure out why the odds variable exists
+
 	num_phecodes = len(fm[0, 0])
-	p_values = np.zeros(num_phecodes, dtype=float)
-	if genotypes.shape[0] < 500:
-		thresh = math.ceil(genotypes.shape[0] * 0.05)
-	else:
-		thresh = math.ceil(genotypes.shape[0] * 0.01)
+	# p_values = np.zeros(num_phecodes, dtype=float)
+	thresh = math.ceil(genotypes.shape[0] * 0.01)
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
 	control = fm[0][genotypes.genotype == 0, :]
@@ -329,13 +330,16 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
+		# to prevent false positives, only run regressions if more than thresh records have positive values
 		if np.where(phen_vector1 > 0)[0].shape[0] > thresh:
 			if index in inds:
-				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=1,
+				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
+										   lr=1,
 										   response=response,
 										   phen_vector3=phen_vector3)
 			else:
-				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=0,
+				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
+										   lr=0,
 										   response=response,
 										   phen_vector3=phen_vector3)
 
@@ -353,7 +357,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 
 		regressions.loc[index] = info
 
-		p_values[index] = res[1] # TODO: can I take this out?
+		# p_values[index] = res[1] # TODO: can I take this out?
 	return regressions
 
 
@@ -494,7 +498,7 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 	"""
 
 	# Determine whether or not to show the imbalance.
-	fig = plt.figure()
+	fig = plt.figure(1)
 	ax = plt.subplot(111)
 	show_imbalance = imbalances.size != 0
 
@@ -533,30 +537,17 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 	#                            'Benj-Hoch-Yek p = ' + str(round(np.power(10, -thresh2), 3))], rotation=10, fontsize=10)
 	for i in idx:
 		if y[i] > thresh:
+			if show_imbalance:
+				mew = 1.5
+				if imbalances[i] > 0: m = '+'
+				else: m = '_'
+			else:
+				mew = 0.0
+				m = 'o'
+
+			ax.plot(e, y[i], m, color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full', markeredgewidth=mew)
 			e += 15
-			if show_imbalance:  # and imbalances[i]>0:
-				# if imbalances[i]>0:
-				artists.append(ax.text(e, y[i], c['Phenotype'][i], rotation=89, va='bottom', fontsize=8))
-			# else:
-			#	artists.append(ax.text(e, -y[i], c['phewas_string'][i], rotation=271, va='top',fontsize=8))
-			elif not show_imbalance:
-				artists.append(ax.text(e, y[i], c['Phenotype'][i], rotation=89, va='bottom'))
-		else:
-			e += 0
-
-		if show_imbalance:
-			if y[i] > thresh:
-				if imbalances[i] > 0:
-					ax.plot(e, y[i], '+', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
-							markeredgewidth=1.5)
-
-				else:
-					# ax.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
-					ax.plot(e, y[i], '_', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
-							markeredgewidth=1.5)
-		else:
-			ax.plot(e, y[i], 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
-					markeredgewidth=0.0)
+			artists.append(ax.text(e, y[i], c['Phenotype'][i], rotation=89, va='bottom', fontsize=8))
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
@@ -572,17 +563,12 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 	# if show_imbalance:
 	# 	for pos in linepos:
 	# 		ax.axvline(x=pos, color='black', ls='dotted')
+
 	# Determine the type of output desired (saved to a plot or displayed on the screen)
 	if save:
 		pdf = PdfPages(save)
 		pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
 		pdf.close()
-	else:
-		ax.subplots_adjust(left=0.05, right=0.85)
-		ax.show()
-
-	# Clear the plot in case another plot is to be made.
-	plt.clf()
 
 
 def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
@@ -605,7 +591,7 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
 	"""
 
 	# Determine whether or not to show the imbalance.
-	fig = plt.figure()
+	fig = plt.figure(2)
 	ax = plt.subplot(111)
 	show_imbalance = imbalances.size != 0
 
@@ -643,48 +629,41 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
 					artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, ha='left', fontsize=6))
 				else:
 					artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, ha='right', fontsize=6))
-			elif not show_imbalance:
-				artists.append(ax.text(e, y[i][0], c['Phenotype'][i], rotation=40, va='bottom'))
-		else:
-			e += 0
+			else:
+				artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, va='bottom'))
+		# else:
+		# 	e += 0
 
-		if show_imbalance:
-			if p[i] > thresh:
-				ax.plot(y[i][0], e, 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
-						markeredgewidth=0.0)
-				ax.plot([y[i, 1], y[i, 2]], [e, e], color=plot_colors[c[i:i + 1].category_string.values[0]])
+		# if show_imbalance:
+		if p[i] > thresh:
+			ax.plot(y[i][0], e, 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
+			ax.plot([y[i, 1], y[i, 2]], [e, e], color=plot_colors[c[i:i + 1].category_string.values[0]])
 		# else:
 		# ax.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
 		#	ax.plot(e,-y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
-		else:
-			ax.plot(e, y[i], 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
-					markeredgewidth=0.0)
+		# else:
+			# ax.plot(e, y[i], 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
 	for lab in plot_colors.keys():
 		line1.append(
 			mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
-	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.15), loc='upper center', fancybox=True, ncol=4,
-							 prop={'size': 6}))
-	ax.axvline(x=0, color='black')
+	artists.append(
+		ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
+	ax.axhline(y=0, color='black')
 	frame1.axes.get_yaxis().set_visible(False)
 
 	# If the imbalance is to be shown, draw lines to show the categories.
 	# if show_imbalance:
 	# 	for pos in linepos:
 	# 		ax.axvline(x=pos, color='black', ls='dotted')
+
 	# Determine the type of output desired (saved to a plot or displayed on the screen)
 	if save:
 		pdf = PdfPages(save)
 		pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
 		pdf.close()
-	else:
-		ax.subplots_adjust(left=0.05, right=0.85)
-		ax.show()
-
-	# Clear the plot in case another plot is to be made.
-	plt.clf()
 
 
 def process_args(kwargs, optargs, *args):
@@ -746,7 +725,8 @@ regression_map = {
 }
 threshold_map = {
 	'bon': 0,
-	'fdr': 1
+	'fdr': 1,
+	'custom':2
 }
 
 icd9_codes = get_codes(version='v1_2_icd9')
