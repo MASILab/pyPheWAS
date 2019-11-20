@@ -1,6 +1,5 @@
 import pandas as pd
 from hopcroftkarp import HopcroftKarp
-from tqdm import tqdm
 import numpy as np
 
 CATEGORICAL_DATA = '675161f1c87ff2648c61ff1c57c780f2'
@@ -59,7 +58,7 @@ def output_matches(path, outputfile, data, all_used, success, goal, matched):
 	print("New group file in %s" % (path + outputfile))
 
 
-def control_match(path, inputfile, outputfile, keys, deltas, save_matches=False, condition='genotype', goal=1):
+def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype', goal=1):
 	# Reformat arguments into Python format
 	keys = keys.replace(" ", "").split('+')
 	deltas = deltas.replace(" ", "").split(',')
@@ -115,7 +114,7 @@ def control_match(path, inputfile, outputfile, keys, deltas, save_matches=False,
 			if i in matched:
 				cid.add(matched[i])
 				tid.add(i)
-				if save_matches: pairing[i]['matching_ix'].append(matched[i])
+				pairing[i]['matching_ix'].append(matched[i])
 		# remove matched IDs from control pool
 		rem_ids = set(controls.index).difference(cid)
 		controls = controls.ix[rem_ids]
@@ -124,33 +123,32 @@ def control_match(path, inputfile, outputfile, keys, deltas, save_matches=False,
 	final_ratio = float(len(cid)) / float(len(tid))
 	all_used = cid.union(tid)
 
-	if save_matches:
-		print('Formatting matches')
-		# convert pairing to dataframe & get matching ids from ix
-		pairing_df = pd.DataFrame.from_dict(pairing, orient='index')
-		# copy matching ix and remove extra columns
-		targets.loc[pairing_df.index, 'matching_ix'] = pairing_df['matching_ix']
-		# get match IDs from index
-		get_ids = lambda i: list(data.loc[i['matching_ix'], 'id'].values)
-		targets['matching_ids'] = targets.apply(get_ids, axis=1)
-		# separate list of subject IDs & get matching subject's info
-		cols = keys[:]
-		for i in range(0,orig_goal):
-			match_col = 'match'+str(i+1)
-			cols.append(match_col)
-			expand = lambda x: pd.Series(x['matching_ids'])
-			targets[match_col] = targets.apply(expand, axis=1)[i]
-			for key in keys:
-				match_info = pd.merge(targets[[match_col]], data[['id', key]], left_on=match_col, right_on='id')
-				match_info.rename(columns={key: match_col + '_' + key}, inplace=True)
-				targets = pd.merge(targets, match_info.drop(columns='id'), on=match_col,how='left')
-				cols.append(match_col + '_' + key)
+	print('Formatting matches')
+	# convert pairing to dataframe & get matching ids from ix
+	pairing_df = pd.DataFrame.from_dict(pairing, orient='index')
+	# copy matching ix and remove extra columns
+	targets.loc[pairing_df.index, 'matching_ix'] = pairing_df['matching_ix']
+	# get match IDs from index
+	get_ids = lambda i: list(data.loc[i['matching_ix'], 'id'].values)
+	targets['matching_ids'] = targets.apply(get_ids, axis=1)
+	# separate list of subject IDs & get matching subject's info
+	cols = keys[:]
+	for i in range(0,orig_goal):
+		match_col = 'match'+str(i+1)
+		cols.append(match_col)
+		expand = lambda x: pd.Series(x['matching_ids'])
+		targets[match_col] = targets.apply(expand, axis=1)[i]
+		for key in keys:
+			match_info = pd.merge(targets[[match_col]], data[['id', key]], left_on=match_col, right_on='id')
+			match_info.rename(columns={key: match_col + '_' + key}, inplace=True)
+			targets = pd.merge(targets, match_info.drop(columns='id'), on=match_col,how='left')
+			cols.append(match_col + '_' + key)
 
-		cols.insert(0,'id')
-		cols.insert(1, 'genotype')
-		# export matching pairs
-		print('Saving target/control mapping to ' + path + 'matches__' + outputfile)
-		targets.to_csv(path + 'matches__' + outputfile,index=False, columns=cols)
+	cols.insert(0,'id')
+	cols.insert(1, 'genotype')
+	# export matching pairs
+	print('Saving target/control mapping to ' + path + 'matches__' + outputfile)
+	targets.to_csv(path + 'matches__' + outputfile,index=False, columns=cols)
 
 	if final_ratio == orig_goal:
 		matching_success = 1
