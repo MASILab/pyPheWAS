@@ -3,6 +3,7 @@
 from pyPheWAS.pyPhewasCorev2 import process_args
 from pyPheWAS.maximize_bipartite import *
 import sys, os
+import argparse
 
 optargs = {
 	'--input': 'inputfile',
@@ -11,8 +12,7 @@ optargs = {
 	'--keys':'keys',
 	'--condition':'condition',
 	'--goal' : 'goal',
-	'--path' : 'path',
-	'--save_matches' : 'save_matches'
+	'--path' : 'path'
 }
 
 """
