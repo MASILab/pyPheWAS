@@ -1,43 +1,51 @@
 #!/usr/bin/env python
 
 from pyPheWAS.pyPhewasCorev2 import *
-import sys, os
+import os
 import time
+import math
+import argparse
 
-optargs = {
-	'--phenotype': 'phenotypefile',
-	'--group':'groupfile',
-	'--path':'path',
-	'--covariates':'covariates',
-	'--response': 'response',
-	'--postfix': 'postfix',
-	'--reg_type':'reg_type',
-	'--phewas_cov':'phewas_cov',
-	'--imbalance': 'show_imbalance',
-	'--thresh_type':'thresh_type'
-}
+def parse_args():
+    parser = argparse.ArgumentParser(description="pyPheWAS ICD-Phecode Lookup Tool")
+
+    parser.add_argument('--phenotype', required=True, type=str, help='Name of the phenotype file (e.g. icd9_data.csv)')
+    parser.add_argument('--group', required=True, type=str, help ='Name of the group file (e.g. groups.csv)')
+    parser.add_argument('--reg_type', required=True, type=str, help='Type of regression that you would like to use (log, lin, or dur)')
+    parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files')
+    parser.add_argument('--postfix', required=False, default=None, type=str, help='Descriptive postfix for output files (e.g. poster or ages50-60)')
+    parser.add_argument('--phewas_cov', required=False, default=None, type=float, help="PheCodes to use as covariates in pyPhewasModel's regression")
+    parser.add_argument('--covariates', required=False, default='', type=str, help='Variables to be used as covariates')
+    parser.add_argument('--response', required=False, default='', type=str, help='Variable to predict instead of genotype')
+    parser.add_argument('--imbalance', required=False, default="True", type=str, help='Whether or not to show the direction of imbalance in the plot')
+    parser.add_argument('--thresh_type', required=False, default=None, type=str, help='Type of threshold to be used in the plot (fdr, bon, or custom)')
+    parser.add_argument('--custom_thresh', required=False, default=None, type=float, help="Custom threshold value (float between 0 and 1)")
+
+    args = parser.parse_args()
+    return args
 
 """
 Retrieve and validate all arguments.
 """
 start = time.time()
 
-args = sys.argv[1:]
-
-# Define any default arguments
-kwargs = {'postfix' : None, 'path':'.','phewas_cov':'','response':'','covariates':''}
-
-kwargs = process_args(kwargs, optargs, *args)
-
-# Change path to absolute path
-kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
-
-print(kwargs)
+args = parse_args()
+kwargs = {'path': os.path.join(os.path.abspath(args.path),''),
+          'phenotypefile': args.phenotype,
+          'groupfile': args.group,
+          'phewas_cov':args.phewas_cov,
+          'postfix':args.postfix,
+          'show_imbalance': eval(args.imbalance),
+          'custom_thresh': args.custom_thresh,
+          'covariates': args.covariates,
+          'response': args.response
+}
+str_reg_type = args.reg_type
+str_thresh_type = args.thresh_type
 
 # Assert that a valid regression type was used
-assert kwargs['reg_type'] in regression_map.keys(), "%s is not a valid regression type" % (kwargs['reg_type'])
-str_reg_type = kwargs['reg_type']
-kwargs['reg_type'] = regression_map[kwargs['reg_type']]
+assert str_reg_type in regression_map.keys(), "%s is not a valid regression type" % str_reg_type
+kwargs['reg_type'] = regression_map[str_reg_type]
 
 
 # Assert that valid files were given
@@ -45,28 +53,31 @@ assert kwargs['phenotypefile'].endswith('.csv'), "%s is not a valid phenotype fi
 assert kwargs['groupfile'].endswith('.csv'), "%s is not a valid group file, must be a .csv file" % (kwargs['groupfile'])
 
 # Assign the output file if none was assigned
-if kwargs['postfix'] == None:
-	kwargs['postfix'] = os.path.splitext(kwargs['groupfile'])[0]
+if kwargs['postfix'] is None:
+    if kwargs['covariates'] is not '':
+        kwargs['postfix'] = kwargs['covariates'] + '_' + os.path.splitext(kwargs['groupfile'])[0]
+    else:
+        kwargs['postfix'] = os.path.splitext(kwargs['groupfile'])[0]
 else:
-	kwargs['postfix'] =  os.path.splitext(kwargs['postfix'])[0]
+    if kwargs['covariates'] is not '':
+        kwargs['postfix'] = kwargs['covariates'] + '_' + os.path.splitext(kwargs['postfix'])[0]
+    else:
+        kwargs['postfix'] = os.path.splitext(kwargs['groupfile'])[0]
 
 # Check phewas_cov
 if kwargs['phewas_cov']:
-	kwargs['phewas_cov'] = float(kwargs['phewas_cov'])
+    kwargs['phewas_cov'] = float(kwargs['phewas_cov'])
 
-if kwargs['response'] == None:
-	kwargs['response'] = ""
+if kwargs['response'] is None:
+    kwargs['response'] = ""
 
-# Check covariates
-assert len(kwargs['covariates']) != 0, "No covariates provided"
 
 # Assert that a valid threshold type was used
-assert kwargs['thresh_type'] in threshold_map.keys(), "%s is not a valid regression type" % (kwargs['thresh_type'])
-str_thresh_type = kwargs['thresh_type']
-kwargs['thresh_type'] = threshold_map[kwargs['thresh_type']]
-
-# Evaluate the imbalance string
-kwargs['show_imbalance'] = eval(kwargs['show_imbalance'])
+if args.thresh_type is None:
+    kwargs['thresh_type'] = ['fdr','bon']
+else:
+    assert str_thresh_type in threshold_map.keys(), "%s is not a valid threshold type" % (str_thresh_type)
+    kwargs['thresh_type'] = [str_thresh_type]
 
 # Print Arguments
 display_kwargs(kwargs)
@@ -102,7 +113,7 @@ pyPhewasModel
 """
 
 print("Running PheWAS regressions...")
-regressions = run_phewas(fm, genotypes,covariates, reg_type, response, phewas_cov)
+regressions = run_phewas(fm, genotypes, covariates, reg_type, response, phewas_cov)
 
 reg_outfile = "regressions_" + postfix + ".csv"
 print("Saving regression data to %s" % (path + reg_outfile))
@@ -117,38 +128,55 @@ f.close()
 pyPhewasPlot 
 """
 
+
 y = regressions['"-log(p)"']
 
 try:
-	regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
-	regressions.uplim = regressions.uplim.str.replace(']', '')
-	regressions.lowlim = regressions.lowlim.str.replace('[', '')
-	yb = regressions[['beta', 'lowlim', 'uplim']].as_matrix()
-	yb = yb.astype(float)
+    regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
+    regressions.uplim = regressions.uplim.str.replace(']', '')
+    regressions.lowlim = regressions.lowlim.str.replace('[', '')
+    yb = regressions[['beta', 'lowlim', 'uplim']].values
+    yb = yb.astype(float)
 except:
-	print 'no corr'
+    print 'no corr'
 
-# Check if an imbalanace will be used
+# Check if an imbalance will be used
 if show_imbalance:
-	imbalances = get_imbalances(regressions)
+    imbalances = get_imbalances(regressions)
 else:
-	imbalances = np.array([])
+    imbalances = np.array([])
 
 # Get the regular p-values using a numpy vectorized function
 regpvalues = np.vectorize(lambda x: 10**(-x))(y)
 
-# Get the threshold type
-if thresh_type == 0:
-		thresh = get_bon_thresh(y,0.05)
-elif thresh_type == 1:
-		thresh = get_fdr_thresh(regpvalues,0.05)
+for t in thresh_type:
+    t_num = threshold_map[t]
 
-save = path + postfix + '.pdf'
-saveb = path + postfix + '_beta.pdf'
-print("Saving plots to %s" % (save))
+    # Get the threshold type
+    if t_num == 0:
+        thresh = get_bon_thresh(y,0.05)
+    elif t_num == 1:
+        thresh = get_fdr_thresh(regpvalues,0.05)
+    elif t_num == 2:
+        thresh = kwargs['custom_thresh']
 
-plot_data_points(y, -math.log10(thresh), save, imbalances)
-plot_odds_ratio(yb, y, -math.log10(thresh), saveb, imbalances)
+    save = path + t + '_'  + postfix + '.pdf'
+    saveb = path + t + '_' + postfix + '_beta.pdf'
+    print('Saving plots to %s' %save)
 
-end = time.time()
-print("pyPhewasPipeline Complete: Runtime %0.2f min" %((end-start)/60))
+    plot_data_points(y, -math.log10(thresh), save, imbalances)
+    plot_odds_ratio(yb, y, -math.log10(thresh), saveb, imbalances)
+
+interval = time.time() - start
+hour = math.floor(interval/3600.0)
+minute = math.floor((interval - hour*3600)/60)
+second = math.floor(interval - hour*3600 - minute*60)
+
+if hour > 0:
+    time_str = '%dh:%dm:%ds' %(hour,minute,second)
+elif minute > 0:
+    time_str = '%dm:%ds' % (minute, second)
+else:
+    time_str = '%ds' % second
+
+print('pyPhewasPipeline Complete\nRuntime: %s' %time_str)
