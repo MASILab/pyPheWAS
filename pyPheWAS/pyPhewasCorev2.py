@@ -22,6 +22,7 @@ import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
 from tqdm import tqdm
 import sys
+import time
 
 
 def get_codes(version):  # same
@@ -73,26 +74,33 @@ def get_group_file(path, filename):  # same
 	return genotypes_df
 
 
-def get_input(path, filename, reg_type):  # diff -done - add duration
+def get_icd_codes(path, filename, reg_type):
 	"""
 	Read all of the phenotype data from the given file and load it into a pandas DataFrame.
 
 	:param path: The path to the file that contains the phenotype data
 	:param filename: The name of the file that contains the phenotype data.
+	:param reg_type: Type of regression
 	:type path: string
 	:type filename: string
+	:type reg_type: int
 
 	:returns: The data from the phenotype file.
 	:rtype: pandas DataFrame
 	"""
+
 	wholefname = path + filename
 	icdfile = pd.read_csv(wholefname,dtype={'ICD_CODE':str})
 	icdfile['ICD_CODE'] = icdfile['ICD_CODE'].str.strip()
 	icd_types = np.unique(icdfile['ICD_TYPE'])
+
+	# check ICD types present in file
 	if not all((icd_types == 9) | (icd_types == 10)):
 		# TODO: add actual exception
 		print('Found an ICD_TYPE that was not 9 or 10 - Please check phenotype file.\nExiting pyPheWAS')
 		sys.exit()
+
+	# merge with Phecode table, depends on which type(s) of ICD codes are in the icd file
 	if icd_types.shape[0] == 2:
 		print('Found both ICD-9 and ICD-10 codes.')
 		icd9s = icdfile[icdfile['ICD_TYPE'] == 9]
@@ -108,47 +116,44 @@ def get_input(path, filename, reg_type):  # diff -done - add duration
 		phenotypes = pd.merge(icdfile, icd10_codes, on='ICD_CODE')
 	else:
 		# TODO: add actual exception
-		print('An issue occured while parsing the ICD_TYPE column - Please check phenotype file.\nExiting pyPheWAS')
+		print('An issue occurred while parsing the ICD_TYPE column - Please check phenotype file.\nExiting pyPheWAS')
 		sys.exit()
 
-	print("...")
-	if reg_type == 0:
-		print("...")
-		phenotypes['MaxAgeAtICD'] = 0
-		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max')
-		print("...")
-		phenotypes.sort_values(by='id', inplace=True)
-		print("...")
-	else:
-		"""
-		This needs to be changed, need to adjust for a variety of different naming conventions
-		in the phenotype file, not simply 'AgeAtICD', 'id', 'icd9', etc.
-		Either we need to adjust for different names in the code, or state explicitly in the
-		documentation that we cannot do things like this.
-		"""
-		phenotypes['count'] = 0
-		phenotypes['count'] = phenotypes.groupby(['id', 'PheCode'])['count'].transform('count')
+	if reg_type == 2:
+		# pre-calculate durations for feature matrix step
 		phenotypes['duration'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max') - \
 								 phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('min') + 1
-		phenotypes['MaxAgeAtICD'] = 0
-		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max')
+
+	# calculate max age at each ICD code
+	phenotypes['MaxAgeAtICD'] = 0
+	phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max')
+	# pre-sort by ID for feature matrix step
+	phenotypes.sort_values(by='id', inplace=True)
+
 	return phenotypes
 
 
-def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov=''):
+def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
-	:param genotypes:
+	:param genotypes_df:
 	:param icds:
-	:type genotypes:
-	:type icds:
+	:param reg_type:
+	:param phewas_cov:
+	:type genotypes_df: pandas DataFrame
+	:type icds: pandas DataFrame
+	:type reg_type: int
+	:type phewas_cov: str
 
 	:returns:
 	:rtype:
 
 	"""
 
+	# feature matrix 0: reg_type specific data
+	# feature matrix 1: age data
+	# feature matrix 2: phecode covariance data
 	feature_matrix = np.zeros((3, genotypes_df.shape[0], phewas_codes.shape[0]), dtype=float)
 
 	# make genotype a dictionary for faster access time
@@ -164,36 +169,36 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov=''):
 	last_id = ''  # track last id seen in icd list
 	count = -1
 
-	for index, data in tqdm(icds.iterrows(), desc="Processing ICDs", total=icds.shape[0]):
+	for _,event in tqdm(icds.iterrows(), desc="Processing ICDs", total=icds.shape[0]):
+		curr_id = event['id']
+		if not curr_id in genotypes:
+			if not curr_id in exclude:
+				print('%s has records in icd file but is not in group file - excluding from study' % curr_id)
+				exclude.append(curr_id)
+			continue
+		# check id to see if a new subject has been found
+		if last_id != curr_id:
+			count += 1
+			last_id = curr_id  # reset last_id
+			feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
+
+		# get column index of event phecode
+		phecode_ix = np_index[event['PheCode']]
+		# add the max at of that ICD code to the age feature matrix
+		feature_matrix[1][count][phecode_ix] = event['MaxAgeAtICD']
+		# if using a phecode covariate and the event phecode is equal to the covariate phecode, set the fm2 to 1 for this subject
+		if (phewas_cov is not None) & (event['PheCode'] == phewas_cov):
+			feature_matrix[2][count][:] = 1
+
 		if reg_type == 0:
-			curr_id = data['id']
-			if not curr_id in genotypes:
-				if not curr_id in exclude:
-					print('%s has records in icd file but is not in group file - excluding from study' % (curr_id))
-					exclude.append(curr_id)
-				continue
-			# check id to see if a new subject has been found
-			if last_id != curr_id:
-				count += 1
-				last_id = curr_id  # reset last_id
-				feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
-
-			# add data to feature matrices
-			phecode_ix = np_index[data['PheCode']]
+			# binary aggregate: add a 1 to the phecode's column to denote that this subject had this phecode at some point
 			feature_matrix[0][count][phecode_ix] = 1
-			feature_matrix[1][count][phecode_ix] = data['MaxAgeAtICD']
-			if phewas_cov:
-				# TODO: add phewas_cov
-				continue
-
 		elif reg_type == 1:
-			# TODO: add linear regression
-			print("linear (count) regression is not currently supported")
-			return -1
+			# count aggregate: add 1 to the phecode's column to find the total number of times this subject had this phecode
+			feature_matrix[0][count][phecode_ix] += 1
 		else:
-			# TODO: add duration regression
-			print("duration regression is not currently supported")
-			return -1
+			# dur aggregate: store the number of years between the first and last events with this phecode
+			feature_matrix[0][count][phecode_ix] = event['duration'] # duration calculated in get_icd_codes()
 
 	return feature_matrix
 
@@ -318,7 +323,6 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 	"""
 
 	num_phecodes = len(fm[0, 0])
-	# p_values = np.zeros(num_phecodes, dtype=float)
 	thresh = math.ceil(genotypes.shape[0] * 0.01)
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
@@ -357,7 +361,6 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 
 		regressions.loc[index] = info
 
-		# p_values[index] = res[1] # TODO: can I take this out?
 	return regressions
 
 
@@ -546,8 +549,8 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 				m = 'o'
 
 			ax.plot(e, y[i], m, color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full', markeredgewidth=mew)
-			e += 15
 			artists.append(ax.text(e, y[i], c['Phenotype'][i], rotation=89, va='bottom', fontsize=8))
+			e += 15
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
@@ -630,7 +633,7 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
 				else:
 					artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, ha='right', fontsize=6))
 			else:
-				artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, va='bottom'))
+				artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, va='bottom', fontsize=6))
 		# else:
 		# 	e += 0
 
