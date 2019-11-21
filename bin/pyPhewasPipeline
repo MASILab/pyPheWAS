@@ -91,7 +91,7 @@ pyPhewasLookup
 """
 
 print("Retrieving phenotype data...")
-phenotypes = get_input(path, phenotypefile, reg_type)
+phenotypes = get_icd_codes(path, phenotypefile, reg_type)
 
 print("Retrieving group data...")
 genotypes = get_group_file(path, groupfile)
