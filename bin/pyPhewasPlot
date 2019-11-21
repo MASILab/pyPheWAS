@@ -10,13 +10,12 @@ import matplotlib.pyplot as plt
 def parse_args():
     parser = argparse.ArgumentParser(description="pyPheWAS Plotting Tool")
 
-
     parser.add_argument('--statfile', required=True, type=str, help='Name of the statistics/regressions file')
     parser.add_argument('--imbalance', required=True, type=str, help ='Whether or not to show the direction of imbalance in the plot')
     parser.add_argument('--thresh_type', required=True, type=str, help=' the type of threshold to be used in the plot')
-    parser.add_argument('--custom_thresh', required=False, default=None, type=float, help="Custom threshold value (float between 0 and 1)")
+    parser.add_argument('--custom_thresh', required=False, default=None, type=float, help='Custom threshold value (float between 0 and 1)')
     parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files')
-    parser.add_argument('--outfile', required=False, default=None, type=str, help="Name of the output file for the plot")
+    parser.add_argument('--outfile', required=False, default=None, type=str, help='Name of the output file for the plot')
 
     args = parser.parse_args()
     return args
