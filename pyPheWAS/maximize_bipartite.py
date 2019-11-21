@@ -43,6 +43,7 @@ def get_options(targets, controls, keys, deltas):
 
 def output_matches(path, outputfile, data, all_used, success, goal, matched):
 	new_data = data[data.index.isin(all_used)]
+	print('---')
 
 	if not success:
 		print("Could not match data 1-%d, using the maximum number of matches found by the approximation algorithm" % goal)
@@ -88,11 +89,11 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 	# Separate patients and controls
 	match_by_group0 = len(data[data[condition] == 1]) > len(data[data[condition] == 0])
 	if match_by_group0:
-		print('There are more targets (condition=1) than controls (condition=0) -- matching by controls')
+		print('There are more cases (%s=1) than controls (%s=0) -- matching by controls' %(condition, condition))
 		targets = data[data[condition] == 0].copy()
 		controls = data[data[condition] == 1].copy()
 	else:
-		print('There are more controls (condition=0) than targets (condition=1) -- matching by targets')
+		print('There are more controls (%s=0) than cases (%s=1) -- matching by cases' %(condition, condition))
 		targets = data[data[condition] == 1].copy()
 		controls = data[data[condition] == 0].copy()
 
@@ -109,7 +110,6 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 		matching = get_options(targets, controls, keys, deltas) # get all possible matches for each target
 		matched = HopcroftKarp(matching).maximum_matching() # find optimal pairings
 		# store matches
-		print('...')
 		for i in targets.index:
 			if i in matched:
 				cid.add(matched[i])
@@ -147,7 +147,7 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 	cols.insert(0,'id')
 	cols.insert(1, 'genotype')
 	# export matching pairs
-	print('Saving target/control mapping to ' + path + 'matches__' + outputfile)
+	print('Saving case/control mapping to ' + path + 'matches__' + outputfile)
 	targets.to_csv(path + 'matches__' + outputfile,index=False, columns=cols)
 
 	if final_ratio == orig_goal:
