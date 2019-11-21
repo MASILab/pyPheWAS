@@ -93,3 +93,4 @@ else:
     time_str = '%ds' % second
 
 print('pyPhewasLookup Complete\nRuntime: %s' %time_str)
+
