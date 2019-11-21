@@ -681,9 +681,10 @@ def process_args(kwargs, optargs, *args):
 def display_kwargs(kwargs):
 	print("Arguments: ")
 	for k, v in kwargs.items():
-		left = str(k).ljust(30, '.')
-		right = str(v).rjust(50, '.')
-		print(left + right)
+		num_dots = 80 - len(str(k)) - len(str(v))
+		# left = str(k).ljust(30, '.')
+		# right = str(v).rjust(50, '.')
+		print(str(k) + '.'*num_dots + str(v))
 
 
 output_columns = ['PheWAS Code',
