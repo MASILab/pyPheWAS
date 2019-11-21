@@ -1,37 +1,44 @@
 #!/usr/bin/env python
 
-from pyPheWAS.pyPhewasCorev2 import process_args
+from pyPheWAS.pyPhewasCorev2 import display_kwargs
 from pyPheWAS.maximize_bipartite import *
-import sys, os
+import os
+import argparse
 
-optargs = {
-	'--input': 'inputfile',
-	'--output':'outputfile',
-	'--deltas':'deltas',
-	'--keys':'keys',
-	'--condition':'condition',
-	'--goal' : 'goal',
-	'--path' : 'path'
-}
+def parse_args():
+    parser = argparse.ArgumentParser(description="pyPheWAS Case/Control Matching Tool")
+
+    parser.add_argument('--input', required=True, type=str, help='Name of the input group file')
+    parser.add_argument('--output', required=True, type=str, help ='Name of the output group file')
+    parser.add_argument('--deltas', required=True, type=str, help='Intervals for the matching criteria')
+    parser.add_argument('--keys', required=True, type=str, help='Fields on which the matching criteria is applied')
+    parser.add_argument('--goal', required=True, type=int, help='n, indicating the ratio of control and case groups that are being matched')
+    parser.add_argument('--condition', required=False, default='genotype', type=str, help='Field which denotes the groups to be matched (default = genotype)')
+    parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files (default = current directory)')
+
+    args = parser.parse_args()
+    return args
 
 """
 Retrieve and validate all arguments.
 """
 
-# Retrieve Arguments
-args = sys.argv[1:]
+args = parse_args()
+kwargs = {'path': os.path.join(os.path.abspath(args.path),''),
+          'inputfile': args.input,
+          'outputfile': args.output,
+          'deltas':args.deltas,
+          'keys':args.keys,
+          'condition':args.condition,
+          'goal': int(args.goal)
+}
 
-# No Default Arguments
-kwargs = {}
+assert kwargs['inputfile'].endswith('.csv'), "%s is not a valid input group file, must be a .csv file" % (kwargs['inputfile'])
+assert kwargs['outputfile'].endswith('.csv'), "%s is not a valid output group file, must be a .csv file" % (kwargs['outputfile'])
+assert os.path.exists(kwargs['path'] + kwargs['inputfile']), "%s does not exist" %(kwargs['path'] + kwargs['inputfile'])
 
-# Process the arguments
-kwargs = process_args(kwargs, optargs, *args)
-
-# Set path to being absolute
-kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
-
-# Set the goal as an integer
-kwargs['goal'] = int(kwargs['goal'])
+# Print Arguments
+display_kwargs(kwargs)
 
 # Run command with arguments
 control_match(**kwargs)

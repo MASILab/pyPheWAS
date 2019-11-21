@@ -17,17 +17,15 @@ from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import os
 import pandas as pd
-import scipy.stats
 import statsmodels.discrete.discrete_model as sm
 import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
 from tqdm import tqdm
-import warnings
+import sys
 import time
 
 
-
-def get_codes():  # same
+def get_codes(version):  # same
 	"""
 	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
 
@@ -36,8 +34,25 @@ def get_codes():  # same
 
 	"""
 	path = os.path.dirname(os.path.abspath(__file__))
-	filename = os.sep.join([path, 'resources', 'codes.csv'])
-	return pd.read_csv(filename)
+	filename = os.sep.join([path, 'resources', 'phecode_map_'+ version + '.csv'])
+	if '9' in version:
+		icd_col = 'ICD9'
+	elif '10' in version:
+		icd_col = 'ICD10'
+	else:
+		# TODO: add an actual exception here
+		print('Error in phecode map version name: exiting pyPheWAS')
+		sys.exit()
+	try:
+		phecode_map = pd.read_csv(filename, dtype={icd_col: str, 'PheCode': str})
+		phecode_map.rename(columns={icd_col:'ICD_CODE'},inplace=True)
+		phecode_map.dropna(subset=['PheCode'], inplace=True)
+	except Exception as e:
+		print(e)
+		print('Error in phecode map version name: exiting pyPheWAS')
+		sys.exit()
+
+	return phecode_map
 
 
 def get_group_file(path, filename):  # same
@@ -59,68 +74,93 @@ def get_group_file(path, filename):  # same
 	return genotypes_df
 
 
-def get_input(path, filename, reg_type):  # diff -done - add duration
+def get_icd_codes(path, filename, reg_type):
 	"""
 	Read all of the phenotype data from the given file and load it into a pandas DataFrame.
 
 	:param path: The path to the file that contains the phenotype data
 	:param filename: The name of the file that contains the phenotype data.
+	:param reg_type: Type of regression
 	:type path: string
 	:type filename: string
+	:type reg_type: int
 
 	:returns: The data from the phenotype file.
 	:rtype: pandas DataFrame
 	"""
+
 	wholefname = path + filename
-	icdfile = pd.read_csv(wholefname,dtype={'icd9':str})
-	icdfile['icd9'] = icdfile['icd9'].str.strip()
-	print("...")
-	if reg_type == 0:
-		phenotypes = pd.merge(icdfile, codes, on='icd9')
-		print("...")
-		phenotypes['MaxAgeAtICD'] = 0
-		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
-		print("...")
-		phenotypes.sort_values(by='id', inplace=True)
-		print("...")
+	icdfile = pd.read_csv(wholefname,dtype={'ICD_CODE':str})
+	icdfile['ICD_CODE'] = icdfile['ICD_CODE'].str.strip()
+	icd_types = np.unique(icdfile['ICD_TYPE'])
+
+	# check ICD types present in file
+	if not all((icd_types == 9) | (icd_types == 10)):
+		# TODO: add actual exception
+		print('Found an ICD_TYPE that was not 9 or 10 - Please check phenotype file.\nExiting pyPheWAS')
+		sys.exit()
+
+	# merge with Phecode table, depends on which type(s) of ICD codes are in the icd file
+	if icd_types.shape[0] == 2:
+		print('Found both ICD-9 and ICD-10 codes.')
+		icd9s = icdfile[icdfile['ICD_TYPE'] == 9]
+		icd10s = icdfile[icdfile['ICD_TYPE'] == 10]
+		phenotypes_9 = pd.merge(icd9s, icd9_codes,on='ICD_CODE')
+		phenotypes_10 = pd.merge(icd10s, icd10_codes, on='ICD_CODE')
+		phenotypes = phenotypes_9.append(phenotypes_10,sort=False)
+	elif icd_types[0] == 9:
+		print('Found only ICD-9 codes.')
+		phenotypes = pd.merge(icdfile,icd9_codes,on='ICD_CODE')
+	elif icd_types[0] == 10:
+		print('Found only ICD-10 codes.')
+		phenotypes = pd.merge(icdfile, icd10_codes, on='ICD_CODE')
 	else:
-		"""
-		This needs to be changed, need to adjust for a variety of different naming conventions
-		in the phenotype file, not simply 'AgeAtICD', 'id', 'icd9', etc.
-		Either we need to adjust for different names in the code, or state explicitly in the
-		documentation that we cannot do things like this.
-		"""
-		phenotypes = pd.merge(icdfile, codes, on='icd9')
-		phenotypes['count'] = 0
-		phenotypes['count'] = phenotypes.groupby(['id', 'phewas_code'])['count'].transform('count')
-		phenotypes['duration'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max') - \
-								 phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('min') + 1
-		phenotypes['MaxAgeAtICD'] = 0
-		phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'phewas_code'])['AgeAtICD'].transform('max')
+		# TODO: add actual exception
+		print('An issue occurred while parsing the ICD_TYPE column - Please check phenotype file.\nExiting pyPheWAS')
+		sys.exit()
+
+	if reg_type == 2:
+		# pre-calculate durations for feature matrix step
+		phenotypes['duration'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max') - \
+								 phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('min') + 1
+
+	# calculate max age at each ICD code
+	phenotypes['MaxAgeAtICD'] = 0
+	phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max')
+	# pre-sort by ID for feature matrix step
+	phenotypes.sort_values(by='id', inplace=True)
+
 	return phenotypes
 
 
-def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov=''):
+def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
-	:param genotypes:
+	:param genotypes_df:
 	:param icds:
-	:type genotypes:
-	:type icds:
+	:param reg_type:
+	:param phewas_cov:
+	:type genotypes_df: pandas DataFrame
+	:type icds: pandas DataFrame
+	:type reg_type: int
+	:type phewas_cov: str
 
 	:returns:
 	:rtype:
 
 	"""
 
+	# feature matrix 0: reg_type specific data
+	# feature matrix 1: age data
+	# feature matrix 2: phecode covariance data
 	feature_matrix = np.zeros((3, genotypes_df.shape[0], phewas_codes.shape[0]), dtype=float)
 
 	# make genotype a dictionary for faster access time
 	genotypes = genotypes_df.set_index('id').to_dict('index')
 
 	# use phewascodes to make a dictionary of indices in the np array
-	empty_phewas_df = phewas_codes.set_index('phewas_code')
+	empty_phewas_df = phewas_codes.set_index('PheCode')
 	empty_phewas_df.sort_index(inplace=True)
 	empty_phewas_df['np_index'] = range(0,empty_phewas_df.shape[0])
 	np_index = empty_phewas_df['np_index'].to_dict()
@@ -129,36 +169,36 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov=''):
 	last_id = ''  # track last id seen in icd list
 	count = -1
 
-	for index, data in tqdm(icds.iterrows(), desc="Processing ICDs", total=icds.shape[0]):
+	for _,event in tqdm(icds.iterrows(), desc="Processing ICDs", total=icds.shape[0]):
+		curr_id = event['id']
+		if not curr_id in genotypes:
+			if not curr_id in exclude:
+				print('%s has records in icd file but is not in group file - excluding from study' % curr_id)
+				exclude.append(curr_id)
+			continue
+		# check id to see if a new subject has been found
+		if last_id != curr_id:
+			count += 1
+			last_id = curr_id  # reset last_id
+			feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
+
+		# get column index of event phecode
+		phecode_ix = np_index[event['PheCode']]
+		# add the max at of that ICD code to the age feature matrix
+		feature_matrix[1][count][phecode_ix] = event['MaxAgeAtICD']
+		# if using a phecode covariate and the event phecode is equal to the covariate phecode, set the fm2 to 1 for this subject
+		if (phewas_cov is not None) & (event['PheCode'] == phewas_cov):
+			feature_matrix[2][count][:] = 1
+
 		if reg_type == 0:
-			curr_id = data['id']
-			if not curr_id in genotypes:
-				if not curr_id in exclude:
-					print('%s has records in icd file but is not in group file - excluding from study' % (curr_id))
-					exclude.append(curr_id)
-				continue
-			# check id to see if a new subject has been found
-			if last_id != curr_id:
-				count += 1
-				last_id = curr_id  # reset last_id
-				feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
-
-			# add data to feature matrices
-			phecode_ix = np_index[data['phewas_code']]
+			# binary aggregate: add a 1 to the phecode's column to denote that this subject had this phecode at some point
 			feature_matrix[0][count][phecode_ix] = 1
-			feature_matrix[1][count][phecode_ix] = data['MaxAgeAtICD']
-			if phewas_cov:
-				# TODO: add phewas_cov
-				continue
-
 		elif reg_type == 1:
-			# TODO: add linear regression
-			print("linear (count) regression is not currently supported")
-			return -1
+			# count aggregate: add 1 to the phecode's column to find the total number of times this subject had this phecode
+			feature_matrix[0][count][phecode_ix] += 1
 		else:
-			# TODO: add duration regression
-			print("duration regression is not currently supported")
-			return -1
+			# dur aggregate: store the number of years between the first and last events with this phecode
+			feature_matrix[0][count][phecode_ix] = event['duration'] # duration calculated in get_icd_codes()
 
 	return feature_matrix
 
@@ -178,27 +218,32 @@ def get_phewas_info(p_index):  # same
 	:param p_index: The index of the desired phewas code
 	:type p_index: int
 
-	:returns: A list including the code, the name, and the rollup of the phewas code. The rollup is a list of all of the ICD-9 codes that are grouped into this phewas code.
+	:returns: A list including the code, the name, and the rollup of the phewas code. The rollup is a list of all of the ICD-9 and ICD-10 codes that are grouped into this phewas code.
 	:rtype: list of strings
 	"""
-	p_code = phewas_codes.loc[p_index].phewas_code
-	corresponding = codes[codes.phewas_code == p_code]
+	p_code = phewas_codes.loc[p_index, 'PheCode']
+	p_name = phewas_codes.loc[p_index, 'Phenotype']
+	icd9_ix = icd9_codes['PheCode'] == p_code
+	icd10_ix = icd10_codes['PheCode'] == p_code
 
-	p_name = corresponding.iloc[0].phewas_string
-	p_rollup = ','.join(codes[codes.phewas_code == p_code].icd9.tolist())
-	return [p_code, p_name, p_rollup]
+	p_icd9_rollup = '/'.join(icd9_codes.loc[icd9_ix, 'ICD_CODE'].tolist())
+	p_icd10_rollup = '/'.join(icd10_codes.loc[icd10_ix, 'ICD_CODE'].tolist())
+
+	return [p_code, p_name, p_icd9_rollup,p_icd10_rollup]
 
 
-def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=0, response='',
+def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0, response='',
 						 phen_vector3=''):  # diff - done
 	"""
 	Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
 
 	:param genotypes: a DataFrame containing the genotype information
-	:param phen_vector: a array containing the phenotype vector
+	:param phen_vector1: a array containing the phenotype vector
+	:param phen_vector2: a array containing the phenotype vector
 	:param covariates: a string containing all desired covariates
 	:type genotypes: pandas DataFrame
-	:type phen_vector: numpy array
+	:type phen_vector1: numpy array
+	:type phen_vector2: numpy array
 	:type covariates: string
 
 	.. note::
@@ -215,16 +260,18 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covari
 	data['y'] = phen_vector1
 	data['MaxAgeAtICD'] = phen_vector2
 	# f='y~'+covariates
+	if covariates is not '':
+		covariates = '+' + covariates
 	if response:
-		f = response + '~ y + genotype +' + covariates
+		f = response + '~ y + genotype' + covariates
 		if phen_vector3.any():
 			data['phe'] = phen_vector3
 			f = response + '~ y + phe + genotype' + covariates
 	else:
-		f = 'genotype ~ y +' + covariates
+		f = 'genotype ~ y' + covariates
 		if phen_vector3.any():
 			data['phe'] = phen_vector3
-			f = 'genotype ~ y + phe +' + covariates
+			f = 'genotype ~ y + phe' + covariates
 	try:
 		if lr == 0: # fit logit without regulatization
 			logreg = smf.logit(f, data).fit(disp=False)
@@ -268,37 +315,39 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 	:param fm: The phewas feature matrix.
 	:param genotypes: A pandas DataFrame of the genotype file.
 	:param covariates: The covariates that the function is to be run on.
+	:param reg_type: The covariates that the function is to be run on.
+	:param response: The covariates that the function is to be run on.
+	:param phewas_cov: The covariates that the function is to be run on.
 
 	:returns: A tuple containing indices, p-values, and all the regression data.
 	"""
-	m = len(fm[0, 0])
-	p_values = np.zeros(m, dtype=float)
-	icodes = []
-	if genotypes.shape[0] < 500:
-		thresh = math.ceil(genotypes.shape[0] * 0.05)
-	else:
-		thresh = math.ceil(genotypes.shape[0] * 0.01)
+
+	num_phecodes = len(fm[0, 0])
+	thresh = math.ceil(genotypes.shape[0] * 0.01)
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
 	control = fm[0][genotypes.genotype == 0, :]
 	disease = fm[0][genotypes.genotype == 1, :]
-	# find all phecodes that only present for a single genotype (ie only controls or only diseased show the phecode) -- have to use regularization!
+	# find all phecodes that only present for a single genotype (ie only controls or only diseased show the phecode) -> have to use regularization
 	inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
-	for index in tqdm(range(m), desc='Running Regressions'):
+	for index in tqdm(range(num_phecodes), desc='Running Regressions'):
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
+		# to prevent false positives, only run regressions if more than thresh records have positive values
 		if np.where(phen_vector1 > 0)[0].shape[0] > thresh:
 			if index in inds:
-				# print get_phewas_info(index)
-				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=1,
+				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
+										   lr=1,
 										   response=response,
 										   phen_vector3=phen_vector3)
 			else:
-				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=0,
+				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
+										   lr=0,
 										   response=response,
 										   phen_vector3=phen_vector3)
-		else:
+
+		else: # default (non-significant) values if not enough samples to run regression
 			odds = 0
 			p = 1
 			od = [-0.0, 1.0, 0.0, np.nan]
@@ -308,11 +357,10 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 
 		phewas_info = get_phewas_info(index)
 		stat_info = res[2]
-		info = phewas_info[0:2] + stat_info + [phewas_info[2]]
+		info = phewas_info[0:2] + stat_info + [phewas_info[2]] + [phewas_info[3]]
 
 		regressions.loc[index] = info
 
-		p_values[index] = res[1]
 	return regressions
 
 
@@ -356,7 +404,8 @@ def get_fdr_thresh(p_values, power):
 	return sn[i]
 
 
-def get_bhy_thresh(p_values, power):
+
+def get_bhy_thresh(p_values, power): # TODO: why does this exist
 	"""
 	Calculate the false discovery rate threshold.
 
@@ -452,12 +501,12 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 	"""
 
 	# Determine whether or not to show the imbalance.
-	fig = plt.figure()
+	fig = plt.figure(1)
 	ax = plt.subplot(111)
 	show_imbalance = imbalances.size != 0
 
 	# Sort the phewas codes by category.
-	c = codes.loc[phewas_codes['index']]
+	c = icd9_codes.loc[phewas_codes['index']]
 	c = c.reset_index()
 	idx = c.sort_values(by='category').index
 
@@ -491,30 +540,17 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 	#                            'Benj-Hoch-Yek p = ' + str(round(np.power(10, -thresh2), 3))], rotation=10, fontsize=10)
 	for i in idx:
 		if y[i] > thresh:
+			if show_imbalance:
+				mew = 1.5
+				if imbalances[i] > 0: m = '+'
+				else: m = '_'
+			else:
+				mew = 0.0
+				m = 'o'
+
+			ax.plot(e, y[i], m, color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full', markeredgewidth=mew)
+			artists.append(ax.text(e, y[i], c['Phenotype'][i], rotation=89, va='bottom', fontsize=8))
 			e += 15
-			if show_imbalance:  # and imbalances[i]>0:
-				# if imbalances[i]>0:
-				artists.append(ax.text(e, y[i], c['phewas_string'][i], rotation=89, va='bottom', fontsize=8))
-			# else:
-			#	artists.append(ax.text(e, -y[i], c['phewas_string'][i], rotation=271, va='top',fontsize=8))
-			elif not show_imbalance:
-				artists.append(ax.text(e, y[i], c['phewas_string'][i], rotation=89, va='bottom'))
-		else:
-			e += 0
-
-		if show_imbalance:
-			if y[i] > thresh:
-				if imbalances[i] > 0:
-					ax.plot(e, y[i], '+', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
-							markeredgewidth=1.5)
-
-				else:
-					# ax.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
-					ax.plot(e, y[i], '_', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
-							markeredgewidth=1.5)
-		else:
-			ax.plot(e, y[i], 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
-					markeredgewidth=0.0)
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
@@ -530,17 +566,12 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 	# if show_imbalance:
 	# 	for pos in linepos:
 	# 		ax.axvline(x=pos, color='black', ls='dotted')
+
 	# Determine the type of output desired (saved to a plot or displayed on the screen)
 	if save:
 		pdf = PdfPages(save)
 		pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
 		pdf.close()
-	else:
-		ax.subplots_adjust(left=0.05, right=0.85)
-		ax.show()
-
-	# Clear the plot in case another plot is to be made.
-	plt.clf()
 
 
 def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
@@ -563,12 +594,12 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
 	"""
 
 	# Determine whether or not to show the imbalance.
-	fig = plt.figure()
+	fig = plt.figure(2)
 	ax = plt.subplot(111)
 	show_imbalance = imbalances.size != 0
 
 	# Sort the phewas codes by category.
-	c = codes.loc[phewas_codes['index']]
+	c = icd9_codes.loc[phewas_codes['index']]
 	c = c.reset_index()
 	idx = c.sort_values(by='category').index
 
@@ -598,51 +629,44 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
 			e += 15
 			if show_imbalance:  # and imbalances[i]>0:
 				if imbalances[i] > 0:
-					artists.append(ax.text(y[i][0], e, c['phewas_string'][i], rotation=0, ha='left', fontsize=6))
+					artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, ha='left', fontsize=6))
 				else:
-					artists.append(ax.text(y[i][0], e, c['phewas_string'][i], rotation=0, ha='right', fontsize=6))
-			elif not show_imbalance:
-				artists.append(ax.text(e, y[i][0], c['phewas_string'][i], rotation=40, va='bottom'))
-		else:
-			e += 0
+					artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, ha='right', fontsize=6))
+			else:
+				artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, va='bottom', fontsize=6))
+		# else:
+		# 	e += 0
 
-		if show_imbalance:
-			if p[i] > thresh:
-				ax.plot(y[i][0], e, 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
-						markeredgewidth=0.0)
-				ax.plot([y[i, 1], y[i, 2]], [e, e], color=plot_colors[c[i:i + 1].category_string.values[0]])
+		# if show_imbalance:
+		if p[i] > thresh:
+			ax.plot(y[i][0], e, 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
+			ax.plot([y[i, 1], y[i, 2]], [e, e], color=plot_colors[c[i:i + 1].category_string.values[0]])
 		# else:
 		# ax.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
 		#	ax.plot(e,-y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
-		else:
-			ax.plot(e, y[i], 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full',
-					markeredgewidth=0.0)
+		# else:
+			# ax.plot(e, y[i], 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
 	for lab in plot_colors.keys():
 		line1.append(
 			mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
-	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.15), loc='upper center', fancybox=True, ncol=4,
-							 prop={'size': 6}))
-	ax.axvline(x=0, color='black')
+	artists.append(
+		ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
+	ax.axhline(y=0, color='black')
 	frame1.axes.get_yaxis().set_visible(False)
 
 	# If the imbalance is to be shown, draw lines to show the categories.
 	# if show_imbalance:
 	# 	for pos in linepos:
 	# 		ax.axvline(x=pos, color='black', ls='dotted')
+
 	# Determine the type of output desired (saved to a plot or displayed on the screen)
 	if save:
 		pdf = PdfPages(save)
 		pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
 		pdf.close()
-	else:
-		ax.subplots_adjust(left=0.05, right=0.85)
-		ax.show()
-
-	# Clear the plot in case another plot is to be made.
-	plt.clf()
 
 
 def process_args(kwargs, optargs, *args):
@@ -660,9 +684,10 @@ def process_args(kwargs, optargs, *args):
 def display_kwargs(kwargs):
 	print("Arguments: ")
 	for k, v in kwargs.items():
-		left = str(k).ljust(30, '.')
-		right = str(v).rjust(50, '.')
-		print(left + right)
+		num_dots = 80 - len(str(k)) - len(str(v))
+		# left = str(k).ljust(30, '.')
+		# right = str(v).rjust(50, '.')
+		print(str(k) + '.'*num_dots + str(v))
 
 
 output_columns = ['PheWAS Code',
@@ -671,7 +696,8 @@ output_columns = ['PheWAS Code',
 				  'p-val',
 				  'beta',
 				  'Conf-interval beta',
-				  'ICD-9']
+				  'ICD-9',
+				  'ICD-10']
 
 plot_colors = {'-': 'gold',
 			   'circulatory system': 'red',
@@ -699,14 +725,16 @@ imbalance_colors = {
 regression_map = {
 	'log': 0,
 	'lin': 1,
-	'lind': 2
+	'dur': 2
 }
 threshold_map = {
 	'bon': 0,
-	'fdr': 1
+	'fdr': 1,
+	'custom':2
 }
 
-codes = get_codes()
-phewas_codes = pd.DataFrame(codes['phewas_code'].drop_duplicates());
-phewas_codes.sort_values(by=['phewas_code'], inplace=True)
+icd9_codes = get_codes(version='v1_2_icd9')
+icd10_codes = get_codes(version='v1_2_icd10_beta')
+phewas_codes = icd9_codes[['PheCode','Phenotype','category','category_string']].drop_duplicates(subset='PheCode')
+phewas_codes.sort_values(by=['PheCode'], inplace=True)
 phewas_codes.reset_index(inplace=True)
