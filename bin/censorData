@@ -2,7 +2,8 @@
 
 from pyPheWAS.pyPhewasCorev2 import *
 from pyPheWAS.rt_censor_diagnosis import *
-import sys, os
+import os
+import argparse
 
 optargs = {
 	'--phenotype': 'phenotype_file',
@@ -15,21 +16,35 @@ optargs = {
 	'--end':'end_time',
 }
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="pyPheWAS ICD-Phecode Lookup Tool")
+
+    parser.add_argument('--phenotype', required=True, type=str, help='Name of phenotype file')
+    parser.add_argument('--group', required=True, type=str, help ='Name of the group file (e.g. groups.csv)')
+    parser.add_argument('--phenotypeout', required=True, type=str,help='Name of output phenotype file')
+    parser.add_argument('--groupout', required=True, type=str, help='Name of output group file')
+    parser.add_argument('--path', required=False, default='.', type=str,help='Path to all input files and destination of output files')
+    parser.add_argument('--field', required=False, default='AgeAtICD', type=str, help='Type of event to censor on')
+    parser.add_argument('--start', required=False, default=None, type=float, help='Start time for censoring')
+    parser.add_argument('--end', required=False, default=None, type=float, help='End time for censoring')
+
+    args = parser.parse_args()
+    return args
+
 """
 Retrieve and validate all arguments.
 """
 
-args = sys.argv[1:]
-
-# Define any default arguments
-kwargs = {'path':'.', 'field':'na', 'start_time':float('nan'), 'end_time':float('nan')}
-
-kwargs = process_args(kwargs, optargs, *args)
-
-# Change path to absolute path
-kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
-
-print(kwargs)
+args = parse_args()
+kwargs = {'path': os.path.join(os.path.abspath(args.path),''),
+		  'phenotype_file': args.phenotype,
+		  'genotype_file': args.group,
+		  'final_pfile':args.phenotypeout,
+		  'final_gfile':args.groupout,
+          'start_time':args.start,
+          'end_time':args.end,
+          'field':args.field
+}
 
 
 # Assert that valid files were given
@@ -37,7 +52,11 @@ assert kwargs['phenotype_file'].endswith('.csv'), "%s is not a valid phenotype f
 assert kwargs['genotype_file'].endswith('.csv'), "%s is not a valid group file, must be a .csv file" % (kwargs['groups'])
 
 # Assert that the output file is valid
-assert kwargs['final_pfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenout'])
+assert kwargs['final_pfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['final_pfile'])
+assert kwargs['final_gfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['final_gfile'])
+
+# Assert that a valid combination of start/end was given
+assert (kwargs['start_time'] is not None) or (kwargs['end_time'] is not None), "Please define a start time and/or end time for censoring"
 
 # Print Arguments
 display_kwargs(kwargs)
