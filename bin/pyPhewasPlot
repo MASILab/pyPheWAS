@@ -75,7 +75,7 @@ try:
     yb = regressions[['beta', 'lowlim', 'uplim']].values
     yb = yb.astype(float)
 except:
-    print 'No correlation'
+    print('No correlation')
 
 # Check if an imbalance will be used
 if show_imbalance:
@@ -93,6 +93,7 @@ elif thresh_type == 1:
     thresh = get_fdr_thresh(regpvalues,0.05)
 elif thresh_type == 2:
     thresh = kwargs['custom_thresh']
+print('%s threshold: %0.5f'%(str_thresh_type,thresh))
 
 if outfile != '':
     save = path + outfile
