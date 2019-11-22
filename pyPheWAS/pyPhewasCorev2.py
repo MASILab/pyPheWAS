@@ -22,7 +22,6 @@ import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
 from tqdm import tqdm
 import sys
-import time
 
 
 def get_codes(version):  # same
