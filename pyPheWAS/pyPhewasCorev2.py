@@ -500,9 +500,12 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 
 	"""
 
-	# Determine whether or not to show the imbalance.
+	# Initialize figure
 	fig = plt.figure(1)
 	ax = plt.subplot(111)
+	frame1 = plt.gca()
+
+	# Determine whether or not to show the imbalance.
 	show_imbalance = imbalances.size != 0
 
 	# Sort the phewas codes by category.
@@ -510,36 +513,14 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 	c = c.reset_index()
 	idx = c.sort_values(by='category').index
 
-	# Get the position of the lines and of the labels
-	# linepos = get_x_label_positions(c['category'].tolist(), False)
-	# x_label_positions = get_x_label_positions(c['category'].tolist(), True)
-	# x_labels = c.sort_values('category').category_string.drop_duplicates().tolist()
-
-	# Plot each of the points, if necessary, label the points.
+	# Plot all points w/ labels
 	e = 1
 	artists = []
-	frame1 = plt.gca()
-	# ax.axhline(y=-math.log10(0.05), color='yellow', ls='dotted')
-	ax.axhline(y=thresh, color='red', ls='dotted')
-	# ax.axhline(y=thresh1, color='yellow', ls='dotted')
-	# ax.axhline(y=thresh, color='orange', ls='dotted')
-	# ax.xticks(x_label_positions, x_labels, rotation=70, fontsize=10)
-	# ax.xlim(xmin=0, xmax=len(c))
 	plt.ylabel('-log10(p)')
-	# if thresh_type == 0:
-	#     thresh = thresh0
-	# elif thresh_type == 1:
-	#     thresh = thresh1
-	# else:
-	#     thresh = thresh2
-
-	# y_label_positions = [thresh]#[thresh0, thresh1,thresh2]
-
-	# plt.yticks(y_label_positions, ['Bonf p = ' + '{:.2e}'.format(np.power(10, -thresh0)),
-	#                               'Benj-Hoch p = ' + str(round(np.power(10, -thresh1), 3)),
-	#                            'Benj-Hoch-Yek p = ' + str(round(np.power(10, -thresh2), 3))], rotation=10, fontsize=10)
+	ax.axhline(y=thresh, color='red', ls='dotted')  # plot threshold
 	for i in idx:
 		if y[i] > thresh:
+			# determine marker type based on whether/not showing imbalance
 			if show_imbalance:
 				mew = 1.5
 				if imbalances[i] > 0: m = '+'
@@ -547,18 +528,20 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 			else:
 				mew = 0.0
 				m = 'o'
-
+			# Plot PheCode data point & format PheCode label
 			ax.plot(e, y[i], m, color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full', markeredgewidth=mew)
-			artists.append(ax.text(e, y[i], c['Phenotype'][i], rotation=89, va='bottom', fontsize=8))
+			artists.append(ax.text(e, y[i], c['Phenotype'][i], rotation=89, va='bottom', fontsize=6))
 			e += 15
+
+	# Legend
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
 	for lab in plot_colors.keys():
-		line1.append(
-			mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
-	artists.append(
-		ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
+		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
+	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
+
+	# Plot x axis
 	ax.axhline(y=0, color='black')
 	frame1.axes.get_xaxis().set_visible(False)
 
@@ -567,11 +550,14 @@ def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
 	# 	for pos in linepos:
 	# 		ax.axvline(x=pos, color='black', ls='dotted')
 
-	# Determine the type of output desired (saved to a plot or displayed on the screen)
+	# Save the plot
 	if save:
 		pdf = PdfPages(save)
 		pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
 		pdf.close()
+		plt.clf()
+
+	return
 
 
 def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
@@ -593,9 +579,12 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
 
 	"""
 
-	# Determine whether or not to show the imbalance.
+	# Initialize figure
 	fig = plt.figure(2)
 	ax = plt.subplot(111)
+	frame1 = plt.gca()
+
+	# determine whether or not to show imbalances
 	show_imbalance = imbalances.size != 0
 
 	# Sort the phewas codes by category.
@@ -603,58 +592,36 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
 	c = c.reset_index()
 	idx = c.sort_values(by='category').index
 
-	# Get the position of the lines and of the labels
-	# linepos = get_x_label_positions(c['category'].tolist(), False)
-	# x_label_positions = get_x_label_positions(c['category'].tolist(), True)
-	# x_labels = c.sort_values('category').category_string.drop_duplicates().tolist()
-
-	# Plot each of the points, if necessary, label the points.
+	# Plot all points w/ labels
 	e = 1
 	artists = []
-	frame1 = plt.gca()
-	# ax.xticks(x_label_positions, x_labels, rotation=70, fontsize=10)
 	plt.xlabel('Log odds ratio')
-
-	# if thresh_type == 0:
-	#     thresh = thresh0
-	# elif thresh_type == 1:
-	#     thresh = thresh1
-	# else:
-	#     thresh = thresh2
-
-	# plt.xlim(xmin=min(y[p>thresh,1]), xmax=max(y[p>thresh,2]))
-
 	for i in idx:
 		if p[i] > thresh:
-			e += 15
-			if show_imbalance:  # and imbalances[i]>0:
+			# Add Phecode label
+			if show_imbalance:
 				if imbalances[i] > 0:
 					artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, ha='left', fontsize=6))
 				else:
 					artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, ha='right', fontsize=6))
 			else:
 				artists.append(ax.text(y[i][0], e, c['Phenotype'][i], rotation=0, va='bottom', fontsize=6))
-		# else:
-		# 	e += 0
 
-		# if show_imbalance:
-		if p[i] > thresh:
+			# Plot Phecode Data
 			ax.plot(y[i][0], e, 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
 			ax.plot([y[i, 1], y[i, 2]], [e, e], color=plot_colors[c[i:i + 1].category_string.values[0]])
-		# else:
-		# ax.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
-		#	ax.plot(e,-y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
-		# else:
-			# ax.plot(e, y[i], 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
+			e += 15
+
+	# Legend
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
 	for lab in plot_colors.keys():
-		line1.append(
-			mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
-	artists.append(
-		ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
-	ax.axhline(y=0, color='black')
+		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
+	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.125), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
+
+	# Plot y axis
+	ax.axvline(x=0, color='black')
 	frame1.axes.get_yaxis().set_visible(False)
 
 	# If the imbalance is to be shown, draw lines to show the categories.
@@ -662,11 +629,14 @@ def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
 	# 	for pos in linepos:
 	# 		ax.axvline(x=pos, color='black', ls='dotted')
 
-	# Determine the type of output desired (saved to a plot or displayed on the screen)
+	# Save the plot
 	if save:
 		pdf = PdfPages(save)
 		pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
 		pdf.close()
+		plt.clf()
+
+	return
 
 
 def process_args(kwargs, optargs, *args):
