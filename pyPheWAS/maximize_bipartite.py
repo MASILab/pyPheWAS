@@ -117,7 +117,7 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 				pairing[i]['matching_ix'].append(matched[i])
 		# remove matched IDs from control pool
 		rem_ids = set(controls.index).difference(cid)
-		controls = controls.ix[rem_ids]
+		controls = controls.loc[rem_ids,:]
 		goal = goal - 1
 
 	final_ratio = float(len(cid)) / float(len(tid))
