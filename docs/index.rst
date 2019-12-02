@@ -14,21 +14,11 @@ Features
 * Run logarithmic regressions on patient data
 * Plot results
 
-Installation
-------------
-
-Install pyPhewas through pip by running::
-
-	pip install pyPhewas
-
-Online
-------
+Support
+-------
 
 * Issue Tracker: github.com/MASILab/pyPheWAS/issues
 * Source Code: github.com/MASILab/pyPheWAS
-
-Support
--------
 
 If you are having issues, please let us know! Email me at:
 
