@@ -14,195 +14,115 @@ This is a basic outline of the pyPheWAS research tools structure:
 
 .. figure:: pyPheWAS_Research_Tools.png
 
-Getting Started
----------------
 
-Install the pyPheWAS package by running::
+Regression Types
+----------------
+Three regression types are available for the pyPheWAS package.
 
-		pip install pyPheWAS
-
-If this command fails, make sure that you are running Python 2.7+ and that you have pip set up on your machine.
-
-As long as the install is successful, the pyPheWAS package can now be run from any directory.
+ 1. **log**: binary aggregates (Is a PheWAS code present for a subject?)
+ 2. **lin**: count aggregates (How many times is a PheWAS code present for a subject?)
+ 3. **dur**: duration aggregates (What is the time interval [years] between the first and last instances of a PheWAS code present for a subject?)
 
 pyPhewasLookup
 --------------
  
-pyPhewasLookup takes the phenotype file and the group file and will generate the feature matrix.
+pyPhewasLookup takes the phenotype file and the group file and will generate the feature matrices.
 
-The options:
- * ``--path``:		the path to all input files and destination of output files
- * ``--phenotype``:	the name of the phenotype file (e.g. "icd9_data.csv")
- * ``--group``:		the name of the group file (e.g. "groups.csv")
- * ``--outfile``:	the name of the output file that contains the feature matrix
- * ``--reg_type``: the type of regression that you would like to use. (See the key below for more information)
-
-.. note:: the outfile parameter is not required. If it is left off, the default output file will be "feature_matrix_[group file name]" So if "group.csv" is entered as the group file and the outfile parameter is not specified, the feature matrix will be placed in "feature_matrix_group.csv"
-
-The valid options for reg_type:
- * log: for binary aggregates
- * lin: for count aggregates
- * dur: for duration aggregates
+Required Arguments:
+ * ``--phenotype``: 	the name of the phenotype CSV file (e.g. "icd9_data.csv")
+ * ``--group``:		    the name of the group CSV file (e.g. "groups.csv")
+ * ``--reg_type``:      the type of regression that you would like to use ("log", "lin", or "dur")
+Optional Arguments:
+ * ``--path``:		    the path to all input files and destination of output files (*default*: current directory)
+ * ``--outfile``:	    the name of the output file that contains the feature matrix (*default*: "feature_matrix_[group file name]")
+ * ``--phewas_cov``:    a PheWAS code to use as covariate
 
 A sample execution of *pyPhewasLookup*::
 
 		pyPhewasLookup --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --reg_type="log" --outfile="feature_matrix_group.csv"
 
-The "EMRdata" folder before the command:
-
-.. figure:: pyPhewasLookupBefore.png
-
-After the command:
-
-.. figure:: pyPhewasLookupAfter.png
 
 pyPhewasModel
 -------------
 
-pyPhewasModel takes the feature matrix, group file, covariate information, and regression type and runs regressions on each PheWAS code to test for association.
+pyPhewasModel takes the feature matrices, group file, covariate information, and regression type and runs logarithmic regressions on each PheWAS code to test for association.
 
-The options:
- * ``--path``:			the path to all input files and destination of output files
- * ``--feature_matrix``:the name of the feature matrix file (e.g. "feature_matrix_group.csv")
- * ``--group``:			the name of the group file (e.g. " group.csv")
- * ``--covariates``:	the variables to be used as covariates
- * ``--reg_type``:		the regression type to be used (e.g. "log")
- * ``--outfile``:		the name of the output file that contains the regression data
-The valid regression types are listed above under *pyPhewasLookup*
+Required Arguments:
+ * ``--feature_matrix``:the name of the feature matrix CSV file (e.g. "feature_matrix_group.csv")
+ * ``--group``:			the name of the group CSV file (e.g. " group.csv")
+ * ``--reg_type``:		the regression type to be used ("log", "lin", or "dur")
+Optional Arguments:
+ * ``--path``:			the path to all input files and destination of output files (*default*: current directory)
+ * ``--outfile``:		the name of the output CSV file that contains the regression data (*default*: "regressions_[group file name]")
+ * ``--covariates``:	the variables to be used as covariates seperated by '+' (e.g. "SEX" or "SEX+MaxAgeAtICD")
+ * ``--response``:	    the variable to predict (instead of genotype)
+ * ``--phewas_cov``:	a PheWAS code to use as covariate
 
-.. note:: the outfile parameter is not required. If it is left off, the default output file will be "regressions_[group file name]" So if "group.csv" is entered as the group file and the outfile parameter is not specified, the feature matrix will be placed in "regressions_group.csv"
-
-.. note:: If multiple covariates are to be used, it is necessary to specify them in one string with a *+* in between them. For example, if you would like to use "MaxAgeAtICD" and "SEX" as covariates, the argument would be ``--covariates="MaxAgeAtICD+SEX"``
 
 A sample execution of *pyPhewasModel*::
 
 		pyPhewasModel --path="/Users/me/Documents/EMRdata/" --feature_matrix="feature_matrix_group.csv" --group="group.csv" --covariates="MaxAgeAtICD" --reg_type="log" --outfile="regressions_group.csv"
 
-The "EMRdata" folder before the command:
-
-.. figure:: pyPhewasModelBefore.png
-
-After the command:
-
-.. figure:: pyPhewasLookupAfter.png
 
 pyPhewasPlot
 ------------
 
-pyPhewasPlot takes the statistics file and threshold type and generates a plot based on the regression data.
+pyPhewasPlot takes the regressions file and threshold type and generates two plots (Manhattan and Log Odds) based on the regression data.
 
-The options:
- * ``--path``:			the path to all input files and destination of output files
- * ``--statfile``:		the name of the statistics file
- * ``--imbalance``:		the option of whether or not to show the direction of imbalance in the plot
+Required Arguments:
+ * ``--statfile``:		the name of the regressions CSV file
+ * ``--imbalance``:		whether or not to show the direction of imbalance in the plot ("True" or "False")
  * ``--thresh_type``:	the type of threshold to be used in the plot (See the key below for more information)
- * ``--outfile``:		the name of the output file for the plot
+Optional Arguments:
+ * ``--path``:          the path to all input files and destination of output files (*default*: current directory)
+ * ``--outfile``:       the name of the output PDF file for the plot
+ * ``--custom_thresh``: custom threshold value, required if *thresh_type* ="custom" (float between 0 and 1)
 
-.. note:: the outfile is not required. If it is left off, an output file will not be saved to the target directory. Instead, a plot will be displayed on the screen by the matplotlib module. It is possible to save the plot with any desired file name in this display.
-
-.. note:: the ``--imbalance`` option must be either *True* or *False*
 
 The valid options for thresh_type:
- * *bon*:	Use the Bonferroni correction threshold
- * *fdr*:	Use the False Discovery Rate threshold
+ * *bon*:	    Use the Bonferroni correction threshold
+ * *fdr*:	    Use the False Discovery Rate threshold
+ * *custom*:	Use a custom threshold specified by *--custom_thresh*
+
+.. note:: **If outfile is not specified, the plot will not be saved automatically**. Instead, a plot will be displayed on the screen by the matplotlib module. It is possible to save the plot with any desired file name in this display.
+
 
 A sample execution of *pyPhewasPlot*::
 
-		pyPhewasPlot --path="/Users/me/Documents/EMRdata/" --statfile="regressions_group.csv" --imbalance="False" --thresh_type="bon" --outfile="pyPheWAS_plot.png"
+		pyPhewasPlot --path="/Users/me/Documents/EMRdata/" --statfile="regressions_group.csv" --imbalance="False" --thresh_type="bon" --outfile="pyPheWAS_plot.pdf"
 
-The "EMRdata" folder before the command:
+pyPhewasPipeline
+----------------
 
-.. figure:: pyPhewasPlotBefore.png
+pyPhewasPipeline is a streamlined combination of pyPhewasLookup, pyPhewasModel, and pyPhewasPlot. If using all default
+values for the optional arguments, it takes a group file, phenotype file, and regression type and (1) creates the feature
+matrix, (2) runs the regressions, and (3) saves Manhattan and Log Odds plots with both the BonFerroni and False Discovery
+Rate thresholds. All intermediate files are saved with the *postfix* argument appended to the file name.
 
-After the command:
 
-.. figure:: pyPhewasPlotAfter.png
+Required Arguments:
+ * ``--phenotype``: 	the name of the phenotype CSV file (e.g. "icd9_data.csv")
+ * ``--group``:			the name of the group CSV file (e.g. " group.csv")
+ * ``--reg_type``:		the regression type to be used ("log", "lin", or "dur")
+Optional Arguments:
+ * ``--path``:          the path to all input files and destination of output files (*default*: current directory)
+ * ``--postfix``:       descriptive postfix for output files (*default*: "[covariates]_[group file name]")
+ * ``--phewas_cov``:    a PheWAS code to use as covariate
+ * ``--covariates``:	the variables to be used as covariates seperated by '+' (e.g. "SEX" or "SEX+MaxAgeAtICD")
+ * ``--response``:	    the variable to predict (instead of genotype)
+ * ``--imbalance``:		whether or not to show the direction of imbalance in the plot, must be "True" or "False" (*default*: True)
+ * ``--thresh_type``:	the type of threshold to be used in the plot (See the key below for more information)
+ * ``--custom_thresh``: custom threshold value, required if *thresh_type* ="custom" (float between 0 and 1)
 
 
-Additional Research Tools
-=========================
+The valid options for thresh_type:
+ * *bon*:	    Use the Bonferroni correction threshold
+ * *fdr*:	    Use the False Discovery Rate threshold
+ * *custom*:	Use a custom threshold specified by *--custom_thresh*
 
-Grouping Tool (generateGroups)
--------------
 
-The grouping tool allows you to take two or more icd9 files, and two or more group files. And merge them together, while removing any double counted groups, so that the resulting data files are ready to be run through the pyPheWAS Research Tools.
+A sample execution of *pyPhewasPlot*::
 
-The options:
- * ``--path``:			the path to all input files and destination of output files
- * ``--phenotypefiles``:		a list of phenotype file names, each separated by a *+*
- * ``--groupfile``:				a list of group file names, each separated by a *+*
- * ``--phenotypeout``:			the output file name for the merged phenotype files
- * ``--groupout``:				the output file name for the merged group files
+		pyPhewasPipline --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --reg_type="log" --postfix="poster_Nov22"
 
-A sample execution of *generateGroups*::
-
-		generateGroups --path="/Users/me/Documents/EMRdata" --phenotypefiles="icd9_one.csv+icd9_two.csv" --groupfiles="group_one.csv+group_two.csv" --phenotypeout="new_icd9.csv" --groupout="new_group.csv"
-
-Conver event to age (convertEventToAge)
-------------
-Converts event date of ICD9 or CPT to age at the event. Phenotype and group files should be provided with “id” column in both files, and a “DOB” column in the group file.
-The options:
- * ``--phenotype``: phenotype file name
- * ``--group``:	 group file name
- * ``--path``:	the path to all input files and destination of output files
- * ``--phenotypeout``:	the output file name for the merged phenotype files
- * ``--eventcolumn``:	Name of the event date column
- * ``-—precision``:	Decimal precision of the age needed
- * ``-—type``:	Type of data:CPT or ICD
-
-Censoring (censorData)
----------
-
-Censor files to restrict data to a specific time interval. The default field option is to censor based on AgeAtICD. Can change the default field to other events such as AgeAtDx. 
-The options:
- * ``--path``:			the path to all input files and destination of output files
- * ``--phenotype``:		phenotype file name
- * ``--group``:			group file name
- * ``--field``:			the field is the type of event to censor on
- * ``-—phenotypeout``:		the output file name for the censored phenotype files
- * ``-—groupout``:		the output file name for the censored genotype files
- * ``-—start``:			start time for censoring
- * ``-—end``:			end time for censoring
-
-A sample execution of *censorData*::
-
-		censorData --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" —field=“AgeAtDx” —-phenotypeout="icd9_data_cen.csv" —groupout="group_cen.csv" -—start="0" —-end="2"
-
-Age matching (maximizeControls)
----------
-Match the subjects in case and control groups based on a criteria such as age ('key'), and on an interval condition ('delta'). The default option for matching groups is genotype (condition='genotype'). The default matching group can be changed to other options such as sex or race.
-The options:
-
-* ``--path``: the path to all input files and destination of output
-
-* ``--input``:	input group file name
-
-* ``--output``:	output group file name
-
-* ``--deltas``:	the intervals for the matching criteria
-
-* ``--keys``: the fields on which the matching criteria is applied
-
-* ``-—condition``: the field which denotes the groups to be matched
-
-* ``-—goal``: n, indicating the ratio of control and case groups that are being matched
-	
-A sample execution of * maximizeControls*::
-
-		maximizeControls --path="/Users/me/Documents/EMRdata" --input="group.csv" --output="group__am.csv" --deltas='1,0' --keys="MaxAgeAtVisit+SEX" --condition="genotype" --goal="2"
-
-Create a group file (createGenotypeFile)
----------
-Create a group file by defining ICD-9 codes in the case group and the minimum frequency required to be included in the study.
-The options:
-
-* ``--path``: the path to all input files and destination of output
-
-* ``--phenotype``: phenotype file name
-
-* ``--groupout``: output group file name
-
-* ``--code``: list of ICD-9 codes separated by comma
-
-* ``--code_freq``: minimum frequency of codes
 
