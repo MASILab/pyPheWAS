@@ -4,4 +4,6 @@ Tutorial
 .. toctree::
 	:maxdepth: 2
 
-	tutorial/researchtools
+	tutorial/basic
+    tutorial/researchtools
+    tutorial/data_prep
