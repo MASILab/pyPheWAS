@@ -6,4 +6,4 @@ Tutorial
 
 	tutorial/basic
     tutorial/researchtools
-    tutorial/data_prep
+    tutorial/dataprep
