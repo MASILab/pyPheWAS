@@ -381,24 +381,26 @@ def get_bon_thresh(normalized, power):  # same
 	return power / sum(np.isfinite(normalized))
 
 
-def get_fdr_thresh(p_values, power):
+def get_fdr_thresh(p_values, alpha):
 	"""
 	Calculate the false discovery rate threshold.
 
 	:param p_values: a list of p-values obtained by executing the regression
-	:param power: the thershold power being used (usually 0.05)
+	:param alpha: the uncorrected significance level being used (usually 0.05)
 	:type p_values: numpy array
-	:type power: float
+	:type alpha: float
 
 	:returns: the false discovery rate
 	:rtype: float
 	"""
 	sn = np.sort(p_values)
 	sn = sn[np.isfinite(sn)]
-	sn = sn[::-1]
+	# sn = sn[::-1]
 	for i in range(len(sn)):
-		thresh = power * i / len(sn)
-		if sn[i] <= thresh:
+		p_crit = alpha * float(i+1) / float(len(sn))
+		if sn[i] <= p_crit:
+			continue
+		else:
 			break
 	return sn[i]
 
