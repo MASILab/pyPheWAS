@@ -1,32 +1,43 @@
 #!/usr/bin/env python
 
 from pyPheWAS.pyPhewasCorev2 import *
-import sys, os
+import os
 import datetime
 import pandas as pd
+import argparse
+import time
 
-optargs = {
-	'--phenotype': 'phenotype_file',
-	'--group':'genotype_file',
-	'--path':'path',
-	'--phenotypeout': 'final_pfile',
-	'--eventcolumn':'ec',
-	'--precision':'precision',
-	'--type':'type',
-	'--phenotype_column':'pcol'
+def parse_args():
+    parser = argparse.ArgumentParser(description="pyPheWAS ICD-Phecode Lookup Tool")
+
+    parser.add_argument('--phenotype', required=True, type=str, help='Name of the phenotype file (e.g. icd9_data.csv)')
+    parser.add_argument('--group', required=True, type=str, help ='Name of the group file (e.g. groups.csv)')
+    parser.add_argument('--phenotypeout', required=True, type=str, help='Name of the output file (original phenotype data + event ages)')
+    parser.add_argument('--eventcolumn', required=True, type=str, help='Name of the event column in the phenotype file')
+    parser.add_argument('--type', required=True, type=str, help='Type of event data (CPT or ICD)')
+    parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files')
+    parser.add_argument('--precision', required=False, default=3, type=int, help='Decimal precision of age in the output file (default: 3)')
+    parser.add_argument('--dob_column', required=False, default='DOB',type=str, help='Name of the birth date column in the group file (default: DOB)')
+
+    args = parser.parse_args()
+    return args
+
+"""
+Retrieve and validate all arguments.
+"""
+start = time.time()
+
+args = parse_args()
+
+kwargs = {'phenotype_file': args.phenotype,
+          'genotype_file': args.group,
+          'path': os.path.join(os.path.abspath(args.path),''),
+          'final_pfile': args.phenotypeout,
+          'ec': args.eventcolumn,
+          'precision': args.precision,
+          'dob_column': args.dob_column,
+          'etype':args.type
 }
-
-args = sys.argv[1:]
-
-# Define any default arguments
-kwargs = {'path':'.','ec':'Event_date', 'precision':2,'type':'ICD','pcol':'icd9'}
-
-kwargs = process_args(kwargs, optargs, *args)
-
-# Change path to absolute path
-kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
-
-print(kwargs)
 
 # Assert that valid files were given
 assert kwargs['phenotype_file'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotypes'])
@@ -34,6 +45,8 @@ assert kwargs['genotype_file'].endswith('.csv'), "%s is not a valid group file, 
 
 # Assert that the output file is valid
 assert kwargs['final_pfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenout'])
+
+assert kwargs['etype'] in ['CPT','ICD'], "%s is not a valid data type. Must be CPT or ICD" % (kwards['type'])
 
 # Print Arguments
 display_kwargs(kwargs)
@@ -44,21 +57,39 @@ kwargs['genotype_file'] = os.sep.join([kwargs['path'], kwargs['genotype_file']])
 
 kwargs['final_pfile'] = os.sep.join([kwargs['path'], kwargs['final_pfile']])
 
-# Make precision an integer
-kwargs['precision'] = int(kwargs['precision'])
-
 # Make all arguments local variables
 locals().update(kwargs)
 
 group = pd.read_csv(genotype_file)
 phen = pd.read_csv(phenotype_file)
-group['nDOB'] = pd.to_datetime(group['DOB'])
-phen['nEvent_date'] = pd.to_datetime(phen[ec],infer_datetime_format=True)
+
+group['nDOB'] = pd.to_datetime(group[dob_column], infer_datetime_format=True)
+phen['nEvent_date'] = pd.to_datetime(phen[ec], infer_datetime_format=True)
 df = pd.merge(group, phen, on='id')
 
 century = datetime.timedelta(365.2425) * 100
 df.loc[df['nEvent_date'] < df['nDOB'], 'nDOB'] = df[df['nEvent_date'] < df['nDOB']]['nDOB'] - century
 
-df['AgeAt'+type] = (df['nEvent_date'] - df['nDOB']).astype('timedelta64[D]')/365.2425
-df['AgeAt'+type] = df['AgeAt'+type].round(2)
-df[['id', pcol, ec, 'AgeAt'+type,'ICD_TYPE']].to_csv(final_pfile, index=False)
+df['AgeAt'+etype] = (df['nEvent_date'] - df['nDOB']).astype('timedelta64[D]')/365.2425
+df['AgeAt'+etype] = df['AgeAt'+etype].round(precision)
+
+out_cols = list(phen.columns)
+out_cols.append('AgeAt'+etype)
+out_cols.remove(ec)
+
+df.to_csv(final_pfile, index=False, columns=out_cols)
+
+
+interval = time.time() - start
+hour = math.floor(interval/3600.0)
+minute = math.floor((interval - hour*3600)/60)
+second = math.floor(interval - hour*3600 - minute*60)
+
+if hour > 0:
+    time_str = '%dh:%dm:%ds' %(hour,minute,second)
+elif minute > 0:
+    time_str = '%dm:%ds' % (minute, second)
+else:
+    time_str = '%ds' % second
+
+print('convertEventToAge Complete\nRuntime: %s' %time_str)
