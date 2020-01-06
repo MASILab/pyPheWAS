@@ -70,15 +70,16 @@ genotypes = get_group_file(path, groupfile)
 assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is in group file"
 
 print("Generating feature matrix...")
-fm = generate_feature_matrix(genotypes,phenotypes,reg_type,phewas_cov)
+fm,columns = generate_feature_matrix(genotypes,phenotypes,reg_type,phewas_cov)
 
 print("Saving feature matrices to %s" % (path + outfile))
+h = ','.join(columns)
 
-np.savetxt(path + 'agg_measures_' + outfile, fm[0],delimiter=',')
+np.savetxt(path + 'agg_measures_' + outfile, fm[0],delimiter=',',header=h)
 print("...")
-np.savetxt(path + 'icd_age_' + outfile, fm[1],delimiter=',')
+np.savetxt(path + 'icd_age_' + outfile, fm[1],delimiter=',',header=h)
 print("...")
-np.savetxt(path + 'phewas_cov_' + outfile, fm[2],delimiter=',')
+np.savetxt(path + 'phewas_cov_' + outfile, fm[2],delimiter=',',header=h)
 
 interval = time.time() - start
 hour = math.floor(interval/3600.0)
