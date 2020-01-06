@@ -228,36 +228,58 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covari
 
 
 def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):  # same
-    """
-    For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
+	"""
+	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
 
-    :param fm: The phewas feature matrix.
-    :param genotypes: A pandas DataFrame of the genotype file.
-    :param covariates: The covariates that the function is to be run on.
+	:param fm: The phewas feature matrix.
+	:param genotypes: A pandas DataFrame of the genotype file.
+	:param covariates: The covariates that the function is to be run on.
+	:param reg_type: The covariates that the function is to be run on.
+	:param response: The covariates that the function is to be run on.
+	:param phewas_cov: The covariates that the function is to be run on.
 
-    :returns: A tuple containing indices, p-values, and all the regression data.
-    """
-    m = len(fm[0, 0])
-    p_values = np.zeros(m, dtype=float)
-    icodes = []
-    # store all of the pertinent data from the regressions
-    regressions = pd.DataFrame(columns=output_columns)
-    for index in range(m):
-        print index
-        phen_vector1 = fm[0][:, index]
-        phen_vector2 = fm[1][:, index]
-        phen_vector3 = fm[2][:, index]
-        res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, response=response,
-                                   phen_vector3=phen_vector3)
+	:returns: A tuple containing indices, p-values, and all the regression data.
+	"""
 
-        # save all of the regression data
-        phewas_info = get_phewas_info(index)
-        stat_info = res[2]
-        info = phewas_info[0:2] + [res[1]] + stat_info + [phewas_info[2]]
-        regressions.loc[index] = info
+	num_phecodes = len(fm[0, 0])
+	thresh = math.ceil(genotypes.shape[0] * 0.03)
+	# store all of the pertinent data from the regressions
+	regressions = pd.DataFrame(columns=output_columns)
+	control = fm[0][genotypes.genotype == 0, :]
+	disease = fm[0][genotypes.genotype == 1, :]
+	# find all phecodes that only present for a single genotype (ie only controls or only diseased show the phecode) -> have to use regularization
+	inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
+	for index in tqdm(range(num_phecodes), desc='Running Regressions'):
+		phen_vector1 = fm[0][:, index]
+		phen_vector2 = fm[1][:, index]
+		phen_vector3 = fm[2][:, index]
+		# to prevent false positives, only run regressions if more than thresh records have positive values
+		if np.where(phen_vector1 > 0)[0].shape[0] > thresh:
+			if index in inds:
+				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
+										   lr=1,
+										   response=response,
+										   phen_vector3=phen_vector3)
+			else:
+				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
+										   lr=0,
+										   response=response,
+										   phen_vector3=phen_vector3)
 
-        p_values[index] = res[1]
-    return regressions
+		else: # default (non-significant) values if not enough samples to run regression
+			odds = 0
+			p = np.nan
+			od = [np.nan, p, np.nan, np.nan]
+			res = (odds, p, od)
+
+		# save all of the regression data
+		phewas_info = get_phewas_info(index)
+		stat_info = res[2]
+		info = phewas_info[0:2] + stat_info + [phewas_info[2]] + [phewas_info[3]]
+
+		regressions.loc[index] = info
+
+	return regressions.dropna(subset=['p-val']).sort_values(by='PheWAS Code')
 
 
 def get_bon_thresh(normalized, power):  # same
