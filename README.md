@@ -10,14 +10,14 @@ Shikha Chaganti, PhD
 
 Cailey Kerley
 
-### Latest Release: pyPheWAS 3.0.1
+## Latest Release: pyPheWAS 3.0.1
 - Bug fixes including __FDR & Bonferroni threshold calculations__
 - Header saved in feature matrices
 - More file formats available for saving plots
 
 ### Older Releases
 
-## pyPheWAS 3.0.0
+#### pyPheWAS 3.0.0
 This release includes:
 - Support for both ICD 9 and ICD 10
 - All 3 regression types (binary, count, & duration) optimized for big data
