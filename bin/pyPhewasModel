@@ -84,7 +84,7 @@ print("Saving regression data to %s" % (path + outfile))
 header = ','.join(['str_reg_type', str_reg_type, 'group', groupfile]) + '\n'
 f = open(os.sep.join([path, outfile]), 'w')
 f.write(header)
-regressions.to_csv(f)
+regressions.to_csv(f,index=False)
 f.close()
 
 interval = time.time() - start
