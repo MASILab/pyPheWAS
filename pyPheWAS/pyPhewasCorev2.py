@@ -200,7 +200,7 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov):
 			# dur aggregate: store the number of years between the first and last events with this phecode
 			feature_matrix[0][count][phecode_ix] = event['duration'] # duration calculated in get_icd_codes()
 
-	return feature_matrix
+	return feature_matrix,list(empty_phewas_df.index)
 
 
 
