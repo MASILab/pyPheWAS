@@ -18,7 +18,6 @@ Cailey Kerley
 ### Older Releases
 
 #### pyPheWAS 3.0.0
-This release includes:
 - Support for both ICD 9 and ICD 10
 - All 3 regression types (binary, count, & duration) optimized for big data
 - pyPhewasPipeline: a streamlined combination of pyPhewasLookup, pyPhewasModel, and pyPhewasPlot
