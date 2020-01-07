@@ -559,7 +559,7 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	return
 
 
-def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_format='', label_loc="path"):  # same
+def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_format='', label_loc="plot"):  # same
 	"""
 	Plots the data on a Log Odds Plot.
 
