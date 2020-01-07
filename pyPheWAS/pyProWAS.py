@@ -9,7 +9,8 @@ import pandas as pd
 import scipy.stats
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-import sys
+from tqdm import tqdm
+import matplotlib.lines as mlines
 
 
 def get_codes():  # same
@@ -23,7 +24,7 @@ def get_codes():  # same
     sep = os.sep
     path = os.path.dirname(os.path.abspath(__file__))
     filename = os.sep.join([path, 'resources', 'prowas_codes.csv'])
-    return pd.read_csv(filename)
+    return pd.read_csv(filename,dtype=str)
 
 
 def get_group_file(path, filename):  # same
@@ -99,7 +100,7 @@ def generate_feature_matrix(genotypes, phenotypes, reg_type, phewas_cov=''):  # 
 
     feature_matrix = np.zeros((3, genotypes.shape[0], prowas_codes.shape[0]), dtype=int)
     count = 0;
-    for i in genotypes['id']:
+    for i in tqdm(genotypes['id']):
         if reg_type == 0:
             temp = pd.DataFrame(phenotypes[phenotypes['id'] == i][['prowas_code', 'MaxAgeAtCPT']]).drop_duplicates()
             match = prowas_codes2['prowas_code'].isin(list(phenotypes[phenotypes['id'] == i]['prowas_code']))
@@ -171,60 +172,80 @@ def get_phewas_info(p_index):  # same
     return [p_code, p_name, p_rollup]
 
 
-def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, response='',
-                         phen_vector3=''):  # diff - done
-    """
-    Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
+def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0, response='',
+						 phen_vector3=''):  # diff - done
+	"""
+	Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
 
-    :param genotypes: a DataFrame containing the genotype information
-    :param phen_vector: a array containing the phenotype vector
-    :param covariates: a string containing all desired covariates
-    :type genotypes: pandas DataFrame
-    :type phen_vector: numpy array
-    :type covariates: string
+	:param genotypes: a DataFrame containing the genotype information
+	:param phen_vector1: a array containing the phenotype vector
+	:param phen_vector2: a array containing the phenotype vector
+	:param covariates: a string containing all desired covariates
+	:type genotypes: pandas DataFrame
+	:type phen_vector1: numpy array
+	:type phen_vector2: numpy array
+	:type covariates: string
 
-    .. note::
-        The covariates must be a string that is delimited by '+', not a list.
-        If you are using a list of covariates and would like to convert it to the pyPhewas format, use the following::
+	.. note::
+		The covariates must be a string that is delimited by '+', not a list.
+		If you are using a list of covariates and would like to convert it to the pyPhewas format, use the following::
 
-            l = ['genotype', 'age'] # a list of your covariates
-            covariates = '+'.join(l) # pyPhewas format
+			l = ['genotype', 'age'] # a list of your covariates
+			covariates = '+'.join(l) # pyPhewas format
 
-        The covariates that are listed here *must* be headers to your genotype CSV file.
-    """
+		The covariates that are listed here *must* be headers to your genotype CSV file.
+	"""
 
-    data = genotypes
-    data['y'] = phen_vector1
-    data['MaxAgeAtCPT'] = phen_vector2
-    # f='y~'+covariates
-    if response:
-        f = response + '~ y + genotype +' + covariates
-        if phen_vector3.any():
-            data['phe'] = phen_vector3
-            f = response + '~ y + phe + genotype' + covariates
-    else:
-        f = 'genotype ~ y +' + covariates
-        if phen_vector3.any():
-            data['phe'] = phen_vector3
-            f = 'genotype ~ y + phe +' + covariates
-    try:
-        if reg_type == 0:
-            logreg = smf.logit(f, data).fit(method='bfgs', disp=False)
-            p = logreg.pvalues.y
-            odds = logreg.params.y
-            conf = logreg.conf_int()
-            od = [-math.log10(p), logreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
-        else:
-            linreg = smf.logit(f, data).fit(method='bfgs', disp=False)
-            p = linreg.pvalues.y
-            odds = linreg.params.y
-            conf = linreg.conf_int()
-            od = [-math.log10(p), linreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
-    except:
-        odds = 0
-        p = np.nan
-        od = [np.nan, np.nan, np.nan]
-    return (odds, p, od)
+	data = genotypes
+	data['y'] = phen_vector1
+	data['MaxAgeAtICD'] = phen_vector2
+	# f='y~'+covariates
+	if covariates is not '':
+		covariates = '+' + covariates
+	if response:
+		f = response + '~ y + genotype' + covariates
+		if phen_vector3.any():
+			data['phe'] = phen_vector3
+			f = response + '~ y + phe + genotype' + covariates
+	else:
+		f = 'genotype ~ y' + covariates
+		if phen_vector3.any():
+			data['phe'] = phen_vector3
+			f = 'genotype ~ y + phe' + covariates
+	try:
+		if lr == 0: # fit logit without regulatization
+			logreg = smf.logit(f, data).fit(disp=False)
+			p = logreg.pvalues.y
+			odds = 0  #
+			conf = logreg.conf_int()
+			od = [-math.log10(p), p, logreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
+		elif lr == 1: # fit logit with regularization
+			f1 = f.split(' ~ ')
+			f1[1] = f1[1].replace(" ", "")
+			logit = sm.Logit(data[f1[0].strip()], data[f1[1].split('+')])
+			lf = logit.fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
+			p = lf.pvalues.y
+			odds = 0
+			conf = lf.conf_int()
+			od = [-math.log10(p), p, lf.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
+		else:
+			linreg = smf.logit(f, data).fit(method='bfgs', disp=False)
+			p = linreg.pvalues.y
+			odds = 0
+			conf = linreg.conf_int()
+			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
+	except ValueError as ve:
+		print(ve)
+		print('lr = % d' %lr)
+		odds = 0
+		p = np.nan
+		od = [np.nan, p, np.nan, np.nan]
+	except Exception as e:
+		print(e)
+		odds = 0
+		p = np.nan
+		od = [np.nan, p, np.nan, np.nan]
+	return (odds, p, od)
 
 
 def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):  # same
@@ -275,7 +296,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 		# save all of the regression data
 		phewas_info = get_phewas_info(index)
 		stat_info = res[2]
-		info = phewas_info[0:2] + stat_info + [phewas_info[2]] + [phewas_info[3]]
+		info = phewas_info[0:2] + stat_info + [phewas_info[2]]
 
 		regressions.loc[index] = info
 
@@ -376,180 +397,177 @@ def get_x_label_positions(categories, lines=True):  # same
     return label_positions
 
 
-def plot_data_points(y, thresh, save='', imbalances=np.array([])):  # same
-    """
-    Plots the data with a variety of different options.
+def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_format=''):  # same
+	"""
+	Plots the data on a Manhattan Plot.
 
-    This function is the primary plotting function for pyPhewas.
-
-    :param x: an array of indices
-    :param y: an array of p-values
-    :param thresh: the threshold power
-    :param save: the output file to save to (if empty, display the plot)
-    :param imbalances: a list of imbalances
-    :type x: numpy array
-    :type y: numpy array
-    :type thresh: float
-    :type save: str
-    :type imbalances: numpy array
-
-    """
-
-    # Determine whether or not to show the imbalance.
-    show_imbalance = imbalances.size != 0
-
-    # Sort the phewas codes by category.
-    c = codes.loc[prowas_codes['index']]
-    c = c.reset_index()
-    #idx = c.sort_values(by='CCS Label').index
-    idx = y.sort_values().index
-
-    # Get the position of the lines and of the labels
-    linepos = get_x_label_positions(c['CCS Label'].tolist(), True)
-    x_label_positions = get_x_label_positions(c['CCS Label'].tolist(), False)
-    x_labels = c.sort_values('CCS Label')['CCS Label'].drop_duplicates().tolist()
-
-    # Plot each of the points, if necessary, label the points.
-    e = 1
-    artists = []
-    for i in idx:
-        if imbalances[i]>0:
-            plt.plot(e, y[i], 'o', color=imbalance_colors[imbalances[i]], fillstyle='full', markeredgewidth=0.0)
-        # else:
-        #     plt.plot(e, y[i], 'o', color=plot_colors[c[i:i + 1].category_string.values[0]], markersize=10,
-        #              fillstyle='full', markeredgewidth=0.0)
-
-        if y[i] > thresh and imbalances[i]>0:
-            artists.append(plt.text(e, y[i], c['prowas_desc'][i], rotation=70, va='bottom'))
-            e += 10
-
-    # If the imbalance is to be shown, draw lines to show the categories.
-    # if show_imbalance:
-    #     for pos in linepos:
-    #         plt.axvline(x=pos, color='black', ls='dotted')
-
-    # Plot a blue line at p=0.05 and plot a red line at the line for the threshold type.
-    plt.axhline(y=-math.log10(0.05), color='blue')
-    plt.axhline(y=thresh, color='red')
-
-    # Set windows and labels
-    # plt.xticks(x_label_positions, x_labels, rotation=70, fontsize=10)
-    plt.ylim(ymin=0, ymax=max(y[imbalances>0])+5)
-    plt.xlim(xmin=0, xmax=e)
-    plt.ylabel('-log10(p)')
-
-    # Determine the type of output desired (saved to a plot or displayed on the screen)
-    if save:
-        pdf = PdfPages(save)
-        pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
-        pdf.close()
-    else:
-        plt.subplots_adjust(left=0.05, right=0.85)
-        plt.show()
-
-    # Clear the plot in case another plot is to be made.
-    plt.clf()
-
-def plot_odds_ratio(y, p, thresh, save='', imbalances=np.array([])):  # same
-    """
-	Plots the data with a variety of different options.
-
-	This function is the primary plotting function for pyPhewas.
-
-	:param x: an array of indices
-	:param y: an array of p-values
-	:param thresh: the threshold power
+	:param regressions: dataframe containing the regression results
+	:param thresh: the significance threshold
 	:param save: the output file to save to (if empty, display the plot)
-	:param imbalances: a list of imbalances
-	:type x: numpy array
-	:type y: numpy array
+	:param show_imbalance: boolean variable that determines whether or not to show imbalances on the plot (default True)
+	:type regressions: pandas DataFrame
 	:type thresh: float
 	:type save: str
-	:type imbalances: numpy array
+	:type show_imbalance: boolean
 
 	"""
 
-    # Determine whether or not to show the imbalance.
-    fig = plt.figure()
-    ax = plt.subplot(111)
-    show_imbalance = imbalances.size != 0
+	# Initialize figure
+	fig = plt.figure(1)
+	ax = plt.subplot(111)
+	frame1 = plt.gca()
 
-    # Sort the phewas codes by category.
-    c = codes.loc[prowas_codes['index']]
-    c = c.reset_index()
-    # idx = c.sort_values(by='category').index
-    idx = p.sort_values().index
+	# Merge regressions with Phewas data to get categories
+	regressions = pd.merge(regressions, prowas_codes, left_on='PheWAS Code', right_on='prowas_code').sort_values(by='ccs')
 
-    # Get the position of the lines and of the labels
-    # linepos = get_x_label_positions(c['category'].tolist(), False)
-    # x_label_positions = get_x_label_positions(c['category'].tolist(), True)
-    # x_labels = c.sort_values('category').category_string.drop_duplicates().tolist()
+	# Determine whether or not to show the imbalance.
+	# show_imbalance = imbalances.size != 0
 
-    # Plot each of the points, if necessary, label the points.
-    e = 1
-    artists = []
-    frame1 = plt.gca()
-    # ax.xticks(x_label_positions, x_labels, rotation=70, fontsize=10)
-    plt.xlabel('Log odds ratio')
+	# c = icd9_codes.loc[phewas_codes['index']]
+	# c = c.reset_index()
+	# idx = c.sort_values(by='category').index
 
-    # if thresh_type == 0:
-    #     thresh = thresh0
-    # elif thresh_type == 1:
-    #     thresh = thresh1
-    # else:
-    #     thresh = thresh2
+	# Plot all points w/ labels
+	e = 1
+	artists = []
+	plt.ylabel('-log10(p)')
+	ax.axhline(y=thresh, color='red', ls='dotted')  # plot threshold
+	for ix,data in regressions.iterrows():
+		logp_ix = data['"-log(p)"']
+		if  logp_ix > thresh:
+			# determine marker type based on whether/not showing imbalance
+			if show_imbalance:
+				mew = 1.5
+				if data['beta'] > 0: m = '+'
+				else: m = '_'
+			else:
+				mew = 0.0
+				m = 'o'
+			# Plot PheCode data point & format PheCode label
+			ax.plot(e, logp_ix, m, color="blue", fillstyle='full', markeredgewidth=mew)
+			artists.append(ax.text(e, logp_ix, data['prowas_desc'], rotation=89, va='bottom', fontsize=6))
+			e += 15
 
-    # plt.xlim(xmin=min(y[p>thresh,1]), xmax=max(y[p>thresh,2]))
+	# # Legend
+	# line1 = []
+	# box = ax.get_position()
+	# ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
+	# for lab in plot_colors.keys():
+	# 	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
+	# artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
 
-    for i in idx:
-        if p[i] > thresh:
-            e += 15
-            if show_imbalance:  # and imbalances[i]>0:
-                if imbalances[i] > 0:
-                    artists.append(ax.text(y[i][0], e, c['CCS Label'][i], rotation=0, ha='left', fontsize=6))
-                else:
-                    artists.append(ax.text(y[i][0], e, c['CCS Label'][i], rotation=0, ha='right', fontsize=6))
-            elif not show_imbalance:
-                artists.append(ax.text(e, y[i][0], c['CCS Label'][i], rotation=40, va='bottom'))
-        else:
-            e += 0
+	# Plot x axis
+	ax.axhline(y=0, color='black')
+	frame1.axes.get_xaxis().set_visible(False)
 
-        if show_imbalance:
-            if p[i] > thresh:
-                ax.plot(y[i][0], e, 'o', color=imbalance_colors[imbalances[i]], fillstyle='full',
-                        markeredgewidth=0.0)
-                ax.plot([y[i, 1], y[i, 2]], [e, e], color=imbalance_colors[imbalances[i]])
-            # else:
-            # ax.plot(e,y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
-            #	ax.plot(e,-y[i],'o', color=plot_colors[c[i:i+1].category_string.values[0]], fillstyle='full', markeredgewidth=0.0)
-        else:
-            ax.plot(e, y[i], 'o', color=imbalance_colors[imbalances[i]], fillstyle='full',
-                    markeredgewidth=0.0)
-    # line1 = []
-    # box = ax.get_position()
-    # ax.set_position([box.x0, box.y0 + box.height*0.05, box.width, box.height*0.95])
-    # for lab in plot_colors.keys():
-    #     line1.append(
-    #         mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
-    # artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.15), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
-    ax.axvline(x=0, color='black')
-    frame1.axes.get_yaxis().set_visible(False)
+	# If the imbalance is to be shown, draw lines to show the categories.
+	# if show_imbalance:
+	# 	for pos in linepos:
+	# 		ax.axvline(x=pos, color='black', ls='dotted')
 
-    # If the imbalance is to be shown, draw lines to show the categories.
-    # if show_imbalance:
-    # 	for pos in linepos:
-    # 		ax.axvline(x=pos, color='black', ls='dotted')
-    # Determine the type of output desired (saved to a plot or displayed on the screen)
-    if save:
-        pdf = PdfPages(save)
-        pdf.savefig(bbox_extra_artists=artists, bbox_inches='tight')
-        pdf.close()
-    else:
-        ax.subplots_adjust(left=0.05, right=0.85)
-        ax.show()
+	# Save the plot
+	if save:
+		plt.savefig(save,format=save_format, bbox_extra_artists=artists, bbox_inches='tight')
+		plt.clf()
 
-    # Clear the plot in case another plot is to be made.
-    plt.clf()
+	return
+
+
+def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_format='', label_loc="plot"):  # same
+	"""
+	Plots the data on a Log Odds Plot.
+
+	:param regressions: dataframe containing the regression results
+	:param thresh: the significance threshold
+	:param save: the output file to save to (if empty, display the plot)
+	:param show_imbalance: boolean variable that determines whether or not to show imbalances on the plot (default True)
+	:param label_loc: the output file to save to (if empty, display the plot)
+	:type regressions: pandas DataFrame
+	:type thresh: float
+	:type save: str
+	:type show_imbalance: boolean
+
+	"""
+
+	# Initialize figure
+	fig = plt.figure(2)
+	ax = plt.subplot(111)
+	frame1 = plt.gca()
+
+	# Merge regressions with Phewas data to get categories
+	regressions = pd.merge(regressions, prowas_codes, left_on='PheWAS Code', right_on='prowas_code').sort_values(by='ccs')
+
+	# determine whether or not to show imbalances
+	# show_imbalance = imbalances.size != 0
+
+	# Sort the phewas codes by category.
+	# c = icd9_codes.loc[phewas_codes['index']]
+	# c = c.reset_index()
+	# idx = c.sort_values(by='category').index
+
+	# Plot all points w/ labels
+	e = 1  # vertical index
+	ho = 0.025  # horizontal text offset
+	vo = 1  # vertical text offset
+	text_size = 6
+	artists = []
+	if label_loc == "axis":
+		phecode_labels = []
+		phecode_locs = []
+	plt.xlabel('Log odds ratio')
+	for ix, data in regressions.iterrows():
+		beta_ix = data['beta']
+		if data['"-log(p)"'] > thresh:
+			# Add Phecode label
+			if label_loc == "plot":
+				if show_imbalance:
+					if beta_ix > 0:
+						artists.append(
+							ax.text(beta_ix + ho, e + vo, data['prowas_desc'], rotation=0, ha='left', fontsize=text_size))
+					else:
+						artists.append(ax.text(beta_ix - ho, e + vo, data['prowas_desc'], rotation=0, ha='right',
+						                       fontsize=text_size))
+				else:
+					artists.append(
+						ax.text(beta_ix + ho, e + vo, data['prowas_desc'], rotation=0, va='bottom', fontsize=text_size))
+			else:  # location = "axis"
+				phecode_labels.append(data['prowas_desc'])
+				phecode_locs.append(e)
+
+			# Plot Phecode Data
+			ax.plot(beta_ix, e, 'o', color="green", fillstyle='full', markeredgewidth=0.0)
+			ax.plot([data['lowlim'], data['uplim']], [e, e], color="green")
+			e += 15
+
+	# Plot y axis
+	ax.axvline(x=0, color='black')
+
+	if label_loc == "axis":
+		plt.yticks(phecode_locs, phecode_labels, ha='right', fontsize=text_size)
+	else:
+		frame1.axes.get_yaxis().set_visible(False)
+
+	# Legend
+	# line1 = []
+	# box = ax.get_position()
+	# ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
+	# for lab in plot_colors.keys():
+	# 	line1.append(
+	# 		mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
+	# artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.125), loc='upper center', fancybox=True, ncol=4,
+	#                          prop={'size': text_size}))
+
+	# If the imbalance is to be shown, draw lines to show the categories.
+	# if show_imbalance:
+	# 	for pos in linepos:
+	# 		ax.axvline(x=pos, color='black', ls='dotted')
+
+	# Save the plot
+	if save:
+		plt.savefig(save, format=save_format, bbox_extra_artists=artists, bbox_inches='tight')
+		plt.clf()
+
+	return
 
 def process_args(kwargs, optargs, *args):
     clean = np.vectorize(lambda x: x[x.rfind('-') + 1:] + '=')
@@ -578,6 +596,7 @@ output_columns = ['PheWAS Code',
                   'beta',
                   'Conf-interval beta',
                   'cpt']
+
 plot_colors = {'-': 'gold',
                'circulatory system': 'red',
                'congenital anomalies': 'mediumspringgreen',
@@ -612,7 +631,7 @@ threshold_map = {
 }
 global codes, prowas_codes
 codes = get_codes()
-prowas_codes = pd.DataFrame(codes['prowas_code'].drop_duplicates());
-prowas_codes = prowas_codes.reset_index()
+prowas_codes = codes[['prowas_code','prowas_desc','ccs','CCS Label']].drop_duplicates(subset='prowas_code')
+prowas_codes.reset_index(inplace=True,drop=True)
 
 
