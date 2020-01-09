@@ -68,7 +68,7 @@ else:
     if kwargs['covariates'] is not '':
         kwargs['postfix'] = kwargs['covariates'] + '_' + os.path.splitext(kwargs['postfix'])[0]
     else:
-        kwargs['postfix'] = os.path.splitext(kwargs['groupfile'])[0]
+        kwargs['postfix'] = os.path.splitext(kwargs['postfix'])[0]
 
 # Check phewas_cov
 if kwargs['phewas_cov']:
