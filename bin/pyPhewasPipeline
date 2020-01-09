@@ -5,6 +5,7 @@ import os
 import time
 import math
 import argparse
+import sys
 
 def parse_args():
     parser = argparse.ArgumentParser(description="pyPheWAS ICD-Phecode Lookup Tool")
@@ -18,9 +19,11 @@ def parse_args():
     parser.add_argument('--covariates', required=False, default='', type=str, help='Variables to be used as covariates')
     parser.add_argument('--response', required=False, default='', type=str, help='Variable to predict instead of genotype')
     parser.add_argument('--imbalance', required=False, default="True", type=str, help='Whether or not to show the direction of imbalance in the plot')
+    parser.add_argument('--phewas_label', required=False, default="plot", type=str, help='Where to put PheCode labels - plot (default) or axis')
     parser.add_argument('--thresh_type', required=False, default=None, type=str, help='Type of threshold to be used in the plot (fdr, bon, or custom)')
     parser.add_argument('--custom_thresh', required=False, default=None, type=float, help='Custom threshold value (float between 0 and 1)')
-
+    parser.add_argument('--plot_format', required=False, default="svgz", type=str, help='File extension for plot files (default: svgz)')
+    
     args = parser.parse_args()
     return args
 
@@ -38,8 +41,11 @@ kwargs = {'path': os.path.join(os.path.abspath(args.path),''),
           'show_imbalance': eval(args.imbalance),
           'custom_thresh': args.custom_thresh,
           'covariates': args.covariates,
-          'response': args.response
+          'response': args.response,
+          'phewas_label': args.phewas_label,
+          'plot_format': args.plot_format
 }
+
 str_reg_type = args.reg_type
 str_thresh_type = args.thresh_type
 
@@ -79,6 +85,8 @@ else:
     assert str_thresh_type in threshold_map.keys(), "%s is not a valid threshold type" % (str_thresh_type)
     kwargs['thresh_type'] = [str_thresh_type]
 
+assert kwargs['phewas_label'] in ["plot","axis"], "%s is not a valid PheCode label location" % (kwargs['phewas_label'])
+
 # Print Arguments
 display_kwargs(kwargs)
 
@@ -99,14 +107,15 @@ genotypes = get_group_file(path, groupfile)
 print("Generating feature matrix...")
 fm,columns = generate_feature_matrix(genotypes,phenotypes,reg_type,phewas_cov)
 
-print("Saving feature matrices to %s" % (path + outfile))
+fm_outfile = "feature_matrix_" + postfix + ".csv"
+print("Saving feature matrices to %s" % (path + fm_outfile))
 h = ','.join(columns)
 
-np.savetxt(path + 'agg_measures_' + outfile, fm[0],delimiter=',',header=h)
+np.savetxt(path + 'agg_measures_' + fm_outfile, fm[0],delimiter=',',header=h)
 print("...")
-np.savetxt(path + 'icd_age_' + outfile, fm[1],delimiter=',',header=h)
+np.savetxt(path + 'icd_age_' + fm_outfile, fm[1],delimiter=',',header=h)
 print("...")
-np.savetxt(path + 'phewas_cov_' + outfile, fm[2],delimiter=',',header=h)
+np.savetxt(path + 'phewas_cov_' + fm_outfile, fm[2],delimiter=',',header=h)
 
 
 """ 
@@ -130,44 +139,49 @@ pyPhewasPlot
 """
 
 
-y = regressions['"-log(p)"']
+# y = regressions['"-log(p)"']
 
 try:
     regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
-    regressions.uplim = regressions.uplim.str.replace(']', '')
-    regressions.lowlim = regressions.lowlim.str.replace('[', '')
-    yb = regressions[['beta', 'lowlim', 'uplim']].values
-    yb = yb.astype(float)
-except:
-    print('No correlation')
+    regressions['uplim'] = regressions.uplim.str.replace(']', '')
+    regressions['lowlim'] = regressions.lowlim.str.replace('[', '')
+    #yb = regressions[['beta', 'lowlim', 'uplim']].values
+    #yb = yb.astype(float)
+except Exception as e:
+    print('Error reading regression file:')
+    print(e)
+    sys.exit()
 
 # Check if an imbalance will be used
-if show_imbalance:
-    imbalances = get_imbalances(regressions)
-else:
-    imbalances = np.array([])
+#if show_imbalance:
+#    imbalances = get_imbalances(regressions)
+#else:
+#    imbalances = np.array([])
 
 # Get the regular p-values using a numpy vectorized function
-regpvalues = np.vectorize(lambda x: 10**(-x))(y)
+#regpvalues = np.vectorize(lambda x: 10**(-x))(y)
+
+pvalues = regressions['p-val'].values
 
 for t in thresh_type:
     t_num = threshold_map[t]
 
     # Get the threshold type
     if t_num == 0:
-        thresh = get_bon_thresh(y,0.05)
+        thresh = get_bon_thresh(pvalues,0.05)
     elif t_num == 1:
-        thresh = get_fdr_thresh(regpvalues,0.05)
+        thresh = get_fdr_thresh(pvalues,0.05)
     elif t_num == 2:
         thresh = kwargs['custom_thresh']
     print('%s threshold: %0.5f' % (t, thresh))
 
-    save = path + t + '_'  + postfix + '.pdf'
-    saveb = path + t + '_' + postfix + '_beta.pdf'
+    plot_format.replace('.','') # remove leading periods if they were given by user
+    save = path + t + '_'  + postfix + '.' + plot_format
+    saveb = path + t + '_' + postfix + '_beta.' + plot_format
     print('Saving plots to %s' %save)
 
-    plot_data_points(y, -math.log10(thresh), save, imbalances)
-    plot_odds_ratio(yb, y, -math.log10(thresh), saveb, imbalances)
+    plot_manhattan(regressions, -math.log10(thresh), show_imbalance, save, plot_format)
+    plot_odds_ratio(regressions, -math.log10(thresh), show_imbalance, saveb, plot_format, phewas_label)
 
 interval = time.time() - start
 hour = math.floor(interval/3600.0)
