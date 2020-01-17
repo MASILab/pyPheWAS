@@ -25,7 +25,7 @@ import sys
 import matplotlib
 
 
-def get_codes(version):  # same
+def get_codes(filename):  # same
 	"""
 	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
 
@@ -34,22 +34,26 @@ def get_codes(version):  # same
 
 	"""
 	path = os.path.dirname(os.path.abspath(__file__))
-	filename = os.sep.join([path, 'resources', 'phecode_map_'+ version + '.csv'])
-	if '9' in version:
-		icd_col = 'ICD9'
-	elif '10' in version:
-		icd_col = 'ICD10'
+	filename = os.sep.join([path, 'resources', filename])
+	if 'icd9' in filename:
+		data_col = 'ICD9'
+		new_data_col = 'ICD_CODE'
+		phecode_col = 'PheCode'
+	elif 'icd10' in filename:
+		data_col = 'ICD10'
+		new_data_col = 'ICD_CODE'
+		phecode_col = 'PheCode'
 	else:
-		# TODO: add an actual exception here
-		print('Error in phecode map version name: exiting pyPheWAS')
-		sys.exit()
+		data_col = 'cpt'
+		new_data_col = 'CPT_CODE'
+		phecode_col = 'prowas_code'
 	try:
-		phecode_map = pd.read_csv(filename, dtype={icd_col: str, 'PheCode': str})
-		phecode_map.rename(columns={icd_col:'ICD_CODE'},inplace=True)
-		phecode_map.dropna(subset=['PheCode'], inplace=True)
+		phecode_map = pd.read_csv(filename, dtype={data_col:str, phecode_col:str})
+		phecode_map.rename(columns={data_col:new_data_col},inplace=True)
+		phecode_map.dropna(subset=[phecode_col], inplace=True)
 	except Exception as e:
 		print(e)
-		print('Error in phecode map version name: exiting pyPheWAS')
+		print('Error loading phecode map : exiting pyPheWAS')
 		sys.exit()
 
 	return phecode_map
@@ -133,7 +137,42 @@ def get_icd_codes(path, filename, reg_type):
 	return phenotypes
 
 
-def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov):
+def get_cpt_codes(path, filename, reg_type):
+	"""
+	Read all of the phenotype data from the given file and load it into a pandas DataFrame.
+
+	:param path: The path to the file that contains the phenotype data
+	:param filename: The name of the file that contains the phenotype data.
+	:param reg_type: Type of regression
+	:type path: string
+	:type filename: string
+	:type reg_type: int
+
+	:returns: The data from the phenotype file.
+	:rtype: pandas DataFrame
+	"""
+
+	wholefname = path + filename
+	cptfile = pd.read_csv(wholefname,dtype={'CPT_CODE':str})
+	cptfile['CPT_CODE'] = cptfile['CPT_CODE'].str.strip()
+	phenotypes = pd.merge(cptfile, cpt_codes, on='CPT_CODE')
+
+	if reg_type == 2:
+		# pre-calculate durations for feature matrix step
+		phenotypes['duration'] = phenotypes.groupby(['id', 'prowas_code'])['AgeAtCPT'].transform('max') - \
+								 phenotypes.groupby(['id', 'prowas_code'])['AgeAtCPT'].transform('min') + 1
+
+	# calculate max age at each ICD code
+	phenotypes['MaxAgeAtCPT'] = 0
+	phenotypes['MaxAgeAtCPT'] = phenotypes.groupby(['id', 'prowas_code'])['AgeAtCPT'].transform('max')
+	# pre-sort by ID for feature matrix step
+	phenotypes.sort_values(by='id', inplace=True)
+
+	return phenotypes
+
+
+
+def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, phewas_cov):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -154,26 +193,33 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov):
 	# feature matrix 0: reg_type specific data
 	# feature matrix 1: age data
 	# feature matrix 2: phecode covariance data
-	feature_matrix = np.zeros((3, genotypes_df.shape[0], phewas_codes.shape[0]), dtype=float)
 
-	# make genotype a dictionary for faster access time
-	genotypes = genotypes_df.set_index('id').to_dict('index')
+	# use phewas/prowas codes to make a dictionary of indices in the np array
+	if code_type == 'CPT':
+		phecode_col = 'prowas_code'
+		empty_phewas_df = prowas_codes.set_index('prowas_code')
+	else: # code_type == 'ICD'
+		phecode_col = 'PheCode'
+		empty_phewas_df = phewas_codes.set_index('PheCode')
 
-	# use phewascodes to make a dictionary of indices in the np array
-	empty_phewas_df = phewas_codes.set_index('PheCode')
 	empty_phewas_df.sort_index(inplace=True)
 	empty_phewas_df['np_index'] = range(0,empty_phewas_df.shape[0])
 	np_index = empty_phewas_df['np_index'].to_dict()
+
+	feature_matrix = np.zeros((3, genotypes_df.shape[0], empty_phewas_df.shape[0]), dtype=float)
+
+	# make genotype a dictionary for faster access time
+	genotypes = genotypes_df.set_index('id').to_dict('index')
 
 	exclude = []  # list of ids to exclude (in icd list but not in genotype list)
 	last_id = ''  # track last id seen in icd list
 	count = -1
 
-	for _,event in tqdm(icds.iterrows(), desc="Processing ICDs", total=icds.shape[0]):
+	for _,event in tqdm(phenotype.iterrows(), desc="Processing "+code_type+"s", total=phenotype.shape[0]):
 		curr_id = event['id']
 		if not curr_id in genotypes:
 			if not curr_id in exclude:
-				print('%s has records in icd file but is not in group file - excluding from study' % curr_id)
+				print('%s has records in phenotype file but is not in group file - excluding from study' % curr_id)
 				exclude.append(curr_id)
 			continue
 		# check id to see if a new subject has been found
@@ -183,11 +229,11 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov):
 			feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
 
 		# get column index of event phecode
-		phecode_ix = np_index[event['PheCode']]
+		phecode_ix = np_index[event[phecode_col]]
 		# add the max at of that ICD code to the age feature matrix
-		feature_matrix[1][count][phecode_ix] = event['MaxAgeAtICD']
+		feature_matrix[1][count][phecode_ix] = event['MaxAgeAt'+code_type]
 		# if using a phecode covariate and the event phecode is equal to the covariate phecode, set the fm2 to 1 for this subject
-		if (phewas_cov is not None) & (event['PheCode'] == phewas_cov):
+		if (phewas_cov is not None) & (event[phecode_col] == phewas_cov):
 			feature_matrix[2][count][:] = 1
 
 		if reg_type == 0:
@@ -721,8 +767,15 @@ threshold_map = {
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
-icd9_codes = get_codes(version='v1_2_icd9')
-icd10_codes = get_codes(version='v1_2_icd10_beta')
+# load ICD maps (pyPheWAS)
+icd9_codes = get_codes('phecode_map_v1_2_icd9.csv')
+icd10_codes = get_codes('phecode_map_v1_2_icd10_beta.csv')
 phewas_codes = icd9_codes[['PheCode','Phenotype','category','category_string']].drop_duplicates(subset='PheCode')
 phewas_codes.sort_values(by=['PheCode'], inplace=True)
 phewas_codes.reset_index(inplace=True,drop=True)
+
+# load CPT maps (pyProWAS)
+cpt_codes = get_codes('prowas_codes.csv')
+prowas_codes = cpt_codes[['prowas_code','prowas_desc','ccs','CCS Label']].drop_duplicates(subset='prowas_code')
+prowas_codes.sort_values(by=['prowas_code'], inplace=True)
+prowas_codes.reset_index(inplace=True,drop=True)
