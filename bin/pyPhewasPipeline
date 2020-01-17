@@ -145,6 +145,7 @@ try:
     regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
     regressions['uplim'] = regressions.uplim.str.replace(']', '')
     regressions['lowlim'] = regressions.lowlim.str.replace('[', '')
+    regressions = regressions.astype(dtype={'uplim': float, 'lowlim': float})
     #yb = regressions[['beta', 'lowlim', 'uplim']].values
     #yb = yb.astype(float)
 except Exception as e:
