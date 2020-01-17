@@ -70,7 +70,7 @@ genotypes = get_group_file(path, groupfile)
 assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is in group file"
 
 print("Generating feature matrix...")
-fm,columns = generate_feature_matrix(genotypes,phenotypes,reg_type,phewas_cov)
+fm,columns = generate_feature_matrix(genotypes,phenotypes,reg_type,'ICD',phewas_cov)
 
 print("Saving feature matrices to %s" % (path + outfile))
 h = ','.join(columns)
