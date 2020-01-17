@@ -198,7 +198,7 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0
 
 	data = genotypes
 	data['y'] = phen_vector1
-	data['MaxAgeAtICD'] = phen_vector2
+	data['MaxAgeAtCPT'] = phen_vector2
 	# f='y~'+covariates
 	if covariates is not '':
 		covariates = '+' + covariates
