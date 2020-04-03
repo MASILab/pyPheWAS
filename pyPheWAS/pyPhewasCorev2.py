@@ -71,6 +71,7 @@ def get_group_file(path, filename):  # same
 	genotypes_df = pd.read_csv(wholefname)
 	genotypes_df = genotypes_df.dropna(subset=['id'])
 	genotypes_df.sort_values(by='id', inplace=True)
+	genotypes_df.reset_index(inplace=True,drop=True)
 	return genotypes_df
 
 
@@ -282,7 +283,8 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0
 			p = logreg.pvalues.y
 			odds = 0  #
 			conf = logreg.conf_int()
-			od = [-math.log10(p), p, logreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
+			stderr = logreg.bse.y
+			od = [-math.log10(p), p, logreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y']), stderr]
 		elif lr == 1: # fit logit with regularization
 			f1 = f.split(' ~ ')
 			f1[1] = f1[1].replace(" ", "")
@@ -291,25 +293,29 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0
 			p = lf.pvalues.y
 			odds = 0
 			conf = lf.conf_int()
-			od = [-math.log10(p), p, lf.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
+			stderr = lf.bse.y
+			od = [-math.log10(p), p, lf.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y']), stderr]
 		else:
 			linreg = smf.logit(f, data).fit(method='bfgs', disp=False)
 			p = linreg.pvalues.y
 			odds = 0
 			conf = linreg.conf_int()
-			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
+			stderr = linreg.bse.y
+			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y']), stderr]
 	except ValueError as ve:
 		print(ve)
 		print('lr = % d' %lr)
 		odds = 0
 		p = np.nan
-		od = [np.nan, p, np.nan, np.nan]
+		stderr = np.nan
+		od = [np.nan, p, np.nan, np.nan, stderr]
 	except Exception as e:	
 		print(e)
 		odds = 0
 		p = np.nan
-		od = [np.nan, p, np.nan, np.nan]
-	return (odds, p, od)
+		stderr = np.nan
+		od = [np.nan, p, np.nan, np.nan, stderr]
+	return (odds, p, od, stderr)
 
 
 def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):  # same
@@ -338,7 +344,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
-		# to prevent false positives, only run regressions if more than thresh records have positive values
+		# to prevent false positives, only run regressions if more than 5 records have positive values
 		if np.where(phen_vector1 > 0)[0].shape[0] > 5:
 			if index in inds:
 				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
@@ -354,8 +360,9 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 		else: # default (non-significant) values if not enough samples to run regression
 			odds = 0
 			p = np.nan
-			od = [np.nan, p, np.nan, np.nan]
-			res = (odds, p, od)
+			stderr = np.nan
+			od = [np.nan, p, np.nan, np.nan, stderr]
+			res = (odds, p, od, stderr)
 
 		# save all of the regression data
 		phewas_info = get_phewas_info(index)
@@ -410,14 +417,14 @@ def get_fdr_thresh(p_values, alpha):
 
 
 
-def get_bhy_thresh(p_values, power): 
+def get_bhy_thresh(p_values, alpha):
 	"""
 	Calculate the false discovery rate threshold.
 
 	:param p_values: a list of p-values obtained by executing the regression
-	:param power: the thershold power being used (usually 0.05)
+	:param alpha: the thershold power being used (usually 0.05)
 	:type p_values: numpy array
-	:type power: float
+	:type alpha: float
 
 	:returns: the false discovery rate
 	:rtype: float
@@ -428,8 +435,8 @@ def get_bhy_thresh(p_values, power):
 	for i in range(len(sn)):
 		p_crit = alpha * float(i+1) / (8.1 * float(len(sn)))
 		if sn[i] <= p_crit:
-                    continue
-                else:
+			continue
+		else:
 			break
 	return sn[i]
 
@@ -694,6 +701,7 @@ output_columns = ['PheWAS Code',
 				  'p-val',
 				  'beta',
 				  'Conf-interval beta',
+				  'std_error',
 				  'ICD-9',
 				  'ICD-10']
 
