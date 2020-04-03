@@ -533,7 +533,7 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	ax.axhline(y=thresh, color='red', ls='dotted')  # plot threshold
 	for ix,data in regressions.iterrows():
 		logp_ix = data['"-log(p)"']
-		if  logp_ix > thresh:
+		if  data['p-val'] < thresh:
 			# determine marker type based on whether/not showing imbalance
 			if show_imbalance:
 				mew = 1.5
@@ -621,7 +621,7 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 	plt.xlabel('Log odds ratio')
 	for ix, data in regressions.iterrows():
 		beta_ix = data['beta']
-		if data['"-log(p)"'] > thresh:
+		if  data['p-val'] < thresh:
 			# Add Phecode label
 			if label_loc == "plot":
 				if show_imbalance:
@@ -672,6 +672,83 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 		plt.clf()
 
 	return
+
+
+def plot_volcano(regressions, save='', save_format=''):  # same
+	"""
+	Plots the data on a Volcano Plot.
+
+	:param regressions: dataframe containing the regression results
+	:param thresh: the significance threshold
+	:param save: the output file to save to (if empty, display the plot)
+	:param show_imbalance: boolean variable that determines whether or not to show imbalances on the plot (default True)
+	:type regressions: pandas DataFrame
+	:type thresh: float
+	:type save: str
+	:type show_imbalance: boolean
+
+	"""
+
+	# get thresh values
+	bon = get_bon_thresh(regressions["p-val"].values, 0.05)
+	fdr = get_fdr_thresh(regressions["p-val"].values, 0.05)
+
+	# Initialize figure
+	fig = plt.figure(3)
+	ax = plt.subplot(111)
+	frame1 = plt.gca()
+
+	# Plot all points w/ labels
+	artists = []
+	plt.ylabel('-log10(p)')
+	plt.xlabel('Log Odds Ratio')
+
+	for ix,data in regressions.iterrows():
+		logp_ix = data['"-log(p)"']
+		beta = data['beta']
+		# determine marker color & label based on thresholds
+		if  data['p-val'] < bon:
+			c = 'gold'
+			phe = data['PheWAS Name']
+		elif data['p-val'] < fdr:
+			c = 'midnightblue'
+			phe = data['PheWAS Name']
+		else:
+			c = 'slategray'
+			phe = ''
+
+		# Plot PheCode data point & format PheCode label
+		ax.plot(beta, logp_ix, 'o', color=c, fillstyle='full', markeredgewidth=0)
+		# artists.append(ax.text(beta, logp_ix, phe, rotation=89, va='bottom', fontsize=2))
+
+	# Legend
+	line1 = []
+	box = ax.get_position()
+	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
+
+	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="gold", label="BonFerroni"))
+	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="midnightblue", label="FDR"))
+	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="slategray", label="Insignificant"))
+
+
+	artists.append(ax.legend(handles=line1, loc='best', fancybox=True, ncol=4, prop={'size': 6}))
+
+	# Plot x axis
+	# ax.axhline(y=0, color='black')
+	# frame1.axes.get_xaxis().set_visible(False)
+
+	# Save the plot
+	if save:
+		plt.savefig(save,
+					format = save_format,
+					bbox_extra_artists = artists,
+					bbox_inches ='tight',
+					dpi = 300
+					)
+		plt.clf()
+
+	return
+
 
 
 def process_args(kwargs, optargs, *args):
