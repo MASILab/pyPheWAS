@@ -179,6 +179,10 @@ def generate_feature_matrix(genotypes_df, icds, reg_type, phewas_cov):
 		# check id to see if a new subject has been found
 		if last_id != curr_id:
 			count += 1
+			while(curr_id != genotypes_df.loc[count,'id']): # subject at genotypes_df.loc[count] does not have ICD codes
+				empty_id = genotypes_df.loc[count,'id']
+				feature_matrix[1][count] = genotypes[empty_id]['MaxAgeAtVisit']
+				count += 1 # continue processing next subject
 			last_id = curr_id  # reset last_id
 			feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
 
@@ -323,7 +327,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 	"""
 
 	num_phecodes = len(fm[0, 0])
-	thresh = math.ceil(genotypes.shape[0] * 0.03)
+	# thresh = math.ceil(genotypes.shape[0] * 0.03)
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
 	control = fm[0][genotypes.genotype == 0, :]
@@ -335,7 +339,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
 		# to prevent false positives, only run regressions if more than thresh records have positive values
-		if np.where(phen_vector1 > 0)[0].shape[0] > thresh:
+		if np.where(phen_vector1 > 0)[0].shape[0] > 5:
 			if index in inds:
 				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
 										   lr=1,
@@ -406,7 +410,7 @@ def get_fdr_thresh(p_values, alpha):
 
 
 
-def get_bhy_thresh(p_values, power): # TODO: why does this exist
+def get_bhy_thresh(p_values, power): 
 	"""
 	Calculate the false discovery rate threshold.
 
@@ -420,10 +424,12 @@ def get_bhy_thresh(p_values, power): # TODO: why does this exist
 	"""
 	sn = np.sort(p_values)
 	sn = sn[np.isfinite(sn)]
-	sn = sn[::-1]
+	# sn = sn[::-1]
 	for i in range(len(sn)):
-		thresh = power * i / (8.1 * len(sn))
-		if sn[i] <= thresh:
+		p_crit = alpha * float(i+1) / (8.1 * float(len(sn)))
+		if sn[i] <= p_crit:
+                    continue
+                else:
 			break
 	return sn[i]
 
@@ -553,7 +559,12 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 
 	# Save the plot
 	if save:
-		plt.savefig(save,format=save_format, bbox_extra_artists=artists, bbox_inches='tight')
+		plt.savefig(save,
+					format = save_format,
+					bbox_extra_artists = artists,
+					bbox_inches ='tight',
+					dpi = 300
+					)
 		plt.clf()
 
 	return
@@ -595,8 +606,6 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 
 	# Plot all points w/ labels
 	e = 1 # vertical index
-	ho = 0.025 # horizontal text offset
-	vo = 1 # vertical text offset
 	text_size = 6
 	artists = []
 	if label_loc == "axis":
@@ -610,11 +619,11 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 			if label_loc == "plot":
 				if show_imbalance:
 					if beta_ix > 0:
-						artists.append(ax.text(beta_ix+ho, e+vo, data['Phenotype'], rotation=0, ha='left', fontsize=text_size))
+						artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, ha='left', fontsize=text_size))
 					else:
-						artists.append(ax.text(beta_ix-ho, e+vo, data['Phenotype'], rotation=0, ha='right', fontsize=text_size))
+						artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, ha='right', fontsize=text_size))
 				else:
-					artists.append(ax.text(beta_ix+ho, e+vo, data['Phenotype'], rotation=0, va='bottom', fontsize=text_size))
+					artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, va='bottom', fontsize=text_size))
 			else: # location = "axis"
 				phecode_labels.append(data['Phenotype'])
 				phecode_locs.append(e)
@@ -647,7 +656,12 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 
 	# Save the plot
 	if save:
-		plt.savefig(save,format=save_format,bbox_extra_artists=artists, bbox_inches='tight')
+		plt.savefig(save,
+					format = save_format,
+					bbox_extra_artists = artists,
+					bbox_inches ='tight',
+					dpi = 300
+					)
 		plt.clf()
 
 	return
@@ -722,6 +736,7 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
 icd9_codes = get_codes(version='v1_2_icd9')
+# icd9_codes = get_codes(version='v1_1_icd9') # original ICD-PheCode mapping
 icd10_codes = get_codes(version='v1_2_icd10_beta')
 phewas_codes = icd9_codes[['PheCode','Phenotype','category','category_string']].drop_duplicates(subset='PheCode')
 phewas_codes.sort_values(by=['PheCode'], inplace=True)
