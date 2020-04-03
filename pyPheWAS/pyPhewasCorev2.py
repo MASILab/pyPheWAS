@@ -712,14 +712,14 @@ def plot_volcano(regressions, save='', save_format=''):  # same
 			phe = data['PheWAS Name']
 		elif data['p-val'] < fdr:
 			c = 'midnightblue'
-			phe = data['PheWAS Name']
+			phe = ''
 		else:
 			c = 'slategray'
 			phe = ''
 
 		# Plot PheCode data point & format PheCode label
 		ax.plot(beta, logp_ix, 'o', color=c, fillstyle='full', markeredgewidth=0)
-		# artists.append(ax.text(beta, logp_ix, phe, rotation=89, va='bottom', fontsize=2))
+		artists.append(ax.text(beta, logp_ix, phe, rotation=45, va='bottom', fontsize=3))
 
 	# Legend
 	line1 = []
