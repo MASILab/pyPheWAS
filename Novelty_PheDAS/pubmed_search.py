@@ -78,6 +78,7 @@ def main():
     icd9 = pd.read_csv(args.icd9)
     icd9.dropna(subset=['PheCode'],inplace=True)
     print('Reading UMLS file...')
+    # TODO: check reading with read_csv instead
     umls = pd.read_table(args.umls,sep='|',header=None,names=umls_cols,low_memory=False)
     umls.drop(columns='other',inplace=True)
     outdir = args.outdir
@@ -93,7 +94,7 @@ def main():
     umls_icd10 = umls[umls['SAB'] == 'ICD10'].copy()
     umls_icd9 = umls[umls['SAB'] == 'ICD9CM'].copy()
 
-    for ix, data in tqdm(phecode_list.iterrows()):
+    for ix, data in tqdm(phecode_list.iterrows(),total=phecode_list.shape[0]):
         try:
             uids = set() # unique identifiers of pubmed articles
             phe = data['PheCode']
@@ -105,12 +106,12 @@ def main():
             if phe_icd10.shape[0] > 0:
                 cui_icd10 = pd.merge(umls_icd10, phe_icd10, left_on='CODE', right_on='ICD10')
                 cui_icd9 = pd.merge(umls_icd9, phe_icd9, left_on='CODE', right_on='ICD9')
-                cui = cui_icd10.append(cui_icd9)
+                cui = cui_icd10.append(cui_icd9,sort=False)
             else:
                 cui = pd.merge(umls_icd9, phe_icd9, left_on='CODE', right_on='ICD9')
             all_cui_str = pd.merge(umls, cui[['CUI']], on='CUI')
 
-            for ix, data in tqdm(all_cui_str.iterrows()):
+            for ix, data in tqdm(all_cui_str.iterrows(),total=all_cui_str.shape[0]):
                 # build search string from CUI str
                 ss='('
                 for term in data['STR'].split():
