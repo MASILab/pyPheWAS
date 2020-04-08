@@ -205,12 +205,14 @@ def main():
                time.sleep(60)
                pubmed_list = {}
 
-        except:
-           missed.append(phe)
-           pickle_ms = open(osp.join(outdir,"missed.pickle"), "wb")
-           pickle.dump(missed, pickle_ms)
-           pickle_ms.close()
-           time.sleep(60)
+        except Exception as e:
+            print('Error with ' + str(phe))
+            print(e.args[0])
+            missed.append(phe)
+            pickle_ms = open(osp.join(outdir,"missed.pickle"), "wb")
+            pickle.dump(missed, pickle_ms)
+            pickle_ms.close()
+            time.sleep(60)
 
         break # testing
 
