@@ -113,13 +113,20 @@ def main():
                 cui = pd.merge(umls_icd9, phe_icd9, left_on='CODE', right_on='ICD9')
             all_cui_str = pd.merge(umls, cui[['CUI']], on='CUI')
 
-            for ix, data in tqdm(all_cui_str.iterrows(),total=all_cui_str.shape[0]):
-                # build search string from CUI str
-                ss='('
-                for term in data['STR'].split():
-                    if len(term)>0:
-                        ss=ss+term.strip()+ '+'
-                ss=ss[:-1]+ ')'
+            num_cui = all_cui_str.shape[0]
+            for k, group in tqdm(all_cui_str.groupby(np.arange(num_cui)//50),total=len(np.unique(np.arange(num_cui)//50))):
+                # build search string from CUI strings
+                ss = '('
+                first = True
+                for ix2, data2 in group.iterrows():
+                    if not first: ss = ss + ' OR ('
+                    else: first = False
+                    for term in data2['STR'].split():
+                        if len(term)>0:
+                            ss=ss+term.strip()+ '+'
+                    ss = ss[:-1]+ ')'
+
+                print(ss)
 
                 # search Titles & Abstracts
                 ss_r = search(ss, 0, 'TIAB')
