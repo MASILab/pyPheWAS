@@ -23,18 +23,6 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
-# def WriteDictToCSV(csv_file,csv_columns,dict_data):
-#     try:
-#         with open(csv_file, 'w') as csvfile:
-#             writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
-#             writer.writeheader()
-#             for data in dict_data:
-#                 writer.writerow(data)
-#     except IOError as (errno, strerror):
-#             print("I/O error({0}): {1}".format(errno, strerror))
-#     return
-
 def search(query,rs,f):
     Entrez.email = dev_email
     handle = Entrez.esearch(db='pubmed',
@@ -49,22 +37,6 @@ def search(query,rs,f):
     results = Entrez.read(handle)
     handle.close()
     return results
-
-# def searchf(query,rs,f,w):
-#     Entrez.email = dev_email
-#     handle = Entrez.esearch(db='pubmed',
-#                            sort='relevance',
-#                            retstart=rs,
-#                            retmax=10000,
-#                            retmode='xml',
-#                            field=f,
-#                            WebEnv=w,
-#                            usehistory='y',
-#                            term=query)
-#
-#     results = Entrez.read(handle)
-#     handle.close()
-#     return results
 
 
 def main():
@@ -100,6 +72,7 @@ def main():
         try:
             uids = set() # unique identifiers of pubmed articles
             phe = data['PheCode']
+            # print(phe)
 
             # Get all icd codes the map to current PheCode
             phe_icd10 = icd10[icd10['PheCode'] == phe]
@@ -110,29 +83,31 @@ def main():
                 cui_icd9 = pd.merge(umls_icd9, phe_icd9, left_on='CODE', right_on='ICD9')
                 cui = cui_icd10.append(cui_icd9,sort=False)
             else:
+                # print('Only ICD9')
                 cui = pd.merge(umls_icd9, phe_icd9, left_on='CODE', right_on='ICD9')
-            all_cui_str = pd.merge(umls, cui[['CUI']], on='CUI')
+            all_cui_str = pd.merge(umls, cui[['CUI']], on='CUI').drop_duplicates(subset=['CUI','STR'])
 
             num_cui = all_cui_str.shape[0]
-            for k, group in tqdm(all_cui_str.groupby(np.arange(num_cui)//50),total=len(np.unique(np.arange(num_cui)//50))):
+            for k, group in tqdm(all_cui_str.groupby(np.arange(num_cui)//10),total=len(np.unique(np.arange(num_cui)//10))):
                 # build search string from CUI strings
                 ss = '('
                 first = True
                 for ix2, data2 in group.iterrows():
-                    if not first: ss = ss + ' OR ('
+                    if not first: ss = ss + 'OR('
                     else: first = False
                     for term in data2['STR'].split():
                         if len(term)>0:
-                            ss=ss+term.strip()+ '+'
-                    ss = ss[:-1]+ ')'
+                            ss=ss+term.strip()+ ' AND '
+                    ss = ss[:-5]+ ')'
 
-                print(ss)
+                #print(ss)
 
                 # search Titles & Abstracts
                 ss_r = search(ss, 0, 'TIAB')
 
                 # parse results
                 gx1 = ss_r['Count']
+                # print(gx1)
                 if int(gx1)>1000000:
                     # dump super big results to weird.pickle because this is weird
                     weird.append(ss)
@@ -152,6 +127,7 @@ def main():
 
                 # parse results
                 gx1 = ss_r['Count']
+                # print(gx1)
                 if int(gx1)>1000000:
                     # dump super big results to weird.pickle because this is weird
                     weird.append(ss)
@@ -178,6 +154,7 @@ def main():
             ss_r = search(ss, 0, 'TIAB')
             # parse results
             gx1 = ss_r['Count']
+            # print(gx1)
             if int(gx1) > 1000000:
                 # dump super big results to weird.pickle because this is weird
                 weird.append(ss)
@@ -194,6 +171,7 @@ def main():
             ss_r = search(ss, 0, 'MESH')
             # parse results
             gx1 = ss_r['Count']
+            # print(gx1)
             if int(gx1) > 1000000:
                 # dump super big results to weird.pickle because this is weird
                 weird.append(ss)
@@ -208,9 +186,11 @@ def main():
 
 
             pubmed_list[phe] = list(uids)
+            #print(pubmed_list.items())
+            print(len(uids))
 
             if np.mod(ix, 10) == 0:
-               pd.DataFrame(pubmed_list.items(),columns=['PheCode','IdsList']).to_csv('phecode_pubmed_articles_'+str(ix)+'.csv',index=False)
+               pd.DataFrame(pubmed_list.items(),columns=['PheCode','IdsList']).to_csv(osp.join(outdir,'phecode_pubmed_articles_'+str(ix)+'.csv'),index=False)
                time.sleep(60)
                pubmed_list = {}
 
@@ -223,9 +203,8 @@ def main():
             pickle_ms.close()
             time.sleep(60)
 
-        break # testing
 
-    pd.DataFrame(pubmed_list.items(), columns=['PheCode', 'IdsList']).to_csv('phecode_pubmed_articles_' + str(ix) + '.csv', index=False)
+    pd.DataFrame(pubmed_list.items(), columns=['PheCode', 'IdsList']).to_csv(osp.join(outdir,'phecode_pubmed_articles_' + str(ix) + '.csv'), index=False)
                                                                                 
 
 if __name__ == '__main__':
