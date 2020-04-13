@@ -719,7 +719,7 @@ def plot_volcano(regressions, save='', save_format=''):  # same
 
 		# Plot PheCode data point & format PheCode label
 		ax.plot(beta, logp_ix, 'o', color=c, fillstyle='full', markeredgewidth=0)
-		artists.append(ax.text(beta, logp_ix, phe, rotation=45, va='bottom', fontsize=3))
+		artists.append(ax.text(beta, logp_ix, phe, rotation=45, va='bottom', fontsize=4))
 
 	# Legend
 	line1 = []
