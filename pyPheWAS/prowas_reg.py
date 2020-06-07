@@ -71,7 +71,7 @@ except Exception as e:
     print(e)
     sys.exit()
 
-save = path + 'plot.svgz'
+save = path + 'plot.png'
 file_name, file_format = os.path.splitext(save)
 saveb = file_name + '_beta' + file_format
 file_format = file_format[1:] # remove '.' from from first index

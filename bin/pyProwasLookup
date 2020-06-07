@@ -7,14 +7,14 @@ import time
 import math
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="pyPheWAS ICD-Phecode Lookup Tool")
+    parser = argparse.ArgumentParser(description="pyProWAS CPT-PheCode Lookup Tool")
 
-    parser.add_argument('--phenotype', required=True, type=str, help='Name of the phenotype file (e.g. icd9_data.csv)')
+    parser.add_argument('--phenotype', required=True, type=str, help='Name of the phenotype file (e.g. cpt_data.csv)')
     parser.add_argument('--group', required=True, type=str, help ='Name of the group file (e.g. groups.csv)')
     parser.add_argument('--reg_type', required=True, type=str, help='Type of regression that you would like to use (log, lin, or dur)')
     parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files')
     parser.add_argument('--outfile', required=False, default=None, type=str, help='Name of the output file for the feature matrix')
-    parser.add_argument('--phewas_cov', required=False, default=None, type=str, help='PheCode to use as covariates in pyPhewasModel regression')
+    parser.add_argument('--phewas_cov', required=False, default=None, type=str, help='ProWAS Code to use as covariates in pyProwasModel regression')
 
     args = parser.parse_args()
     return args
@@ -62,7 +62,7 @@ locals().update(kwargs)
 Calculate feature matrix
 """
 print("Retrieving phenotype data...")
-phenotypes = get_icd_codes(path, phenotypefile, reg_type)
+phenotypes = get_cpt_codes(path, phenotypefile, reg_type)
 
 print("Retrieving group data...")
 genotypes = get_group_file(path, groupfile)
@@ -70,14 +70,14 @@ genotypes = get_group_file(path, groupfile)
 assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit is in group file"
 
 print("Generating feature matrix...")
-fm,columns = generate_feature_matrix(genotypes,phenotypes,reg_type,'ICD',phewas_cov)
+fm,columns = generate_feature_matrix(genotypes,phenotypes,reg_type,'CPT',phewas_cov)
 
 print("Saving feature matrices to %s" % (path + outfile))
 h = ','.join(columns)
 
 np.savetxt(path + 'agg_measures_' + outfile, fm[0],delimiter=',',header=h)
 print("...")
-np.savetxt(path + 'icd_age_' + outfile, fm[1],delimiter=',',header=h)
+np.savetxt(path + 'cpt_age_' + outfile, fm[1],delimiter=',',header=h)
 print("...")
 np.savetxt(path + 'phewas_cov_' + outfile, fm[2],delimiter=',',header=h)
 
@@ -93,5 +93,5 @@ elif minute > 0:
 else:
     time_str = '%ds' % second
 
-print('pyPhewasLookup Complete\nRuntime: %s' %time_str)
+print('pyProwasLookup Complete\nRuntime: %s' %time_str)
 
