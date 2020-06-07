@@ -169,12 +169,12 @@ def plot_odds_ratio_novelty(regressions, null_interval, show_imbalance=True, sav
         else:
             artists.append(
                 ax.text(beta_ix+0.1, e+5, round(data['novelty_Findex'],3), rotation=0, va='bottom', fontsize=text_size))
-        phecode_labels.append(data['PheName'])
+        phecode_labels.append(data['PheWAS Name'])
         phecode_locs.append(e)
 
         # Plot Phecode Data
         ax.plot(beta_ix, e, 'o', fillstyle='full', markeredgewidth=0.0, color=colormap(data['novelty_Findex']/10.0))
-        ax.plot([data['beta.lb'], data['beta.ub']], [e, e], color=colormap(data['novelty_Findex']/10.0))
+        ax.plot([data['ci.lb'], data['ci.ub']], [e, e], color=colormap(data['novelty_Findex']/10.0))
         e += 15
 
     # Plot Null interval
