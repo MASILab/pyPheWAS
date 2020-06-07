@@ -8,7 +8,7 @@ Bennett Landman, PhD
 
 Shikha Chaganti, PhD
 
-Cailey Kerley
+Cailey Kerley, B.S.
 
 ## Latest Release: pyPheWAS 3.0.1
 - Bug fixes including __FDR & Bonferroni threshold calculations__
