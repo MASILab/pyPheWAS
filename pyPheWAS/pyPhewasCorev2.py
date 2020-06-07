@@ -309,7 +309,7 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0
 		p = np.nan
 		stderr = np.nan
 		od = [np.nan, p, np.nan, np.nan, stderr]
-	except Exception as e:	
+	except Exception as e:
 		print(e)
 		odds = 0
 		p = np.nan
@@ -530,7 +530,9 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	e = 1
 	artists = []
 	plt.ylabel('-log10(p)')
-	ax.axhline(y=thresh, color='red', ls='dotted')  # plot threshold
+
+	ax.axhline(y=-math.log10(thresh), color='red', ls='dotted')  # plot threshold
+
 	for ix,data in regressions.iterrows():
 		logp_ix = data['"-log(p)"']
 		if  data['p-val'] < thresh:
@@ -636,13 +638,13 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 				phecode_locs.append(e)
 
 			# Plot Phecode Data
-			ax.plot(beta_ix, e, 'o', color=plot_colors[data['category_string']], fillstyle='full', markeredgewidth=0.0)
-			ax.plot([data['lowlim'], data['uplim']], [e, e], color=plot_colors[data['category_string']])
+			ax.plot(beta_ix, e, 'o', color=new_plot_colors[data['category_string']], fillstyle='full', markeredgewidth=0.0)
+			ax.plot([data['lowlim'], data['uplim']], [e, e], color=new_plot_colors[data['category_string']])
 			e += 15
 
 	# Plot y axis
 	ax.axvline(x=0, color='black')
-	
+
 	if label_loc == "axis":
 		plt.yticks(phecode_locs,phecode_labels, ha='right',fontsize=text_size)
 	else:
@@ -653,7 +655,7 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
 	for lab in plot_colors.keys():
-		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
+		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=new_plot_colors[lab], label=lab))
 	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.125), loc='upper center', fancybox=True, ncol=4, prop={'size': text_size}))
 
 	# If the imbalance is to be shown, draw lines to show the categories.
@@ -712,7 +714,7 @@ def plot_volcano(regressions, save='', save_format=''):  # same
 			phe = data['PheWAS Name']
 		elif data['p-val'] < fdr:
 			c = 'midnightblue'
-			phe = ''
+			phe = data['PheWAS Name']
 		else:
 			c = 'slategray'
 			phe = ''
@@ -782,6 +784,25 @@ output_columns = ['PheWAS Code',
 				  'ICD-9',
 				  'ICD-10']
 
+new_plot_colors = {'other': 'gold',
+               'circulatory system': 'xkcd:bright red',
+               'congenital anomalies': 'mediumspringgreen',
+               'dermatologic': 'xkcd:dark peach',
+               'digestive': 'yellowgreen',
+               'endocrine/metabolic': 'darkred',
+               'genitourinary': 'seagreen',
+               'hematopoietic': 'orange',
+               'infectious diseases': 'blue',
+               'injuries & poisonings': 'slategray',
+               'mental disorders': 'xkcd:hot pink',
+               'musculoskeletal': 'darkkhaki',
+               'neoplasms': 'xkcd:bluish',
+               'neurological': 'xkcd:purplish pink',
+               'pregnancy complications': 'peachpuff',
+               'respiratory': 'xkcd:carolina blue',
+               'sense organs': 'darkviolet',
+               'symptoms': 'aqua'}
+
 plot_colors = {'-': 'gold',
 			   'circulatory system': 'red',
 			   'congenital anomalies': 'mediumspringgreen',
@@ -800,6 +821,7 @@ plot_colors = {'-': 'gold',
 			   'respiratory': 'brown',
 			   'sense organs': 'darkviolet',
 			   'symptoms': 'darkviolet'}
+
 imbalance_colors = {
 	0: 'white',
 	1: 'deepskyblue',
