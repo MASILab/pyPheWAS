@@ -11,8 +11,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Add PubMED results to pyPheWAS stat file")
 
     parser.add_argument('--statfile', required=True, type=str, help='Name of the stat file (e.g. regressions.csv)')
-    parser.add_argument('--dx_pb', required=True, type=str, help='Name of the Dx PubMED file (e.g. dx_PubMED_results.csv)')
-    parser.add_argument('--pb_dir', required=True, type=str, help ='Path to PheCode PubMED directory')
+    parser.add_argument('--dx_pm', required=True, type=str, help='Name of the Dx PubMED file (e.g. dx_PubMED_results.csv)')
+    parser.add_argument('--pm_dir', required=True, type=str, help ='Path to PheCode PubMED directory')
     parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files')
     parser.add_argument('--outfile', required=False, default=None, type=str, help='Name of the updated regression output file (default: same as statfile)')
 
@@ -35,8 +35,10 @@ def main():
     reg = pd.read_csv(reg_f) # , dtype={"PheWAS Code":str})
     reg_f.close()
 
-    dx_pubmed = pd.read_csv(osp.join(args.path, args.dx_pb))
-    pubmed_dir = args.pb_dir
+    reg.rename(columns={'Conf-interval beta':'beta.ci','std_error':'beta.se'},inplace=True)
+
+    dx_pubmed = pd.read_csv(osp.join(args.path, args.dx_pm))
+    pubmed_dir = args.pm_dir
 
     ### Set-up Dx list of UIDs ###
     dx_set = set(literal_eval(dx_pubmed.loc[0, "IdsList"]))
@@ -103,10 +105,7 @@ def main():
                         reg.loc[phe_ix, "P.PM.AD.given.phe"] = len(joint_set) / len(phe_set)
 
     tmp.close()
-    out_f = open(outfile,'w+')
-    out_f.write(reg_hdr)
-    reg.to_csv(out_f,index=False)
-    out_f.close()
+    reg.to_csv(outfile,index=False)
 
 
 if __name__ == '__main__':
