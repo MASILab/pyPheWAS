@@ -108,18 +108,22 @@ print('%s threshold: %0.5f'%(str_thresh_type,thresh))
 if outfile is not None:
     save = path + outfile
     file_name, file_format = os.path.splitext(save)
-    saveb = file_name + '_beta' + file_format
+    savem = file_name + '_Manhattan' + file_format
+    saveb = file_name + '_LogOdds' + file_format
+    savev = file_name + '_Volcano' + file_format
     file_format = file_format[1:] # remove '.' from from first index
-    print("Saving plot to %s" % (save))
 else:
     save = ''
     saveb=''
     file_format=''
 
-plot_manhattan(regressions, -math.log10(thresh), show_imbalance, save, file_format)
-plot_odds_ratio(regressions, -math.log10(thresh), show_imbalance, saveb, file_format, phewas_label)
+plot_manhattan(regressions, thresh, show_imbalance, savem, file_format)
+plot_odds_ratio(regressions, thresh, show_imbalance, saveb, file_format, phewas_label)
+plot_volcano(regressions, savev, file_format)
 
-if not save:
+if save:
+    print("Saving plot to %s" % (save))
+else:
     plt.show()
 
 interval = time.time() - start

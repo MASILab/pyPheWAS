@@ -75,6 +75,7 @@ def get_group_file(path, filename):  # same
 	genotypes_df = pd.read_csv(wholefname)
 	genotypes_df = genotypes_df.dropna(subset=['id'])
 	genotypes_df.sort_values(by='id', inplace=True)
+	genotypes_df.reset_index(inplace=True,drop=True)
 	return genotypes_df
 
 
@@ -225,6 +226,10 @@ def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, phewas
 		# check id to see if a new subject has been found
 		if last_id != curr_id:
 			count += 1
+			while(curr_id != genotypes_df.loc[count,'id']): # subject at genotypes_df.loc[count] does not have ICD codes
+				empty_id = genotypes_df.loc[count,'id']
+				feature_matrix[1][count] = genotypes[empty_id]['MaxAgeAtVisit']
+				count += 1 # continue processing next subject
 			last_id = curr_id  # reset last_id
 			feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
 
@@ -324,7 +329,8 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0
 			p = logreg.pvalues.y
 			odds = 0  #
 			conf = logreg.conf_int()
-			od = [-math.log10(p), p, logreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
+			stderr = logreg.bse.y
+			od = [-math.log10(p), p, logreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y']), stderr]
 		elif lr == 1: # fit logit with regularization
 			f1 = f.split(' ~ ')
 			f1[1] = f1[1].replace(" ", "")
@@ -333,25 +339,29 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0
 			p = lf.pvalues.y
 			odds = 0
 			conf = lf.conf_int()
-			od = [-math.log10(p), p, lf.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
+			stderr = lf.bse.y
+			od = [-math.log10(p), p, lf.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y']), stderr]
 		else:
 			linreg = smf.logit(f, data).fit(method='bfgs', disp=False)
 			p = linreg.pvalues.y
 			odds = 0
 			conf = linreg.conf_int()
-			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y'])]
+			stderr = linreg.bse.y
+			od = [-math.log10(p), p, linreg.params.y, '[%s,%s]' % (conf[0]['y'], conf[1]['y']), stderr]
 	except ValueError as ve:
 		print(ve)
 		print('lr = % d' %lr)
 		odds = 0
 		p = np.nan
-		od = [np.nan, p, np.nan, np.nan]
-	except Exception as e:	
+		stderr = np.nan
+		od = [np.nan, p, np.nan, np.nan, stderr]
+	except Exception as e:
 		print(e)
 		odds = 0
 		p = np.nan
-		od = [np.nan, p, np.nan, np.nan]
-	return (odds, p, od)
+		stderr = np.nan
+		od = [np.nan, p, np.nan, np.nan, stderr]
+	return (odds, p, od, stderr)
 
 
 def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):  # same
@@ -369,7 +379,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 	"""
 
 	num_phecodes = len(fm[0, 0])
-	thresh = math.ceil(genotypes.shape[0] * 0.03)
+	# thresh = math.ceil(genotypes.shape[0] * 0.03)
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
 	control = fm[0][genotypes.genotype == 0, :]
@@ -380,8 +390,8 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
-		# to prevent false positives, only run regressions if more than thresh records have positive values
-		if np.where(phen_vector1 > 0)[0].shape[0] > thresh:
+		# to prevent false positives, only run regressions if more than 5 records have positive values
+		if np.where(phen_vector1 > 0)[0].shape[0] > 5:
 			if index in inds:
 				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
 										   lr=1,
@@ -396,8 +406,9 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 		else: # default (non-significant) values if not enough samples to run regression
 			odds = 0
 			p = np.nan
-			od = [np.nan, p, np.nan, np.nan]
-			res = (odds, p, od)
+			stderr = np.nan
+			od = [np.nan, p, np.nan, np.nan, stderr]
+			res = (odds, p, od, stderr)
 
 		# save all of the regression data
 		phewas_info = get_phewas_info(index)
@@ -452,24 +463,26 @@ def get_fdr_thresh(p_values, alpha):
 
 
 
-def get_bhy_thresh(p_values, power): # TODO: why does this exist
+def get_bhy_thresh(p_values, alpha):
 	"""
 	Calculate the false discovery rate threshold.
 
 	:param p_values: a list of p-values obtained by executing the regression
-	:param power: the thershold power being used (usually 0.05)
+	:param alpha: the thershold power being used (usually 0.05)
 	:type p_values: numpy array
-	:type power: float
+	:type alpha: float
 
 	:returns: the false discovery rate
 	:rtype: float
 	"""
 	sn = np.sort(p_values)
 	sn = sn[np.isfinite(sn)]
-	sn = sn[::-1]
+	# sn = sn[::-1]
 	for i in range(len(sn)):
-		thresh = power * i / (8.1 * len(sn))
-		if sn[i] <= thresh:
+		p_crit = alpha * float(i+1) / (8.1 * float(len(sn)))
+		if sn[i] <= p_crit:
+			continue
+		else:
 			break
 	return sn[i]
 
@@ -563,10 +576,12 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	e = 1
 	artists = []
 	plt.ylabel('-log10(p)')
-	ax.axhline(y=thresh, color='red', ls='dotted')  # plot threshold
+
+	ax.axhline(y=-math.log10(thresh), color='red', ls='dotted')  # plot threshold
+
 	for ix,data in regressions.iterrows():
 		logp_ix = data['"-log(p)"']
-		if  logp_ix > thresh:
+		if  data['p-val'] < thresh:
 			# determine marker type based on whether/not showing imbalance
 			if show_imbalance:
 				mew = 1.5
@@ -599,7 +614,12 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 
 	# Save the plot
 	if save:
-		plt.savefig(save,format=save_format, bbox_extra_artists=artists, bbox_inches='tight')
+		plt.savefig(save,
+					format = save_format,
+					bbox_extra_artists = artists,
+					bbox_inches ='tight',
+					dpi = 300
+					)
 		plt.clf()
 
 	return
@@ -641,8 +661,6 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 
 	# Plot all points w/ labels
 	e = 1 # vertical index
-	ho = 0.025 # horizontal text offset
-	vo = 1 # vertical text offset
 	text_size = 6
 	artists = []
 	if label_loc == "axis":
@@ -651,28 +669,28 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 	plt.xlabel('Log odds ratio')
 	for ix, data in regressions.iterrows():
 		beta_ix = data['beta']
-		if data['"-log(p)"'] > thresh:
+		if  data['p-val'] < thresh:
 			# Add Phecode label
 			if label_loc == "plot":
 				if show_imbalance:
 					if beta_ix > 0:
-						artists.append(ax.text(beta_ix+ho, e+vo, data['Phenotype'], rotation=0, ha='left', fontsize=text_size))
+						artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, ha='left', fontsize=text_size))
 					else:
-						artists.append(ax.text(beta_ix-ho, e+vo, data['Phenotype'], rotation=0, ha='right', fontsize=text_size))
+						artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, ha='right', fontsize=text_size))
 				else:
-					artists.append(ax.text(beta_ix+ho, e+vo, data['Phenotype'], rotation=0, va='bottom', fontsize=text_size))
+					artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, va='bottom', fontsize=text_size))
 			else: # location = "axis"
 				phecode_labels.append(data['Phenotype'])
 				phecode_locs.append(e)
 
 			# Plot Phecode Data
-			ax.plot(beta_ix, e, 'o', color=plot_colors[data['category_string']], fillstyle='full', markeredgewidth=0.0)
-			ax.plot([data['lowlim'], data['uplim']], [e, e], color=plot_colors[data['category_string']])
+			ax.plot(beta_ix, e, 'o', color=new_plot_colors[data['category_string']], fillstyle='full', markeredgewidth=0.0)
+			ax.plot([data['lowlim'], data['uplim']], [e, e], color=new_plot_colors[data['category_string']])
 			e += 15
 
 	# Plot y axis
 	ax.axvline(x=0, color='black')
-	
+
 	if label_loc == "axis":
 		plt.yticks(phecode_locs,phecode_labels, ha='right',fontsize=text_size)
 	else:
@@ -683,7 +701,7 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
 	for lab in plot_colors.keys():
-		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
+		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=new_plot_colors[lab], label=lab))
 	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.125), loc='upper center', fancybox=True, ncol=4, prop={'size': text_size}))
 
 	# If the imbalance is to be shown, draw lines to show the categories.
@@ -693,10 +711,92 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 
 	# Save the plot
 	if save:
-		plt.savefig(save,format=save_format,bbox_extra_artists=artists, bbox_inches='tight')
+		plt.savefig(save,
+					format = save_format,
+					bbox_extra_artists = artists,
+					bbox_inches ='tight',
+					dpi = 300
+					)
 		plt.clf()
 
 	return
+
+
+def plot_volcano(regressions, save='', save_format=''):  # same
+	"""
+	Plots the data on a Volcano Plot.
+
+	:param regressions: dataframe containing the regression results
+	:param thresh: the significance threshold
+	:param save: the output file to save to (if empty, display the plot)
+	:param show_imbalance: boolean variable that determines whether or not to show imbalances on the plot (default True)
+	:type regressions: pandas DataFrame
+	:type thresh: float
+	:type save: str
+	:type show_imbalance: boolean
+
+	"""
+
+	# get thresh values
+	bon = get_bon_thresh(regressions["p-val"].values, 0.05)
+	fdr = get_fdr_thresh(regressions["p-val"].values, 0.05)
+
+	# Initialize figure
+	fig = plt.figure(3)
+	ax = plt.subplot(111)
+	frame1 = plt.gca()
+
+	# Plot all points w/ labels
+	artists = []
+	plt.ylabel('-log10(p)')
+	plt.xlabel('Log Odds Ratio')
+
+	for ix,data in regressions.iterrows():
+		logp_ix = data['"-log(p)"']
+		beta = data['beta']
+		# determine marker color & label based on thresholds
+		if  data['p-val'] < bon:
+			c = 'gold'
+			phe = data['PheWAS Name']
+		elif data['p-val'] < fdr:
+			c = 'midnightblue'
+			phe = data['PheWAS Name']
+		else:
+			c = 'slategray'
+			phe = ''
+
+		# Plot PheCode data point & format PheCode label
+		ax.plot(beta, logp_ix, 'o', color=c, fillstyle='full', markeredgewidth=0)
+		artists.append(ax.text(beta, logp_ix, phe, rotation=45, va='bottom', fontsize=4))
+
+	# Legend
+	line1 = []
+	box = ax.get_position()
+	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
+
+	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="gold", label="BonFerroni"))
+	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="midnightblue", label="FDR"))
+	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="slategray", label="Insignificant"))
+
+
+	artists.append(ax.legend(handles=line1, loc='best', fancybox=True, ncol=4, prop={'size': 6}))
+
+	# Plot x axis
+	# ax.axhline(y=0, color='black')
+	# frame1.axes.get_xaxis().set_visible(False)
+
+	# Save the plot
+	if save:
+		plt.savefig(save,
+					format = save_format,
+					bbox_extra_artists = artists,
+					bbox_inches ='tight',
+					dpi = 300
+					)
+		plt.clf()
+
+	return
+
 
 
 def process_args(kwargs, optargs, *args):
@@ -726,8 +826,28 @@ output_columns = ['PheWAS Code',
 				  'p-val',
 				  'beta',
 				  'Conf-interval beta',
+				  'std_error',
 				  'ICD-9',
 				  'ICD-10']
+
+new_plot_colors = {'other': 'gold',
+               'circulatory system': 'xkcd:bright red',
+               'congenital anomalies': 'mediumspringgreen',
+               'dermatologic': 'xkcd:dark peach',
+               'digestive': 'yellowgreen',
+               'endocrine/metabolic': 'darkred',
+               'genitourinary': 'seagreen',
+               'hematopoietic': 'orange',
+               'infectious diseases': 'blue',
+               'injuries & poisonings': 'slategray',
+               'mental disorders': 'xkcd:hot pink',
+               'musculoskeletal': 'darkkhaki',
+               'neoplasms': 'xkcd:bluish',
+               'neurological': 'xkcd:purplish pink',
+               'pregnancy complications': 'peachpuff',
+               'respiratory': 'xkcd:carolina blue',
+               'sense organs': 'darkviolet',
+               'symptoms': 'aqua'}
 
 plot_colors = {'-': 'gold',
 			   'circulatory system': 'red',
@@ -747,6 +867,7 @@ plot_colors = {'-': 'gold',
 			   'respiratory': 'brown',
 			   'sense organs': 'darkviolet',
 			   'symptoms': 'darkviolet'}
+
 imbalance_colors = {
 	0: 'white',
 	1: 'deepskyblue',
@@ -767,9 +888,12 @@ threshold_map = {
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
+
 # load ICD maps (pyPheWAS)
 icd9_codes = get_codes('phecode_map_v1_2_icd9.csv')
+# icd9_codes = get_codes('phecode_map_v1_1_icd9.csv') # original ICD-PheCode mapping
 icd10_codes = get_codes('phecode_map_v1_2_icd10_beta.csv')
+
 phewas_codes = icd9_codes[['PheCode','Phenotype','category','category_string']].drop_duplicates(subset='PheCode')
 phewas_codes.sort_values(by=['PheCode'], inplace=True)
 phewas_codes.reset_index(inplace=True,drop=True)

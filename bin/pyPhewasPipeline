@@ -145,6 +145,7 @@ try:
     regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
     regressions['uplim'] = regressions.uplim.str.replace(']', '')
     regressions['lowlim'] = regressions.lowlim.str.replace('[', '')
+    regressions = regressions.astype(dtype={'uplim': float, 'lowlim': float})
     #yb = regressions[['beta', 'lowlim', 'uplim']].values
     #yb = yb.astype(float)
 except Exception as e:
@@ -163,6 +164,8 @@ except Exception as e:
 
 pvalues = regressions['p-val'].values
 
+plot_format.replace('.','') # remove leading periods if they were given by user
+
 for t in thresh_type:
     t_num = threshold_map[t]
 
@@ -175,13 +178,15 @@ for t in thresh_type:
         thresh = kwargs['custom_thresh']
     print('%s threshold: %0.5f' % (t, thresh))
 
-    plot_format.replace('.','') # remove leading periods if they were given by user
-    save = path + t + '_'  + postfix + '.' + plot_format
-    saveb = path + t + '_' + postfix + '_beta.' + plot_format
+    save = path + t + '_'  + postfix + '_Manhattan.' + plot_format
+    saveb = path + t + '_' + postfix + '_LogOdds.' + plot_format
     print('Saving plots to %s' %save)
 
-    plot_manhattan(regressions, -math.log10(thresh), show_imbalance, save, plot_format)
-    plot_odds_ratio(regressions, -math.log10(thresh), show_imbalance, saveb, plot_format, phewas_label)
+    plot_manhattan(regressions, thresh, show_imbalance, save, plot_format)
+    plot_odds_ratio(regressions, thresh, show_imbalance, saveb, plot_format, phewas_label)
+
+savev = path + postfix + '_Volcano.' + plot_format
+plot_volcano(regressions, savev, plot_format)
 
 interval = time.time() - start
 hour = math.floor(interval/3600.0)

@@ -2,49 +2,137 @@
 from pyPheWAS.pyPhewasCorev2 import *
 import sys, os
 import pandas as pd
+import argparse
+from pathlib import Path
+import os.path as osp
 
-optargs = {
-	'--phenotype': 'phenotype_file',
-	'--groupout':'final_gfile',
-	'--path':'path',
-	'--code':'code',
-	'--code_freq':'cf'
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="pyPheWAS Genotype Assignment Tool")
+
+    parser.add_argument('--phenotype', required=True, type=str, help='Name of the input phenotype file')
+    parser.add_argument('--group', required=False, default='', type=str, help='Name of the group file to add genotype map to')
+    parser.add_argument('--groupout', required=True, type=str, help ='Name of the output group file')
+    parser.add_argument('--case_codes', required=True, type=str, help='Case ICD codes (filename or comma-separated list)')
+    parser.add_argument('--ctrl_codes', required=False, default='', type=str,  help='Control ICD codes (filename or comma-separated list)')
+    parser.add_argument('--code_freq', required=True, type=str, help='Minimum frequency of codes (If 2 comma-separated values are given and ctrl_codes is given, 2nd argument is applied to controls)')
+    parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files (default = current directory)')
+
+    args = parser.parse_args()
+    return args
+
+"""
+Retrieve and validate all arguments.
+"""
+args = parse_args()
+
+kwargs = {
+	'phenotype':args.phenotype,
+	'group':args.group,
+	'groupout':args.groupout,
+	'path':Path(args.path),
+	'case_codes':args.case_codes,
+	'ctrl_codes': args.ctrl_codes,
+	'code_freq':args.code_freq,
 }
 
-args = sys.argv[1:]
-
-# Define any default arguments
-kwargs = {'path':'.'}
-
-kwargs = process_args(kwargs, optargs, *args)
-
 # Change path to absolute path
-kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
+# kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
 
-print(kwargs)
-
-# Assert that valid files were given
-assert kwargs['phenotype_file'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotypes'])
+# Assert that files are valid
+assert kwargs['phenotype'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotype'])
+assert kwargs['groupout'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['groupout'])
+if len(kwargs['group']) > 0:
+	assert kwargs['group'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['group'])
 
 # Assert that the output file is valid
-assert kwargs['final_gfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenout'])
+
 
 # Print Arguments
 display_kwargs(kwargs)
-
-# Fill paths
-kwargs['phenotype_file'] = os.sep.join([kwargs['path'], kwargs['phenotype_file']])
-kwargs['final_gfile'] = os.sep.join([kwargs['path'], kwargs['final_gfile']])
-
-# Make precision an integer
-kwargs['cf'] = int(kwargs['cf'])
-
 # Make all arguments local variables
 locals().update(kwargs)
-code = code.replace(" ","").split(',')
-phen = pd.read_csv(phenotype_file)
-phen['gen']=phen['icd9'].str.match('|'.join(code))
-phen['gen']=phen['gen']*1
-phen['genc']=phen.groupby('id')['gen'].transform('sum')
-phen['genotype']=(phen['genc']>=cf)*1
-phen[['id','genotype']].drop_duplicates().to_csv(final_gfile,index=False)
+
+# Fill paths
+phenotype = path / phenotype
+groupout = path / groupout
+if len(group) > 0:
+	groupout = path / groupout
+
+# Assert that all files exist
+assert osp.exists(phenotype), "%s does not exist" % phenotype
+if len(group) > 0:
+	assert osp.exists(group), "%s does not exist" % group
+if case_codes.endswith('.csv') | case_codes.endswith('.txt'):
+	assert osp.exists(path/case_codes), "%s does not exist" % (path / case_codes)
+if ctrl_codes.endswith('.csv') | ctrl_codes.endswith('.txt'):
+	assert osp.exists(path/ctrl_codes), "%s does not exist" % (path / ctrl_codes)
+
+
+
+# Make precision an integer
+code_freq = code_freq.replace(" ","").split(',')
+for i in range(len(code_freq)):
+	code_freq[i] = int(code_freq[i])
+
+"""
+Parse codes
+"""
+# Case
+if case_codes.endswith('.csv') | case_codes.endswith('.txt'):
+	print('Reading case group codes from file')
+	with open(path/case_codes,'r') as code_f:
+		case_codes = code_f.readlines()[0]
+case_codes = case_codes.replace(" ","").split(',')
+
+# Controls
+if len(ctrl_codes) > 0:
+	if ctrl_codes.endswith('.csv') | ctrl_codes.endswith('.txt'):
+		print('Reading control group codes from file')
+		with open(path/ctrl_codes,'r') as code_f:
+			ctrl_codes = code_f.readlines()[0]
+	ctrl_codes = ctrl_codes.replace(" ","").split(',')
+
+
+"""
+Find codes & make groups
+"""
+phen = pd.read_csv(phenotype)
+phen['genotype'] = -1
+
+# Cases
+print('Finding cases with codes: %s' % '|'.join(case_codes))
+phen['gen'] = phen['ICD_CODE'].str.match('|'.join(case_codes)) # find all ICD code matches
+phen['gen'] = phen['gen']*1 # convert to integer
+phen['genc'] = phen.groupby('id')['gen'].transform('sum') # count all instances
+case_mask = phen['genc']>=code_freq[0]
+phen.loc[case_mask,'genotype'] = 1
+
+# Controls
+if len(ctrl_codes) > 0:
+	print('Finding controls with codes: %s' % '|'.join(ctrl_codes))
+	phen['gen'] = phen['ICD_CODE'].str.match('|'.join(ctrl_codes))
+	phen['gen'] = phen['gen']*1
+	phen['genc'] = phen.groupby('id')['gen'].transform('sum')
+	if len(code_freq) > 1:
+		cf = code_freq[1]
+	else:
+		cf = code_freq[0]
+	ctrl_mask = (phen['genc']>=cf) & ~ case_mask
+	phen.loc[ctrl_mask, 'genotype'] = 0
+	# drop other subjects
+	sub_mask = case_mask | ctrl_mask
+	phen = phen[sub_mask]
+else:
+	phen.loc[~case_mask,'genotype'] = 0
+
+"""
+Save Output
+"""
+phen = phen[['id','genotype']].drop_duplicates()
+num_case = phen[phen['genotype']==1].shape[0]
+num_ctrl = phen[phen['genotype']==0].shape[0]
+print('Cases: %d\nControls:%d' %(num_case, num_ctrl))
+
+print('Saving gentoype mapping to %s' % groupout)
+phen.to_csv(groupout,index=False)
