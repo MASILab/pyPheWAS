@@ -4,76 +4,94 @@ from pyPheWAS.pyPhewasCorev2 import *
 from pyPheWAS.rt_censor_diagnosis import *
 import os
 import argparse
+from pathlib import Path
+import os.path as osp
+import time
+import numpy as np
 
-optargs = {
-	'--phenotype': 'phenotype_file',
-	'--group':'genotype_file',
-	'--path':'path',
-	'--field':'field',
-	'--phenotypeout': 'final_pfile',
-	'--groupout': 'final_gfile',
-	'--start':'start_time',
-	'--end':'end_time',
-}
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="pyPheWAS ICD-Phecode Lookup Tool")
+    parser = argparse.ArgumentParser(description="pyPheWAS ICD/CPT Age Censoring Tool")
 
     parser.add_argument('--phenotype', required=True, type=str, help='Name of phenotype file')
-    parser.add_argument('--group', required=True, type=str, help ='Name of the group file (e.g. groups.csv)')
+    parser.add_argument('--group', required=True, type=str, help ='Name of the group file')
     parser.add_argument('--phenotypeout', required=True, type=str,help='Name of output phenotype file')
     parser.add_argument('--groupout', required=True, type=str, help='Name of output group file')
     parser.add_argument('--path', required=False, default='.', type=str,help='Path to all input files and destination of output files')
-    parser.add_argument('--field', required=False, default='AgeAtICD', type=str, help='Type of event to censor on')
-    parser.add_argument('--start', required=False, default=None, type=float, help='Start time for censoring')
-    parser.add_argument('--end', required=False, default=None, type=float, help='End time for censoring')
+    parser.add_argument('--efield', required=False, default='AgeAtICD', type=str, help='Name of event to censor on (default: AgeAtICD)')
+    parser.add_argument('--delta_field', required=False, default=None, type=str, help='If specified, censor with respect to the interval between delta_field and efield')
+    parser.add_argument('--start', required=False, default=np.nan, type=float, help='Start time for censoring')
+    parser.add_argument('--end', required=False, default=np.nan, type=float, help='End time for censoring')
 
     args = parser.parse_args()
     return args
 
 """
+Print Start Message
+"""
+script_start = time.time()
+print_start_msg()
+print('\ncensorData: ICD/CPT Age Censoring Tool\n')
+
+
+"""
 Retrieve and validate all arguments.
 """
-
 args = parse_args()
-kwargs = {'path': os.path.join(os.path.abspath(args.path),''),
-		  'phenotype_file': args.phenotype,
-		  'genotype_file': args.group,
-		  'final_pfile':args.phenotypeout,
-		  'final_gfile':args.groupout,
-          'start_time':args.start,
-          'end_time':args.end,
-          'field':args.field
+kwargs = {'path': Path(args.path),
+		  'phenotype': args.phenotype,
+		  'group': args.group,
+		  'phenotypeout':args.phenotypeout,
+		  'groupout':args.groupout,
+          'start':args.start,
+          'end':args.end,
+          'efield':args.efield,
+          'delta_field':args.delta_field,
 }
 
 
 # Assert that valid files were given
-assert kwargs['phenotype_file'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotypes'])
-assert kwargs['genotype_file'].endswith('.csv'), "%s is not a valid group file, must be a .csv file" % (kwargs['groups'])
-
-# Assert that the output file is valid
-assert kwargs['final_pfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['final_pfile'])
-assert kwargs['final_gfile'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['final_gfile'])
+assert kwargs['phenotype'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotype'])
+assert kwargs['group'].endswith('.csv'), "%s is not a valid group file, must be a .csv file" % (kwargs['group'])
+assert kwargs['phenotypeout'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenotypeout'])
+assert kwargs['groupout'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['groupout'])
 
 # Assert that a valid combination of start/end was given
-assert (kwargs['start_time'] is not None) or (kwargs['end_time'] is not None), "Please define a start time and/or end time for censoring"
+assert np.isfinite(kwargs['start']) or np.isfinite(kwargs['end']), "Please define a start time and/or end time for censoring"
 
 # Print Arguments
 display_kwargs(kwargs)
-
-# Fill paths
-kwargs['phenotype_file'] = os.sep.join([kwargs['path'], kwargs['phenotype_file']])
-kwargs['genotype_file'] = os.sep.join([kwargs['path'], kwargs['genotype_file']])
-
-kwargs['final_pfile'] = os.sep.join([kwargs['path'], kwargs['final_pfile']])
-kwargs['final_gfile'] = os.sep.join([kwargs['path'], kwargs['final_gfile']])
-
-# Change times to integers
-kwargs['start_time'] = float(kwargs['start_time'])
-kwargs['end_time'] = float(kwargs['end_time'])
-
-
 # Make all arguments local variables
 locals().update(kwargs)
 
-censor_diagnosis(genotype_file, phenotype_file, final_pfile, final_gfile, field, start_time, end_time)
+# Fill paths
+phenotype = path / phenotype
+group = path / group
+phenotypeout = path / phenotypeout
+groupout = path / groupout
+
+# Change times to integers
+start = float(start)
+end = float(end)
+
+"""
+Run censoring
+"""
+censor_diagnosis(group, phenotype, phenotypeout, groupout, efield,  delta_field, start, end)
+
+"""
+Calculate runtime
+"""
+interval = time.time() - script_start
+hour = math.floor(interval/3600.0)
+minute = math.floor((interval - hour*3600)/60)
+second = math.floor(interval - hour*3600 - minute*60)
+
+if hour > 0:
+    time_str = '%dh:%dm:%ds' %(hour,minute,second)
+elif minute > 0:
+    time_str = '%dm:%ds' % (minute, second)
+else:
+    time_str = '%ds' % second
+
+print('censorData Complete [Runtime: %s]' %time_str)
