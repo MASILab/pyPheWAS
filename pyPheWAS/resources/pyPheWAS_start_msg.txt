@@ -1,0 +1,4 @@
+==================== pyPheWAS ====================
+Developed by the MASI Lab at Vanderbilt University
+This software is covered by the MIT license.
+==================================================
