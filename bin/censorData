@@ -70,6 +70,10 @@ group = path / group
 phenotypeout = path / phenotypeout
 groupout = path / groupout
 
+# make sure files exist
+assert osp.exists(phenotype), "%s does not exist" % phenotype
+assert osp.exists(group), "%s does not exist" % group
+
 # Change times to integers
 start = float(start)
 end = float(end)
