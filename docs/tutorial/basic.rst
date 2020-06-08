@@ -1,3 +1,4 @@
+.. _basics:
 Basics
 ======
 
@@ -7,7 +8,7 @@ Purpose
 This tutorial is meant to help get a user started with pyPhewas and troubleshoot problems.
 
 Installation
----------------
+------------
 
 pyPheWAS is compatible with Python 2.7+ and Python 3. Install the pyPheWAS package by running::
 
