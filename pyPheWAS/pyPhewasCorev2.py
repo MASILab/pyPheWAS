@@ -25,6 +25,14 @@ import sys
 import matplotlib
 
 
+def print_start_msg():
+	path = os.path.dirname(os.path.abspath(__file__))
+	filename = os.sep.join([path, 'resources', 'pyPheWAS_start_msg.txt'])
+	with open(filename, 'r') as msg_f:
+		print('\n')
+		for line in msg_f:
+			print(line.strip('\n'))
+
 def get_codes(filename):  # same
 	"""
 	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
