@@ -1,9 +1,4 @@
 Tutorial
 ========
 
-.. toctree::
-	:maxdepth: 2
-
-    tutorial/basic
-    tutorial/researchtools
-    tutorial/dataprep
+.. todo:: Need to add an actual tutorial here with pictures from running the tools.

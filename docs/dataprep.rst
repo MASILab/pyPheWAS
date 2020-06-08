@@ -2,12 +2,12 @@ Data Preparation
 ================
 This page describes the tools available for preparing your data before running
 the pyPheWAS analysis. These tools all require **phenotype** and/or **group**
-files. The formats of these files are explained in the :ref:`basics` section.
+files. The formats of these files are explained in the :ref:`Basics` section.
 
 
 
-createGenotypeFile (Create a group file)
-----------------------------------------
+createGenotypeFile
+------------------
 Split subjects into case (genotype=1) / control (genotype=0) groups based on ICD codes.
 
 Required Arguments:
@@ -68,19 +68,19 @@ command:
 
 
 
-convertEventToAge (Convert event dates to ages)
------------------------------------------------
+convertEventToAge
+-----------------
 Converts the date at an ICD or CPT event to the subject's age.
 
 Required Arguments:
  * ``--phenotype``:     Name of input phenotype file
  * ``--group``:	        Name of input group file
- * ``--phenotypeout``:  Output phenotype file name (event date replaced with event age)
+ * ``--phenotypeout``:  Name of output phenotype file
  * ``--eventcolumn``:	Name of the event date column in the phenotype file
  * ``--etype``:         Type of data (CPT or ICD)
 
 Optional Arguments [default value]:
- * ``--path``:	        The path to all input files and destination of output files [current directory]
+ * ``--path``:	        Path to all input files and destination of output files [current directory]
  * ``--precision``:	    Decimal precision of the age needed [5]
  * ``--dob_column``:    Name of the date of birth column in the group file ['DOB']
 
@@ -96,8 +96,8 @@ to the official pyPheWAS phenotype file format ('AgeAtICD' or 'AgeAtCPT').
 
 
 
-censorData (ICD/CPT date censoring)
------------------------------------
+censorData
+----------
 
 Censor files to restrict data to a specific time interval. The default field option is to censor based on AgeAtICD. Can change the default field to other events such as AgeAtDx.
 
@@ -115,8 +115,8 @@ A sample execution of *censorData*::
 
 		censorData --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" —field=“AgeAtDx” —-phenotypeout="icd9_data_cen.csv" —groupout="group_cen.csv" -—start="0" —-end="2"
 
-maximizeControls (Case/Control matching)
-----------------------------------------
+maximizeControls
+----------------
 Match the subjects in case and control groups based on a criteria such as age ('key'), and on an interval condition ('delta'). The default option for matching groups is genotype (condition='genotype'). The default matching group can be changed to other options such as sex or race.
 
 The options:
@@ -135,8 +135,8 @@ A sample execution of * maximizeControls*::
 .. note:: Case/Control matching is performed using the Hopcroft-Karp algorithm. If there are not enough case/control matches, **some case subjects may be dropped**, and will not appear in the output files.
 
 
-generateGroups (Grouping Tool)
-------------------------------
+generateGroups
+--------------
 
 The grouping tool allows you to take two or more icd9 files, and two or more group files. And merge them together, while removing any double counted groups, so that the resulting data files are ready to be run through the pyPheWAS Research Tools.
 

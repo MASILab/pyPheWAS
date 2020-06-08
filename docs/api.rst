@@ -1,20 +1,20 @@
 Source Documentation
 ====================
 
-:mod:`pyPheWAS` -- Root package
-*******************************
+:mod:`pyPheWAS.pyPhewasCorev2` -- Master pyPheWAS functions file
+****************************************************************
 
-.. automodule:: pyPheWAS
+.. automodule:: pyPheWAS.pyPhewasCorev2
    :members:
 
-:mod:`pyPheWAS.pyPhewasv2` -- pyPhewas functions file
-*****************************************************
+:mod:`pyPheWAS.rt_censor_diagnosis` -- Censoring functions
+**********************************************************
 
-.. automodule:: pyPheWAS.pyPhewasv2
+.. automodule:: pyPheWAS.rt_censor_diagnosis
    :members:
 
-:mod:`pyPheWAS.pyPhewasCore` -- pyPhewas Research Tools file
-************************************************************
+:mod:`pyPheWAS.maximize_bipartite` -- Case/Control matching functions
+*********************************************************************
 
-.. automodule:: pyPheWAS.pyPhewasCore
+.. automodule:: pyPheWAS.maximize_bipartite
    :members:
