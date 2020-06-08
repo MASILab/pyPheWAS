@@ -1,6 +1,6 @@
 Data Preparation
 ================
-This page describes the tools available for preparing your data before running
+This page describes the command line tools available for preparing your data before running
 the pyPheWAS analysis. These tools all require **phenotype** and/or **group**
 files. The formats of these files are explained in the :ref:`Basics` section.
 
@@ -23,8 +23,8 @@ Optional Arguments [default value]:
  * ``--ctrl_codes``: Control ICD codes (filename or comma-separated list)
 
 Output:
- * File (*groupout*) containing subject IDs and genotype assignments
- * *Optional:* if an existing file is specified with ``--group``, the genotype
+ * File (``groupout``) containing subject IDs and genotype assignments
+ * *Optional:* if an existing file is specified with ``group``, the genotype
    assignments will be added as a new column to the data in the existing group file.
 
 Specify a list of ICD-9/10 codes that define the case group (genotype=1) and the minimum
@@ -36,21 +36,21 @@ case group are put in the control group.
 **Example** Define case group as subjects with at least 3 instances of the codes
 008 or 134.1; make all other subjects controls::
 
-        createGenotypeFile --phenotype="icd_data.csv" -—groupout="group.csv" --case_codes="008,134.1" --code_freq="3"
+        createGenotypeFile --case_codes="008,134.1" --code_freq="3" --phenotype="icd_data.csv" -—groupout="group.csv" 
 
 
 Optionally, a list of codes may also be provided for the control group
-(genotype=0). In this case, the control group will be composed of subjects not
+(genotype=0) via ``ctrl_codes``. In this case, the control group will be composed of subjects not
 in the case group that have at least the minimum frequency of control group codes
 in their record; *all subjects not in the case or control groups are removed.*
-Also optionally, a second argument may be provided to the code frequency input;
+Also optionally, a second argument may be provided to the ``code_freq`` input;
 if this is specified along with ctrl_codes, the second frequency value will be
 applied to the control group.
 
 **Example** Define case group as subjects with at least 3 instances of the codes 008;
 define control group as subjects with at least 2 instances of the codes 480.1 or 041::
 
-        createGenotypeFile --phenotype="icd_data.csv" -—groupout="group.csv" --case_codes="008" --ctrl_codes="480.1,041" --code_freq="3,2"
+        createGenotypeFile --case_codes="008" --ctrl_codes="480.1,041" --code_freq="3,2" --phenotype="icd_data.csv" -—groupout="group.csv"
 
 
 ICD code lists may alternatively be specified by text or csv files. Contents of the
@@ -64,7 +64,7 @@ command:
 
 **Command**::
 
-    createGenotypeFile --phenotype="icd_data.csv" -—groupout="group.csv" --case_codes="case_icd.txt" --code_freq="3"
+    createGenotypeFile --case_codes="case_icd.txt" --code_freq="3" --phenotype="icd_data.csv" -—groupout="group.csv"
 
 
 
@@ -85,35 +85,62 @@ Optional Arguments [default value]:
  * ``--dob_column``:    Name of the date of birth column in the group file ['DOB']
 
 Output:
- * File (phenotypeout) containing ICD/CPT events with event dates replaced by event age
+ * File (``phenotypeout``) containing ICD/CPT events with event dates replaced by event age
 
 This function converts event dates to event ages, naming the age column according
 to the official pyPheWAS phenotype file format ('AgeAtICD' or 'AgeAtCPT').
 
 **Example** Convert CPT event dates to ages with 7-decimal precision::
 
-        convertEventToAge --phenotype="cpt_dates.csv" -—group="group.csv" --phenotypeout="cpt_ages.csv" --eventcolumn="CPT_DATE" --etype="CPT" --precision=7
+        convertEventToAge --eventcolumn="CPT_DATE" --etype="CPT" --precision=7 --phenotype="cpt_dates.csv" -—group="group.csv" --phenotypeout="cpt_ages.csv"
 
 
 
 censorData
 ----------
+Restrict ICD/CPT data to a specific time interval.
 
-Censor files to restrict data to a specific time interval. The default field option is to censor based on AgeAtICD. Can change the default field to other events such as AgeAtDx.
+Required Arguments:
+ * ``--phenotype``:		Name of phenotype file
+ * ``--group``:			Name group file
+ * ``--phenotypeout``:	Name of output phenotype file
+ * ``--groupout``:		Name of output group file
 
-The options:
- * ``--path``:			the path to all input files and destination of output files
- * ``--phenotype``:		phenotype file name
- * ``--group``:			group file name
- * ``--field``:			the field is the type of event to censor on
- * ``--phenotypeout``:	the output file name for the censored phenotype files
- * ``--groupout``:		the output file name for the censored genotype files
- * ``--start``:			start time for censoring (in years)
- * ``--end``:			end time for censoring (in years)
+Optional Arguments [default value]:
+ * ``--path``:	        Path to all input files and destination of output files [current directory]
+ * ``--efield``:		Name of field in the phenotype file to be censored [AgeAtICD]
+ * ``--start``:			Start time for censoring in years [-infinity]
+ * ``--end``:			End time for censoring in years [+infinity]
+ * ``--delta_field``:	If specified, censor with respect to the interval between delta_field and efield
 
-A sample execution of *censorData*::
+.. note:: Either the start and/or end arguments must be given.
 
-		censorData --path="/Users/me/Documents/EMRdata" --phenotype="icd9_data.csv" --group="group.csv" —field=“AgeAtDx” —-phenotypeout="icd9_data_cen.csv" —groupout="group_cen.csv" -—start="0" —-end="2"
+Output:
+ * Phenotype File (``phenotypeout``) containing events censored to specified interval.
+ * Group File (``groupout``) containing all subjects with data remaining after censoring.
+
+
+Specify a range of ages for censoring ICD/CPT event data, such that ``efield`` ages are
+censored to the range
+
+        :math:`start \leq efield \leq end`
+
+**Example:** Censor ICD event ages (AgeAtICD) to ages 5 to 18 years-old::
+
+		censorData --start=5 --end=18 --phenotype="icd_data.csv" --group="group.csv" —-phenotypeout="icd_censored.csv" —groupout="group_censored.csv"
+
+
+Instead of censoring based on absolute age, the user may censor with respect to
+another data field using the ``delta_field`` option. If specified, the data is
+censored based on the *interval between* ``delta_field`` and ``efield``:
+
+        :math:`start \leq deltafield - efield \leq end`.
+
+**Example:** Censor CPT events to everything previous to 1 year before patient surgery (AgeAtSurgery)::
+
+		censorData --efield="AgeAtCPT" --delta_field="AgeAtSurgery" -—start=1 --phenotype="cpt_data.csv" --group="group.csv" —-phenotypeout="cpt_censored.csv" —groupout="group_censored.csv"
+
+
 
 maximizeControls
 ----------------
