@@ -48,43 +48,45 @@ def output_matches(path, outputfile, data, all_used, success, goal, matched):
 	if not success:
 		print("Could not match data 1-%d, using the maximum number of matches found by the approximation algorithm" % goal)
 		print("Matched data 1-%0.3f" % matched)
-		if '%s' in outputfile:
-			outputfile = outputfile % ('max')
 	else:
 		print("Matched data 1-%s" % (matched))
-		if '%s' in outputfile:
-			outputfile = outputfile % (matched)
 
-	new_data.to_csv(path + outputfile, index=False)
-	print("New group file in %s" % (path + outputfile))
+	new_data.to_csv(path / outputfile, index=False)
+	print("New group file in %s" % (path / outputfile))
 
 
-def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype', goal=1):
-	# Reformat arguments into Python format
+def control_match(path, input, output, keys, deltas, condition='genotype', goal=1):
+	# Reformat arguments
 	keys = keys.replace(" ", "").split('+')
 	deltas = deltas.replace(" ", "").split(',')
 	deltas = [CATEGORICAL_DATA if x == '' else float(x) for x in deltas]
 
 	# save original goal value
 	orig_goal = goal
+	
+	# Assign new value for outputfile
+	if output is None:
+		inname = input.strip('.csv')
+		output = inname + '__matched.csv'
+		match_file = path / (inname + '__matched_pairs.csv')
+	else:
+		outname = output.strip('.csv')
+		match_file = path / (outname + '__matched_pairs.csv')
 
 	# Read data from the provided input file
-	data = pd.read_csv(path + inputfile)
+	data = pd.read_csv(path / input)
 
-	# Assert that all of the provided keys are present in the data
+	# Assert that all of the provided matching keys are present in the data
 	for key in keys:
-		assert key in data.columns, '%s is not a column in the input file (%s)' % (key, inputfile)
+		assert key in data.columns, '%s is not a column in the input file (%s)' % (key, input)
 	# Assert that condition column is present in the data
-	assert condition in data.columns, 'Specified condition (%s) is not a column in the input file (%s)' % (condition, inputfile)
+	assert condition in data.columns, 'Specified condition (%s) is not a column in the input file (%s)' % (condition, input)
 	# Assert that condition column contains only '1' and '0'
 	condition_vals = np.unique(data[condition])
-	assert len(condition_vals) == 2, 'There are %d values (should only be 2) in the specified condition column (%s) in the input file (%s)' % (len(condition_vals), condition, inputfile)
+	assert len(condition_vals) == 2, 'There are %d values (should only be 2) in the specified condition column (%s) in the input file (%s)' % (len(condition_vals), condition, input)
 	for val in [0, 1]:
-		assert val in condition_vals, 'The value %d is missing from the condition column (%s) in the input file (%s)' % (val, condition, inputfile)
+		assert val in condition_vals, 'The value %d is missing from the condition column (%s) in the input file (%s)' % (val, condition, input)
 
-	# Assign new value for outputfile
-	if not outputfile:
-		outputfile = '1-%s_' + inputfile
 
 	# Separate patients and controls
 	match_by_group0 = len(data[data[condition] == 1]) > len(data[data[condition] == 0])
@@ -96,6 +98,10 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 		print('There are more controls (%s=0) than cases (%s=1) -- matching by cases' %(condition, condition))
 		targets = data[data[condition] == 1].copy()
 		controls = data[data[condition] == 0].copy()
+	# save original number of targets (used to check ifany are dropped)
+	orig_num_target = targets.shape[0]
+	
+	# controls = controls.tail(600)
 
 	# create dictionary to store matching pairs
 	targets['matching_ix'] = [[] for _ in range(targets.shape[0])]
@@ -137,24 +143,31 @@ def control_match(path, inputfile, outputfile, keys, deltas, condition='genotype
 		match_col = 'match'+str(i+1)
 		cols.append(match_col)
 		expand = lambda x: pd.Series(x['matching_ids'])
-		targets[match_col] = targets.apply(expand, axis=1)[i]
-		for key in keys:
-			match_info = pd.merge(targets[[match_col]], data[['id', key]], left_on=match_col, right_on='id')
-			match_info.rename(columns={key: match_col + '_' + key}, inplace=True)
-			targets = pd.merge(targets, match_info.drop(columns='id'), on=match_col,how='left')
-			cols.append(match_col + '_' + key)
+		try:
+			targets[match_col] = targets.apply(expand, axis=1)[i]
+			for key in keys:
+				match_info = pd.merge(targets[[match_col]], data[['id', key]], left_on=match_col, right_on='id')
+				match_info.rename(columns={key: match_col + '_' + key}, inplace=True)
+				targets = pd.merge(targets, match_info.drop(columns='id'), on=match_col,how='left')
+				cols.append(match_col + '_' + key)
+		except: # no matches found for set i
+			targets[match_col] = np.nan
 
-	cols.insert(0,'id')
+	cols.insert(0, 'id')
 	cols.insert(1, 'genotype')
 	# export matching pairs
-	print('Saving case/control mapping to ' + path + 'matches__' + outputfile)
-	targets.to_csv(path + 'matches__' + outputfile,index=False, columns=cols)
+	print('Saving case/control mapping to %s' %match_file)
+	targets.to_csv(match_file,index=False, columns=cols)
+	
+	if len(tid) != orig_num_target:
+		g = 'controls' if match_by_group0 else 'cases'
+		print('WARNING: Some %s were dropped during matching (%d out of %d %s remain)' %(g,len(tid),orig_num_target,g))
 
 	if final_ratio == orig_goal:
 		matching_success = 1
 	else:
 		matching_success = 0
 
-	output_matches(path, outputfile, data, all_used, matching_success, orig_goal, final_ratio)
+	output_matches(path, output, data, all_used, matching_success, orig_goal, final_ratio)
 
 
