@@ -5,6 +5,7 @@ import pandas as pd
 import argparse
 from pathlib import Path
 import os.path as osp
+import time
 
 
 def parse_args():
@@ -20,6 +21,15 @@ def parse_args():
 
     args = parser.parse_args()
     return args
+
+
+"""
+Print Start Message
+"""
+start = time.time()
+print_start_msg()
+print('\ncreateGenotypeFile: Genotype Assignment Tool\n')
+
 
 """
 Retrieve and validate all arguments.
@@ -45,9 +55,6 @@ assert kwargs['groupout'].endswith('.csv'), "%s is not a valid output file, must
 if len(kwargs['group']) > 0:
 	assert kwargs['group'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['group'])
 
-# Assert that the output file is valid
-
-
 # Print Arguments
 display_kwargs(kwargs)
 # Make all arguments local variables
@@ -56,21 +63,23 @@ locals().update(kwargs)
 # Fill paths
 phenotype = path / phenotype
 groupout = path / groupout
-if len(group) > 0:
-	groupout = path / groupout
+if len(str(group)) > 0:
+	group = path / group
 
 # Assert that all files exist
 assert osp.exists(phenotype), "%s does not exist" % phenotype
-if len(group) > 0:
+if len(str(group)) > 0:
 	assert osp.exists(group), "%s does not exist" % group
 if case_codes.endswith('.csv') | case_codes.endswith('.txt'):
 	assert osp.exists(path/case_codes), "%s does not exist" % (path / case_codes)
 if ctrl_codes.endswith('.csv') | ctrl_codes.endswith('.txt'):
 	assert osp.exists(path/ctrl_codes), "%s does not exist" % (path / ctrl_codes)
 
+# Read group file
+if len(str(group)) > 0:
+	group_data = pd.read_csv(group)
 
-
-# Make precision an integer
+# Make code frequency an integer
 code_freq = code_freq.replace(" ","").split(',')
 for i in range(len(code_freq)):
 	code_freq[i] = int(code_freq[i])
@@ -126,13 +135,35 @@ if len(ctrl_codes) > 0:
 else:
 	phen.loc[~case_mask,'genotype'] = 0
 
+phen = phen[['id','genotype']].drop_duplicates()
+
 """
 Save Output
 """
-phen = phen[['id','genotype']].drop_duplicates()
+if len(str(group)) > 0:
+	print('Merging genotype assignment with provided group file')
+	phen = pd.merge(phen, group_data, how='left',on='id', suffixes=('','_old'))
+
 num_case = phen[phen['genotype']==1].shape[0]
 num_ctrl = phen[phen['genotype']==0].shape[0]
-print('Cases: %d\nControls:%d' %(num_case, num_ctrl))
+print('Cases: %d\nControls: %d' %(num_case, num_ctrl))
 
 print('Saving gentoype mapping to %s' % groupout)
 phen.to_csv(groupout,index=False)
+
+"""
+Calculate runtime
+"""
+interval = time.time() - start
+hour = math.floor(interval/3600.0)
+minute = math.floor((interval - hour*3600)/60)
+second = math.floor(interval - hour*3600 - minute*60)
+
+if hour > 0:
+    time_str = '%dh:%dm:%ds' %(hour,minute,second)
+elif minute > 0:
+    time_str = '%dm:%ds' % (minute, second)
+else:
+    time_str = '%ds' % second
+
+print('createGenotypeFile Complete [Runtime: %s]' %time_str)
