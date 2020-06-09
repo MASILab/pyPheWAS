@@ -1,7 +1,7 @@
 Data Preparation
 ================
 This page describes the command line tools available for preparing your data before running
-the pyPheWAS analysis. These tools all require **phenotype** and/or **group**
+a PheWAS or ProWAS analysis. These tools all require **phenotype** and/or **group**
 files. The formats of these files are explained in the :ref:`Basics` section.
 
 
