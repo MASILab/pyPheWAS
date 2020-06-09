@@ -5,6 +5,78 @@ the pyPheWAS analysis. These tools all require **phenotype** and/or **group**
 files. The formats of these files are explained in the :ref:`Basics` section.
 
 
+censorData
+----------
+Restrict ICD/CPT data to a specific time interval.
+
+Required Arguments:
+ * ``--phenotype``:		Name of phenotype file
+ * ``--group``:			Name group file
+ * ``--phenotypeout``:	Name of output phenotype file
+ * ``--groupout``:		Name of output group file
+
+Optional Arguments [default value]:
+ * ``--path``:	        Path to all input files and destination of output files [current directory]
+ * ``--efield``:		Name of field in the phenotype file to be censored [AgeAtICD]
+ * ``--start``:			Start time for censoring in years [-infinity]
+ * ``--end``:			End time for censoring in years [+infinity]
+ * ``--delta_field``:	If specified, censor with respect to the interval between delta_field and efield
+
+.. note:: Either the start and/or end arguments must be given.
+
+Output:
+ * Phenotype File (``phenotypeout``) containing events censored to specified interval.
+ * Group File (``groupout``) containing all subjects with data remaining after censoring.
+
+
+Specify a range of ages for censoring ICD/CPT event data, such that ``efield`` ages are
+censored to the range
+
+        :math:`start \leq efield \leq end`
+
+**Example** Censor ICD event ages (AgeAtICD) to ages 5 to 18 years-old::
+
+		censorData --start=5 --end=18 --phenotype="icd_data.csv" --group="group.csv" —-phenotypeout="icd_censored.csv" —groupout="group_censored.csv"
+
+
+Instead of censoring based on absolute age, the user may censor with respect to
+another data field using the ``delta_field`` option. If specified, the data is
+censored based on the *interval between* ``delta_field`` and ``efield``:
+
+        :math:`start \leq deltafield - efield \leq end`.
+
+**Example** Censor CPT events to everything previous to 1 year before patient surgery (AgeAtSurgery)::
+
+		censorData --efield="AgeAtCPT" --delta_field="AgeAtSurgery" -—start=1 --phenotype="cpt_data.csv" --group="group.csv" —-phenotypeout="cpt_censored.csv" —groupout="group_censored.csv"
+
+
+convertEventToAge
+-----------------
+Converts the date at an ICD or CPT event to the subject's age.
+
+Required Arguments:
+ * ``--phenotype``:     Name of input phenotype file
+ * ``--group``:	        Name of input group file
+ * ``--phenotypeout``:  Name of output phenotype file
+ * ``--eventcolumn``:	Name of the event date column in the phenotype file
+ * ``--etype``:         Type of data (CPT or ICD)
+
+Optional Arguments [default value]:
+ * ``--path``:	        Path to all input files and destination of output files [current directory]
+ * ``--precision``:	    Decimal precision of the age needed [5]
+ * ``--dob_column``:    Name of the date of birth column in the group file ['DOB']
+
+Output:
+ * File (``phenotypeout``) containing ICD/CPT events with event dates replaced by event age
+
+This function converts event dates to event ages, naming the age column according
+to the official pyPheWAS phenotype file format ('AgeAtICD' or 'AgeAtCPT').
+
+**Example** Convert CPT event dates to ages with 7-decimal precision::
+
+        convertEventToAge --eventcolumn="CPT_DATE" --etype="CPT" --precision=7 --phenotype="cpt_dates.csv" -—group="group.csv" --phenotypeout="cpt_ages.csv"
+
+
 
 createGenotypeFile
 ------------------
@@ -68,80 +140,6 @@ command:
 
 
 
-convertEventToAge
------------------
-Converts the date at an ICD or CPT event to the subject's age.
-
-Required Arguments:
- * ``--phenotype``:     Name of input phenotype file
- * ``--group``:	        Name of input group file
- * ``--phenotypeout``:  Name of output phenotype file
- * ``--eventcolumn``:	Name of the event date column in the phenotype file
- * ``--etype``:         Type of data (CPT or ICD)
-
-Optional Arguments [default value]:
- * ``--path``:	        Path to all input files and destination of output files [current directory]
- * ``--precision``:	    Decimal precision of the age needed [5]
- * ``--dob_column``:    Name of the date of birth column in the group file ['DOB']
-
-Output:
- * File (``phenotypeout``) containing ICD/CPT events with event dates replaced by event age
-
-This function converts event dates to event ages, naming the age column according
-to the official pyPheWAS phenotype file format ('AgeAtICD' or 'AgeAtCPT').
-
-**Example** Convert CPT event dates to ages with 7-decimal precision::
-
-        convertEventToAge --eventcolumn="CPT_DATE" --etype="CPT" --precision=7 --phenotype="cpt_dates.csv" -—group="group.csv" --phenotypeout="cpt_ages.csv"
-
-
-
-censorData
-----------
-Restrict ICD/CPT data to a specific time interval.
-
-Required Arguments:
- * ``--phenotype``:		Name of phenotype file
- * ``--group``:			Name group file
- * ``--phenotypeout``:	Name of output phenotype file
- * ``--groupout``:		Name of output group file
-
-Optional Arguments [default value]:
- * ``--path``:	        Path to all input files and destination of output files [current directory]
- * ``--efield``:		Name of field in the phenotype file to be censored [AgeAtICD]
- * ``--start``:			Start time for censoring in years [-infinity]
- * ``--end``:			End time for censoring in years [+infinity]
- * ``--delta_field``:	If specified, censor with respect to the interval between delta_field and efield
-
-.. note:: Either the start and/or end arguments must be given.
-
-Output:
- * Phenotype File (``phenotypeout``) containing events censored to specified interval.
- * Group File (``groupout``) containing all subjects with data remaining after censoring.
-
-
-Specify a range of ages for censoring ICD/CPT event data, such that ``efield`` ages are
-censored to the range
-
-        :math:`start \leq efield \leq end`
-
-**Example** Censor ICD event ages (AgeAtICD) to ages 5 to 18 years-old::
-
-		censorData --start=5 --end=18 --phenotype="icd_data.csv" --group="group.csv" —-phenotypeout="icd_censored.csv" —groupout="group_censored.csv"
-
-
-Instead of censoring based on absolute age, the user may censor with respect to
-another data field using the ``delta_field`` option. If specified, the data is
-censored based on the *interval between* ``delta_field`` and ``efield``:
-
-        :math:`start \leq deltafield - efield \leq end`.
-
-**Example** Censor CPT events to everything previous to 1 year before patient surgery (AgeAtSurgery)::
-
-		censorData --efield="AgeAtCPT" --delta_field="AgeAtSurgery" -—start=1 --phenotype="cpt_data.csv" --group="group.csv" —-phenotypeout="cpt_censored.csv" —groupout="group_censored.csv"
-
-
-
 maximizeControls
 ----------------
 Match subjects in case and control groups based on group variables.
@@ -188,18 +186,26 @@ diagnosis (match within 2 years)::
     be removed**, and will not appear in the output group file. A warning will be issued
     when this occurs with details on how many subjects were lost.
 
-generateGroups
---------------
+mergeGroups
+-----------
+Merge 2 or more phenotype/group files.
 
-The grouping tool allows you to take two or more icd9 files, and two or more group files. And merge them together, while removing any double counted groups, so that the resulting data files are ready to be run through the pyPheWAS Research Tools.
+Optional Arguments [default value]:
+ * ``--path``:			        Path to all input files and destination of output files [current directory]
+ * ``--phenotypefiles``:		List of phenotype file names, separated by +
+ * ``--groupfiles``:			List of group file names, separated by +
+ * ``--phenotypeout``:			Name of output file for merged phenotype data (must be specified if phenotypefiles specified)
+ * ``--groupout``:				Name of output file for merged group data (must be specified if groupfiles specified)
 
-The options:
- * ``--path``:			        the path to all input files and destination of output files
- * ``--phenotypefiles``:		a list of phenotype file names, each separated by a *+*
- * ``--groupfile``:				a list of group file names, each separated by a *+*
- * ``--phenotypeout``:			the output file name for the merged phenotype files
- * ``--groupout``:				the output file name for the merged group files
+Output:
+ * Group file (``groupout``) containing merged group data
+ * Phenotype file (``phenotypeout``) containing merged phenotype data
 
-A sample execution of *generateGroups*::
+ The grouping tool allows you to merge two or more phenotype files together, and/or two or
+ more group files together. It removes any duplicate records in both file types,
+ so that the resulting data files are ready to be run through the pyPheWAS Research Tools.
 
-		generateGroups --path="/Users/me/Documents/EMRdata" --phenotypefiles="icd9_one.csv+icd9_two.csv" --groupfiles="group_one.csv+group_two.csv" --phenotypeout="new_icd9.csv" --groupout="new_group.csv"
+
+**Example** Merge 2 ICD9 phenotype files together and 2 group files together::
+
+		generateGroups --phenotypefiles="icd9_one.csv+icd9_two.csv" --groupfiles="group_one.csv+group_two.csv" --phenotypeout="new_icd9.csv" --groupout="new_group.csv"
