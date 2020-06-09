@@ -20,10 +20,16 @@ def parse_args():
     return args
 
 """
-Retrieve and validate all arguments.
+Print Start Message
 """
 start = time.time()
+print_start_msg()
+print('\npyPhewasLookup: ICD-Phecode Lookup Tool\n')
 
+
+"""
+Retrieve and validate all arguments.
+"""
 args = parse_args()
 kwargs = {'path': os.path.join(os.path.abspath(args.path),''),
 		  'phenotypefile': args.phenotype,
@@ -48,13 +54,8 @@ if kwargs['outfile'] is None:
 # Assert that the output file is valid
 assert kwargs['outfile'].endswith('.csv'), "%s is not a valid outputfile, must be a .csv file" % (kwargs['outfile'])
 
-# Check phewas_cov
-# if kwargs['phewas_cov']:
-#     kwargs['phewas_cov'] = float(kwargs['phewas_cov'])
-
 # Print Arguments
 display_kwargs(kwargs)
-
 # Make all arguments local variables
 locals().update(kwargs)
 
@@ -72,7 +73,10 @@ assert {'MaxAgeAtVisit'}.issubset(genotypes.columns), "make sure MaxAgeAtVisit i
 print("Generating feature matrix...")
 fm,columns = generate_feature_matrix(genotypes,phenotypes,reg_type,'ICD',phewas_cov)
 
-print("Saving feature matrices to %s" % (path + outfile))
+"""
+Save feature matrix
+"""
+print("Saving feature matrices to %s" % (path + '*_' + outfile))
 h = ','.join(columns)
 
 np.savetxt(path + 'agg_measures_' + outfile, fm[0],delimiter=',',header=h)
@@ -81,6 +85,9 @@ np.savetxt(path + 'icd_age_' + outfile, fm[1],delimiter=',',header=h)
 print("...")
 np.savetxt(path + 'phewas_cov_' + outfile, fm[2],delimiter=',',header=h)
 
+"""
+Calculate runtime
+"""
 interval = time.time() - start
 hour = math.floor(interval/3600.0)
 minute = math.floor((interval - hour*3600)/60)
@@ -93,5 +100,5 @@ elif minute > 0:
 else:
     time_str = '%ds' % second
 
-print('pyPhewasLookup Complete\nRuntime: %s' %time_str)
+print('pyPhewasLookup Complete [Runtime: %s]' %time_str)
 
