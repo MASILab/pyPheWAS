@@ -13,8 +13,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="pyPheWAS Case/Control Matching Tool")
 
     parser.add_argument('--input', required=True, type=str, help='Name of the input group file')
-    parser.add_argument('--deltas', required=True, type=str, help='Match intervals for the keys')
-    parser.add_argument('--keys', required=True, type=str, help='Fields on which the matching criteria is applied')
+    parser.add_argument('--deltas', required=True, type=str, help='Tolerance intervals for matching criteria')
+    parser.add_argument('--keys', required=True, type=str, help='Matching criteria (must be columns in group file)')
     parser.add_argument('--goal', required=True, type=int, help='n, indicating the ratio of control to case groups that are being matched')
     parser.add_argument('--output', required=False, default=None, type=str, help='Name of the output group file')
     parser.add_argument('--condition', required=False, default='genotype', type=str, help='Field denoting groups assignments (default = genotype)')
