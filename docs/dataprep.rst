@@ -36,7 +36,7 @@ case group are put in the control group.
 **Example** Define case group as subjects with at least 3 instances of the codes
 008 or 134.1; make all other subjects controls::
 
-        createGenotypeFile --case_codes="008,134.1" --code_freq="3" --phenotype="icd_data.csv" -—groupout="group.csv" 
+        createGenotypeFile --case_codes="008,134.1" --code_freq="3" --phenotype="icd_data.csv" -—groupout="group.csv"
 
 
 Optionally, a list of codes may also be provided for the control group
@@ -125,7 +125,7 @@ censored to the range
 
         :math:`start \leq efield \leq end`
 
-**Example:** Censor ICD event ages (AgeAtICD) to ages 5 to 18 years-old::
+**Example** Censor ICD event ages (AgeAtICD) to ages 5 to 18 years-old::
 
 		censorData --start=5 --end=18 --phenotype="icd_data.csv" --group="group.csv" —-phenotypeout="icd_censored.csv" —groupout="group_censored.csv"
 
@@ -136,7 +136,7 @@ censored based on the *interval between* ``delta_field`` and ``efield``:
 
         :math:`start \leq deltafield - efield \leq end`.
 
-**Example:** Censor CPT events to everything previous to 1 year before patient surgery (AgeAtSurgery)::
+**Example** Censor CPT events to everything previous to 1 year before patient surgery (AgeAtSurgery)::
 
 		censorData --efield="AgeAtCPT" --delta_field="AgeAtSurgery" -—start=1 --phenotype="cpt_data.csv" --group="group.csv" —-phenotypeout="cpt_censored.csv" —groupout="group_censored.csv"
 
@@ -144,23 +144,49 @@ censored based on the *interval between* ``delta_field`` and ``efield``:
 
 maximizeControls
 ----------------
-Match the subjects in case and control groups based on a criteria such as age ('key'), and on an interval condition ('delta'). The default option for matching groups is genotype (condition='genotype'). The default matching group can be changed to other options such as sex or race.
+Match subjects in case and control groups based on group variables.
 
-The options:
- * ``--path``: the path to all input files and destination of output
- * ``--input``:	input group file name
- * ``--output``:	output group file name
- * ``--deltas``:	the intervals for the matching criteria
- * ``--keys``: the fields on which the matching criteria is applied
- * ``--condition``: the field which denotes the groups to be matched
- * ``--goal``: n, indicating the ratio of control and case groups that are being matched
+Required Arguments:
+ * ``--input``:     Name of input group file
+ * ``--keys``:      Comma-separated list of matching criteria (must be columns in group file)
+ * ``--deltas``:	Comma-separated list of tolerance intervals for the matching criteria
+ * ``--goal``:      n, target matching ratio (control:case => n:1)
 
-A sample execution of * maximizeControls*::
+Optional Arguments [default value]:
+ * ``--path``:      Path to all input files and destination of output files [current directory]
+ * ``--output``:	Name of output group file [input__matched.csv]
+ * ``--condition``: Field denoting group assignments [genotype]
 
-		maximizeControls --path="/Users/me/Documents/EMRdata" --input="group.csv" --output="group__am.csv" --deltas="1,0" --keys="MaxAgeAtVisit+SEX" --condition="genotype" --goal="2"
+Output:
+ * Group file (``output``) containing only matched cases/controls.
+ * Match file (output__matched_pairs.csv) containing explicit case to control match mapping.
 
-.. note:: Case/Control matching is performed using the Hopcroft-Karp algorithm. If there are not enough case/control matches, **some case subjects may be dropped**, and will not appear in the output files.
+Match cases/controls based on similarity in matching criteria via the Hopcroft-Karp algorithm.
+Specify matching criteria by passing a comma-separated list of column names to ``keys`` and
+another comma-separated list of tolerance intervals to ``deltas``. For an exact match,
+specify a delta of 0. The order of
+``delta`` values must match the order of the ``keys``. Specify the desired matching
+ratio via the ``goal`` input; if the matching algorithm cannot achieve the desired
+ratio, it will issue a warning and report the achieved ratio.
 
+**Example** Match cases to controls with a 1:3 ratio based on sex (exact match)
+and age at diagnosis (match within 1 year)::
+
+		maximizeControls --keys="Sex,AgeAtDx" --deltas="0,1" --goal="3" --input="group.csv"
+
+The default indicator of group membership is the genotype column. However, any
+column in the group file may be used provided that it contains only the values [0,1].
+To specify a column other than genotype, use the ``condition`` argument.
+
+**Example** Match females (sex=1) to males (sex=0) with a 1:1 ratio based on age at
+diagnosis (match within 2 years)::
+
+		maximizeControls --condition="sex" --keys="AgeAtDx" --deltas="2" --goal="1" --input="group.csv"
+
+.. note::
+    If there are no suitable matches for some case subjects, **these case subjects may
+    be removed**, and will not appear in the output group file. A warning will be issued
+    when this occurs with details on how many subjects were lost.
 
 generateGroups
 --------------
