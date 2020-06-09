@@ -15,9 +15,10 @@ setup(
 	'matplotlib',
 	'scipy>=1.2.1',
 	'pandas>=0.24.2',
-        'statsmodels>=0.10.1',
-        'hopcroftkarp',
-    'tqdm'
+    'statsmodels>=0.10.1',
+    'hopcroftkarp',
+    'tqdm',
+     'pathlib',
 	],
   package_data={
     '':['resources/*.csv']
@@ -27,7 +28,7 @@ setup(
   'bin/pyPhewasModel',
   'bin/pyPhewasPlot',
   'bin/pyPhewasPipeline',
-  'bin/generateGroups',
+  'bin/mergeGroups',
   'bin/censorData',
   'bin/convertEventToAge',
   'bin/createGenotypeFile'
