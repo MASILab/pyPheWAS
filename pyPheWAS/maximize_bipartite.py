@@ -57,7 +57,7 @@ def output_matches(path, outputfile, data, all_used, success, goal, matched):
 
 def control_match(path, input, output, keys, deltas, condition='genotype', goal=1):
 	# Reformat arguments
-	keys = keys.replace(" ", "").split('+')
+	keys = keys.replace(" ", "").split(',')
 	deltas = deltas.replace(" ", "").split(',')
 	deltas = [CATEGORICAL_DATA if x == '' else float(x) for x in deltas]
 
@@ -100,8 +100,6 @@ def control_match(path, input, output, keys, deltas, condition='genotype', goal=
 		controls = data[data[condition] == 0].copy()
 	# save original number of targets (used to check ifany are dropped)
 	orig_num_target = targets.shape[0]
-	
-	# controls = controls.tail(600)
 
 	# create dictionary to store matching pairs
 	targets['matching_ix'] = [[] for _ in range(targets.shape[0])]
