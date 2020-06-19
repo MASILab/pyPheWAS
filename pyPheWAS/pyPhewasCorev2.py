@@ -1,12 +1,7 @@
 """
-PyPheWAS Core version 2 (main PyPheWAS code)
-Developed by:
-    Shikha Chaganti, PhD
-    Cailey Kerley
+pyPheWAS Core version 2 (main pyPheWAS code)
 
-MASI Lab
-Department of Electrical Engineering and Computer Science
-Vanderbilt University
+Contains all functions that drive the core pyPheWAS analysis tools.
 """
 
 from collections import Counter
@@ -32,10 +27,14 @@ def print_start_msg():
 		print('\n')
 		for line in msg_f:
 			print(line.strip('\n'))
+	return
 
 def get_codes(filename):  # same
 	"""
-	Gets the PheWAS codes from a local csv file and load it into a pandas DataFrame.
+	Load PheWAS code map from the resources directory and load it into a pandas DataFrame.
+	
+	:param filename: Name of the file in the resources folder that contains PheWAS Code mapping
+	:type filename: string
 
 	:returns: All of the codes from the resource file.
 	:rtype: pandas DataFrame
@@ -60,7 +59,7 @@ def get_codes(filename):  # same
 		phecode_map.rename(columns={data_col:new_data_col},inplace=True)
 		phecode_map.dropna(subset=[phecode_col], inplace=True)
 	except Exception as e:
-		print(e)
+		print(e.args[0])
 		print('Error loading phecode map : exiting pyPheWAS')
 		sys.exit()
 
@@ -69,40 +68,46 @@ def get_codes(filename):  # same
 
 def get_group_file(path, filename):  # same
 	"""
-	Read all of the genotype data from the given file and load it into a pandas DataFrame.
+	Read genotype data from the given file and load it into a pandas DataFrame.
+	Any records with a null 'id' are dropped.
 
-	:param path: The path to the file that contains the phenotype data
-	:param filename: The name of the file that contains the phenotype data.
-	:type path: string
+	:param path: The path to the file that contains the group data
+	:param filename: The name of the file that contains the group data.
+	:type path: pathlib Path object
 	:type filename: string
 
 	:returns: The data from the genotype file.
 	:rtype: pandas DataFrame
 	"""
-	wholefname = path + filename
+	wholefname = path / filename
 	genotypes_df = pd.read_csv(wholefname)
 	genotypes_df = genotypes_df.dropna(subset=['id'])
-	genotypes_df.sort_values(by='id', inplace=True)
-	genotypes_df.reset_index(inplace=True,drop=True)
 	return genotypes_df
 
 
 def get_icd_codes(path, filename, reg_type):
 	"""
-	Read all of the phenotype data from the given file and load it into a pandas DataFrame.
+	Read ICD data from the given file and load it into a pandas DataFrame.
+	
+	ICD records are mapped to their correpsonding PheWAS Codes.
+	The maximum age of each subject at each PheWAS Code is calculated and
+	added to the DataFrame as the column 'MaxAgeAtICD'. If reg_type=2, the
+	interval of time (years) over which a subject experiences each PheWAS Code
+	is added as the column 'duration'.
 
 	:param path: The path to the file that contains the phenotype data
 	:param filename: The name of the file that contains the phenotype data.
-	:param reg_type: Type of regression
-	:type path: string
+	:param reg_type: Type of regression (0:binary, 1:count, 2:duration)
+	:type path: pathlib Path object
 	:type filename: string
 	:type reg_type: int
 
 	:returns: The data from the phenotype file.
 	:rtype: pandas DataFrame
+	
 	"""
 
-	wholefname = path + filename
+	wholefname = path / filename
 	icdfile = pd.read_csv(wholefname,dtype={'ICD_CODE':str})
 	icdfile['ICD_CODE'] = icdfile['ICD_CODE'].str.strip()
 	icd_types = np.unique(icdfile['ICD_TYPE'])
@@ -140,25 +145,30 @@ def get_icd_codes(path, filename, reg_type):
 	# calculate max age at each ICD code
 	phenotypes['MaxAgeAtICD'] = 0
 	phenotypes['MaxAgeAtICD'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max')
-	# pre-sort by ID for feature matrix step
-	phenotypes.sort_values(by='id', inplace=True)
 
 	return phenotypes
 
 
 def get_cpt_codes(path, filename, reg_type):
 	"""
-	Read all of the phenotype data from the given file and load it into a pandas DataFrame.
+	Read CPT data from the given file and load it into a pandas DataFrame.
+
+	CPT records are mapped to their correpsonding ProWAS Codes.
+	The maximum age of each subject at each ProWAS Code is calculated and
+	added to the DataFrame as the column 'MaxAgeAtCPT'. If reg_type=2, the
+	interval of time (years) over which a subject experiences each ProWAS Code
+	is added as the column 'duration'.
 
 	:param path: The path to the file that contains the phenotype data
 	:param filename: The name of the file that contains the phenotype data.
-	:param reg_type: Type of regression
-	:type path: string
+	:param reg_type: Type of regression (0:binary, 1:count, 2:duration)
+	:type path: pathlib Path object
 	:type filename: string
 	:type reg_type: int
 
 	:returns: The data from the phenotype file.
 	:rtype: pandas DataFrame
+
 	"""
 
 	wholefname = path + filename
@@ -174,34 +184,49 @@ def get_cpt_codes(path, filename, reg_type):
 	# calculate max age at each ICD code
 	phenotypes['MaxAgeAtCPT'] = 0
 	phenotypes['MaxAgeAtCPT'] = phenotypes.groupby(['id', 'prowas_code'])['AgeAtCPT'].transform('max')
-	# pre-sort by ID for feature matrix step
-	phenotypes.sort_values(by='id', inplace=True)
 
 	return phenotypes
 
 
 
-def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, phewas_cov):
+def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, pheno_cov=None):
 	"""
-	Generates the feature matrix that will be used to run the regressions.
+	Generates the feature matrix that will be used to run the PheWAS or ProWAS analysis.
+	
+	Feature matrix is 3xNxP, where N = number of subjects and P = number of PheWAS/ProWAS Codes.
+	
+	Feature matrix [0] is the aggregate PheWAS/ProWAS matrix. It contains phenotype data aggregated across
+	each subject's record accoring to the specified ``reg_type``.
+	
+	Feature matrix [1] is the age matrix, containing each subject's maximum age recorded for each phenotype.
+	For phenotypes absent in the subject's record, the subject's overall maximum age is recorded.
+	
+	Feature matrix [2] is the phenotype covariate matrix. If ``pheno_cov`` is defined, it records whether or
+	not each subject has at least one instance of the specified phenotype in their record. Otherwise, it's a zero matrix.
+	
 
-	:param genotypes_df:
-	:param icds:
-	:param reg_type:
-	:param phewas_cov:
+	:param genotypes_df: group data retrieved with ``pyPheWAS.pyPhewasCorev2.get_group_file``
+	:param phenotype: phenotype data retrieved with ``pyPheWAS.pyPhewasCorev2.get_icd_codes`` or ``pyPheWAS.pyPhewasCorev2.get_cpt_codes``
+	:param reg_type: type of regression (0:binary, 1:count, 2:duration)
+	:param pheno_cov: PheWAS or ProWAS code to use as a covariate
 	:type genotypes_df: pandas DataFrame
-	:type icds: pandas DataFrame
+	:type phenotype: pandas DataFrame
 	:type reg_type: int
 	:type phewas_cov: str
 
-	:returns:
-	:rtype:
+	:returns feature matrix: 3xNxP feature matrix
+	:returns phenotype header: PheWAS/ProWAS codes that correspond to the columns in the feature matrix
+	:rtype feature matrix: numpy array
+	:rtype phenotype header: list of strings
 
 	"""
-
-	# feature matrix 0: reg_type specific data
-	# feature matrix 1: age data
-	# feature matrix 2: phecode covariance data
+	
+	# sort genotype and phenotype dataframes by 'id'
+	print('Sorting phenotype data...')
+	phenotype.sort_values(by='id', inplace=True)
+	print('Sorting group data...')
+	genotypes_df.sort_values(by='id', inplace=True)
+	genotypes_df.reset_index(inplace=True,drop=True)
 
 	# use phewas/prowas codes to make a dictionary of indices in the np array
 	if code_type == 'CPT':
@@ -246,7 +271,7 @@ def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, phewas
 		# add the max at of that ICD code to the age feature matrix
 		feature_matrix[1][count][phecode_ix] = event['MaxAgeAt'+code_type]
 		# if using a phecode covariate and the event phecode is equal to the covariate phecode, set the fm2 to 1 for this subject
-		if (phewas_cov is not None) & (event[phecode_col] == phewas_cov):
+		if (pheno_cov is not None) & (event[phecode_col] == pheno_cov):
 			feature_matrix[2][count][:] = 1
 
 		if reg_type == 0:
@@ -385,6 +410,11 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 
 	:returns: A tuple containing indices, p-values, and all the regression data.
 	"""
+	
+	# sort group data by id
+	print('Sorting group data...')
+	genotypes.sort_values(by='id', inplace=True)
+	genotypes.reset_index(inplace=True,drop=True)
 
 	num_phecodes = len(fm[0, 0])
 	# thresh = math.ceil(genotypes.shape[0] * 0.03)
