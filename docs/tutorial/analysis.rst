@@ -1,2 +1,0 @@
-Methods of Analysis
-===================
