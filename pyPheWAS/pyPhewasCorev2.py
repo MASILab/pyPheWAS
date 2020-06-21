@@ -1,7 +1,7 @@
 """
 **pyPheWAS Core version 2 (main pyPheWAS code)**
 
-Contains all functions that drive the core pyPheWAS & ProWAS analysis tools.
+Contains all functions that drive the core PheWAS & ProWAS analysis tools.
 """
 
 from collections import Counter
@@ -32,7 +32,7 @@ def print_start_msg():
 def get_codes(filename):
 	"""
 	Load PheWAS/ProWAS code map from the resources directory.
-	
+
 	:param filename: Name of file in the resources folder to load
 	:type filename: str
 
@@ -73,7 +73,7 @@ def get_group_file(path, filename):
 
 	:param path: The path to the file that contains the group data
 	:param filename: The name of the file that contains the group data.
-	:type path: pathlib Path object
+	:type path: pathlib Path
 	:type filename: string
 
 	:returns: The data from the genotype file.
@@ -88,23 +88,23 @@ def get_group_file(path, filename):
 def get_icd_codes(path, filename, reg_type):
 	"""
 	Read ICD data from the given file and load it into a pandas DataFrame.
-	
+
 	ICD records are mapped to their correpsonding PheWAS Codes.
 	The maximum age of each subject at each PheWAS Code is calculated and
-	added to the DataFrame as the column *MaxAgeAtICD*. If `reg_type`=2, the
+	added to the DataFrame as the column *MaxAgeAtICD*. If ``reg_type`` = 2, the
 	interval of time (years) over which a subject experiences each PheWAS Code
 	is added as the column *duration*.
 
 	:param path: The path to the file that contains the phenotype data
 	:param filename: The name of the file that contains the phenotype data.
 	:param reg_type: Type of regression (0:binary, 1:count, 2:duration)
-	:type path: pathlib Path object
-	:type filename: string
+	:type path: pathlib Path
+	:type filename: str
 	:type reg_type: int
 
 	:returns: Data from the phenotype file.
 	:rtype: pandas DataFrame
-	
+
 	"""
 
 	wholefname = path / filename
@@ -155,14 +155,14 @@ def get_cpt_codes(path, filename, reg_type):
 
 	CPT records are mapped to their correpsonding ProWAS Codes.
 	The maximum age of each subject at each ProWAS Code is calculated and
-	added to the DataFrame as the column *MaxAgeAtCPT*. If `reg_type`=2, the
+	added to the DataFrame as the column *MaxAgeAtCPT*. If ``reg_type`` = 2, the
 	interval of time (years) over which a subject experiences each ProWAS Code
 	is added as the column *duration*.
 
 	:param path: The path to the file that contains the phenotype data
 	:param filename: The name of the file that contains the phenotype data.
 	:param reg_type: Type of regression (0:binary, 1:count, 2:duration)
-	:type path: pathlib Path object
+	:type path: pathlib Path
 	:type filename: str
 	:type reg_type: int
 
@@ -193,14 +193,14 @@ def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, pheno_
 	"""
 	Generates the feature matrix that will be used to run the PheWAS or ProWAS analysis. Feature matrix is 3xNxP,
 	where N = number of subjects and P = number of PheWAS/ProWAS Codes.
-	
+
 	* Feature matrix [0] is the aggregate PheWAS/ProWAS matrix. It contains phenotype data aggregated across
-	each subject's record accoring to the specified ``reg_type``.
+	  each subject's record accoring to the specified ``reg_type``.
 	* Feature matrix [1] is the age matrix, containing each subject's maximum age recorded for each phenotype.
-	For phenotypes absent in the subject's record, the subject's overall maximum age is recorded.
+	  For phenotypes absent in the subject's record, the subject's overall maximum age is recorded.
 	* Feature matrix [2] is the phenotype covariate matrix. If ``pheno_cov`` is defined, it records whether or
-	not each subject has at least one instance of the specified phenotype in their record. Otherwise, it's a zero matrix.
-	
+	  not each subject has at least one instance of the specified phenotype in their record. Otherwise, it's a zero matrix.
+
 
 	:param genotypes_df: group data
 	:param phenotype: phenotype data retrieved from ``pyPheWAS.pyPhewasCorev2.get_icd_codes`` or ``pyPheWAS.pyPhewasCorev2.get_cpt_codes``
@@ -209,13 +209,13 @@ def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, pheno_
 	:type genotypes_df: pandas DataFrame
 	:type phenotype: pandas DataFrame
 	:type reg_type: int
-	:type phewas_cov: str
+	:type pheno_cov: str
 
 	:returns (feature_matrix, phenotype_header): (3xNxP feature matrix, PheWAS/ProWAS codes that correspond to the columns in the feature matrix)
 	:rtype: (numpy array, list of str)
 
 	"""
-	
+
 	# sort genotype and phenotype dataframes by 'id'
 	print('Sorting phenotype data...')
 	phenotype.sort_values(by='id', inplace=True)
@@ -338,17 +338,17 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
 
 	data = genotypes.copy()
 	data['y'] = phen_vector1 # aggregate phenotype data
-	
+
 	# append '+' to covariates (if there are any) -> makes definition of 'f' more elegant
 	if covariates is not '':
 		covariates = '+' + covariates
-	
+
 	# add MaxAgeAtEvent to data (if needed)
 	if 'MaxAgeAtICD' in covariates:
 		data['MaxAgeAtICD'] = phen_vector2
 	elif 'MaxAgeAtCPT' in covariates:
 		data['MaxAgeAtCPT'] = phen_vector2
-		
+
 	# add phewas_cov feature matrix to data & covariates (if needed)
 	if phen_vector3.any():
 		data['phe'] = phen_vector3
@@ -379,7 +379,7 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
 		conf_int = '[%s,%s]' % (conf[0]['y'], conf[1]['y'])  # yes
 		stderr = model.bse.y
 		reg_result = [-math.log10(p), p, beta, conf_int, stderr]  # collect results
-		
+
 	except ValueError as ve:
 		if phenotype is not '':
 			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
@@ -406,7 +406,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='genotype'):
 
 	:returns: A tuple containing indices, p-values, and all the regression data.
 	"""
-	
+
 	# sort group data by id
 	print('Sorting group data...')
 	genotypes.sort_values(by='id', inplace=True)
@@ -414,10 +414,10 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='genotype'):
 
 	num_phecodes = len(fm[0, 0])
 	# thresh = math.ceil(genotypes.shape[0] * 0.03)
-	
+
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
-	
+
 	control = fm[0][genotypes.genotype == 0, :]
 	disease = fm[0][genotypes.genotype == 1, :]
 	# find all phecodes that only present for a single genotype (ie only controls or only diseased show the phecode) -> have to use regularization
@@ -439,7 +439,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='genotype'):
 		else:
 			# not enough samples to run regression
 			stat_info = [np.nan, np.nan, np.nan, np.nan, np.nan]
-		
+
 		# save regression data
 		info = phewas_info[0:2] + stat_info + [phewas_info[2]] + [phewas_info[3]]
 		regressions.loc[index] = info
