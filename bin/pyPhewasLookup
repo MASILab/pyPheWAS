@@ -53,7 +53,7 @@ assert osp.exists(kwargs['path'] / kwargs['group']), "%s does not exist" %(kwarg
 
 # Assign the output file if none was assigned
 if kwargs['outfile'] is None:
-    kwargs['outfile'] = "feature_matrix_" + kwargs['groupfile']
+    kwargs['outfile'] = "feature_matrix_" + kwargs['group']
 
 # Assert that the output file is valid
 assert kwargs['outfile'].endswith('.csv'), "%s is not a valid outputfile, must be a .csv file" % (kwargs['outfile'])

@@ -62,23 +62,17 @@ if kwargs['outfile'] is None:
 # Assert that the output file is valid
 assert kwargs['outfile'].endswith('.csv'), "%s is not a valid outputfile, must be a .csv file" % (kwargs['outfile'])
 
-# # Check phewas_cov
-# if kwargs['phewas_cov'] is not None:
-#     kwargs['phewas_cov'] = float(kwargs['phewas_cov'])
-
-# if kwargs['response'] is None:
-#     kwargs['response'] = ''
 
 # Print Arguments
 display_kwargs(kwargs)
 
-"""
-Run Regressions
-"""
-
 # Make all arguments local variables
 locals().update(kwargs)
 
+
+"""
+Load Data
+"""
 print("Retrieving group data...")
 genotypes = get_group_file(path, group)
 
@@ -92,18 +86,31 @@ if phewas_cov is not None:
     c = np.loadtxt(path / ('phewas_cov_' + feature_matrix), delimiter=',')
 else:
     c = np.zeros_like(a)
+    
 # reconstruct full feature matrix
 fm = np.array([a,b,c])
 
+
+"""
+Run Regressions
+"""
 print("Running PheWAS regressions...")
-regressions = run_phewas(fm, genotypes, covariates, reg_type, response)
+regressions = run_phewas(fm, genotypes, 'ICD', covariates, response)
 
 print("Saving regression data to %s" % (path / outfile))
-header = ','.join(['group', group, 'reg_type', reg_type, 'covariates',covariates]) + '\n'
+if phewas_cov is not None:
+    covariates = covariates + '+' + phewas_cov
+    
+header = ','.join(['group', group, 'feature_matrix', feature_matrix, 'reg_type', reg_type, 'code_type', 'ICD', 'covariates', covariates]) + '\n'
 f = open(path / outfile, 'w')
 f.write(header)
 regressions.to_csv(f,index=False)
 f.close()
+
+
+"""
+Calculate runtime
+"""
 
 interval = time.time() - start
 hour = math.floor(interval/3600.0)
