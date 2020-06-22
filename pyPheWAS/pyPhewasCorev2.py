@@ -215,11 +215,11 @@ def generate_feature_matrix(genotypes, phenotype, reg_type, code_type, pheno_cov
 
 	:returns (feature_matrix, phenotype_header): (3xNxP feature matrix, PheWAS/ProWAS codes that correspond to the columns in the feature matrix)
 	:rtype: (numpy array, list of str)
-	
-	.. Note: If ICD/CPT codes do not have a corresponding PheWAS/ProWAS code, they are removed by
-			``pyPheWAS.pyPhewasCorev2.get_icd_codes`` and ``pyPheWAS.pyPhewasCorev2.get_cpt_codes``. If a subject in
-			the group *does not have any records in the phenotype DataFrame* (e.g. if none of their ICD/CPT codes had a
-			correponding phenotype), they are *still included* in the feature matrix.
+
+	.. note:: If ICD/CPT codes do not have a corresponding PheWAS/ProWAS code, they are removed by
+           ``pyPheWAS.pyPhewasCorev2.get_icd_codes`` and ``pyPheWAS.pyPhewasCorev2.get_cpt_codes``. If a subject in
+           the group *does not have any records in the phenotype DataFrame* (e.g. if none of their ICD/CPT codes had a
+           correponding phenotype), they are *still included* in the feature matrix.
 
 	"""
 
@@ -300,11 +300,11 @@ Statistical Modeling
 def get_phenotype_info(p_index, code_type):
 	"""
 	Retrieve phenotype info.
-	
+
 	Return info for the phenotype code at the given index in the phenotype map. The phenotype map (PheWAS or ProWAS)
 	depends on the value of ``code_type``. For ``code_type`` = 'ICD', PheWAS code info is returned. For ``code_type`` =
 	'CPT', ProWAS code info is returned.
-	
+
 	The returned information consists of (in order) PheWAS/ProWAS code, Phenotype, and ICD-9/ICD-10 or CPT rollup (i.e. all
 	ICD/CPT codes that map to the given PheWAS/ProWAS code)
 
@@ -331,17 +331,17 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='',
                          response='genotype',  lr=0, phenotype=''):
 	"""
 	Runs a logistic regression for a specific phenotype vector
-	
+
 	Compute a logistic regression of the form:
-	
-	*Pr(response) ~ logit(phen_vector1 + covariates)*
-	
-	``phen_vector1`` is an Nx1 vector of phenotype aggregates, where N = number of subjects.
+
+	:math:`Pr(response) \sim logit(phen\_vector1 + covariates)`
+
+	``phen_vector1`` is a vector of phenotype aggregates of length N, where N = number of subjects.
 	To use the age feature vector (``phen_vector2``), include 'MaxAgeAtICD' or 'MaxAgeAtCPT' in the ``covariates`` string.
 	Other than 'MaxAgeAtICD' and 'MaxAgeAtCPT', all covariates and the response variable must be included in
 	the group DataFrame.
-	
-	The returned results list consists of (in order) the -log10(p-value), p-value, beta, beta's confidence interval,
+
+	The returned results list consists of (in order) the -log\ :sub:`10`\ (p-value), p-value, beta, beta's confidence interval,
 	and beta's standard error, estimated from the logit model for the ``phen_vector1`` variable.
 
 	:param genotypes: group data
@@ -349,7 +349,7 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='',
 	:param phen_vector2: the maximum event age phenotype vector
 	:param phen_vector3: *[optional]* the phenotype covariate vector
 	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
-	:param response: *[optional]* response variable in the logisitc model (default: *genotype*)
+	:param response: *[optional]* response variable in the logit model (default: *genotype*)
 	:param lr: *[optional]* regularized maximum likelihood optimization flag (0 [default] = not regularized; 1 = regularized)
 	:param phenotype: *[optional]* phenotype info [code, description] for this regression (used only for error handling)
 	:type genotypes: pandas DataFrame
@@ -360,7 +360,7 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='',
 	:type response: str
 	:type lr: int [0,1]
 	:type phenotype: list of str
-	
+
 	:returns: regression results
 	:rtype: list
 
@@ -427,19 +427,19 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='',
 def run_phewas(fm, genotypes, code_type, covariates='', response='genotype'):
 	"""
 	Run mass phenotype regressions
-	
+
 	Iterate over all PheWAS/ProWAS codes in the feature matrix, running a logistic regression of the form:
-	
-	*Pr(response) ~ logit(phenotype_aggregate + covariates)*
-	
+
+	:math:`Pr(response) \sim logit(phenotype\_aggregate + covariates)`
+
 	``fm`` is a 3xNxP matrix, where N = number of subjects and P = number of PheWAS/ProWAS Codes; this should only
 	be consutrcted by ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix`` - otherwise results will be untrustworthy.
 	To use the age feature matrix (``fm[1]``), include 'MaxAgeAtICD' or 'MaxAgeAtCPT' in the ``covariates`` string.
 	Other than 'MaxAgeAtICD' and 'MaxAgeAtCPT', all covariates and the response variable must be included in
 	the group DataFrame.
-	
-	The returned DataFrame includes the PheWAS/ProWAS Code, Phenotype (Code description, e.g. 'Pain in joint'),
-	p-value, -log10(p-value), beta, beta's confidence interval, beta's standard error, and lists of the ICD-9/ICD-10 or
+
+	The returned DataFrame includes the PheWAS/ProWAS code, Phenotype (code description, e.g. 'Pain in joint'),
+	-log\ :sub:`10`\ (p-value), p-value, beta, beta's confidence interval, beta's standard error, and lists of the ICD-9/ICD-10 or
 	CPT codes that map to the phenotype.
 
 	:param fm: phenotype feature matrix derived via ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix``
@@ -455,15 +455,16 @@ def run_phewas(fm, genotypes, code_type, covariates='', response='genotype'):
 
 	:returns: regression results for each phenotype
 	:rtype: pandas DataFrame
-	
-	.. Note:: To prevent false positives & improve statistical power, regressions are only computed for
-		      phenotypes which present for greater than 5 subjects in the cohort. Phenotypes which do not meet
-		      this criteria are not included in the returned regression results.
-		     
-    .. Note:: For phenotypes that present in both the case (``response`` = 1) and control (``response`` = 0) groups, maximum
-              likelihood optimization is used to compute the logistic regression. For phenotypes that only present in
-              one of those groups, regularized maximum likelihood optimization is used.
-    
+
+
+	.. note:: To prevent false positives & improve statistical power, regressions are only computed for
+		  phenotypes which present for greater than 5 subjects in the cohort. Phenotypes which do not meet
+		  this criteria are not included in the returned regression results.
+
+	.. note:: For phenotypes that present in both the case (``response`` = 1) and control (``response`` = 0) groups, maximum
+		  likelihood optimization is used to compute the logistic regression. For phenotypes that only present in
+		  one of those groups, regularized maximum likelihood optimization is used.
+
 	"""
 
 	# sort group data by id
