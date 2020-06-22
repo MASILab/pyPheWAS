@@ -33,10 +33,10 @@ def get_codes(filename):
 	"""
 	Load PheWAS/ProWAS code map from the resources directory.
 
-	:param filename: Name of file in the resources folder to load
+	:param filename: name of file in the resources folder to load
 	:type filename: str
 
-	:returns: Code map from the given file
+	:returns: code map from the given file
 	:rtype: pandas DataFrame
 
 	"""
@@ -68,21 +68,21 @@ def get_codes(filename):
 
 def get_group_file(path, filename):
 	"""
-	Read genotype data from the given file and load it into a pandas DataFrame.
-	Any records with a null *id* are dropped.
+	Read group data from the given file.
+	Note: Any records with a null **id** are dropped.
 
-	:param path: The path to the file that contains the group data
-	:param filename: The name of the file that contains the group data.
+	:param path: path to the file that contains the group data
+	:param filename: name of the file that contains the group data.
 	:type path: pathlib Path
 	:type filename: string
 
-	:returns: The data from the genotype file.
+	:returns: The data from the group file.
 	:rtype: pandas DataFrame
 	"""
 	wholefname = path / filename
-	genotypes_df = pd.read_csv(wholefname)
-	genotypes_df = genotypes_df.dropna(subset=['id'])
-	return genotypes_df
+	genotypes = pd.read_csv(wholefname)
+	genotypes = genotypes.dropna(subset=['id'])
+	return genotypes
 
 
 def get_icd_codes(path, filename, reg_type):
@@ -95,14 +95,14 @@ def get_icd_codes(path, filename, reg_type):
 	interval of time (years) over which a subject experiences each PheWAS Code
 	is added as the column *duration*.
 
-	:param path: The path to the file that contains the phenotype data
-	:param filename: The name of the file that contains the phenotype data.
-	:param reg_type: Type of regression (0:binary, 1:count, 2:duration)
+	:param path: path to the file that contains the phenotype data
+	:param filename: name of the file that contains the phenotype data.
+	:param reg_type: type of regression (0:binary, 1:count, 2:duration)
 	:type path: pathlib Path
 	:type filename: str
 	:type reg_type: int
 
-	:returns: Data from the phenotype file.
+	:returns: data from the phenotype file.
 	:rtype: pandas DataFrame
 
 	"""
@@ -159,14 +159,14 @@ def get_cpt_codes(path, filename, reg_type):
 	interval of time (years) over which a subject experiences each ProWAS Code
 	is added as the column *duration*.
 
-	:param path: The path to the file that contains the phenotype data
-	:param filename: The name of the file that contains the phenotype data.
-	:param reg_type: Type of regression (0:binary, 1:count, 2:duration)
+	:param path: path to the file that contains the phenotype data
+	:param filename: name of the file that contains the phenotype data.
+	:param reg_type: type of regression (0:binary, 1:count, 2:duration)
 	:type path: pathlib Path
 	:type filename: str
 	:type reg_type: int
 
-	:returns: Data from the phenotype file.
+	:returns: data from the phenotype file.
 	:rtype: pandas DataFrame
 
 	"""
@@ -189,7 +189,7 @@ def get_cpt_codes(path, filename, reg_type):
 
 
 
-def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, pheno_cov=None):
+def generate_feature_matrix(genotypes, phenotype, reg_type, code_type, pheno_cov=None):
 	"""
 	Generates the feature matrix that will be used to run the PheWAS or ProWAS analysis. Feature matrix is 3xNxP,
 	where N = number of subjects and P = number of PheWAS/ProWAS Codes.
@@ -202,17 +202,24 @@ def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, pheno_
 	  not each subject has at least one instance of the specified phenotype in their record. Otherwise, it's a zero matrix.
 
 
-	:param genotypes_df: group data
+	:param genotypes: group data
 	:param phenotype: phenotype data retrieved from ``pyPheWAS.pyPhewasCorev2.get_icd_codes`` or ``pyPheWAS.pyPhewasCorev2.get_cpt_codes``
 	:param reg_type: type of regression (0:binary, 1:count, 2:duration)
-	:param pheno_cov: PheWAS or ProWAS code to use as a covariate
-	:type genotypes_df: pandas DataFrame
+	:param code_type: type of EMR code ('ICD' or 'CPT')
+	:param pheno_cov: *[optional]* PheWAS or ProWAS code to use as a covariate
+	:type genotypes: pandas DataFrame
 	:type phenotype: pandas DataFrame
 	:type reg_type: int
+	:type code_type: str
 	:type pheno_cov: str
 
 	:returns (feature_matrix, phenotype_header): (3xNxP feature matrix, PheWAS/ProWAS codes that correspond to the columns in the feature matrix)
 	:rtype: (numpy array, list of str)
+	
+	.. Note: If ICD/CPT codes do not have a corresponding PheWAS/ProWAS code, they are removed by
+			``pyPheWAS.pyPhewasCorev2.get_icd_codes`` and ``pyPheWAS.pyPhewasCorev2.get_cpt_codes``. If a subject in
+			the group *does not have any records in the phenotype DataFrame* (e.g. if none of their ICD/CPT codes had a
+			correponding phenotype), they are *still included* in the feature matrix.
 
 	"""
 
@@ -220,8 +227,8 @@ def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, pheno_
 	print('Sorting phenotype data...')
 	phenotype.sort_values(by='id', inplace=True)
 	print('Sorting group data...')
-	genotypes_df.sort_values(by='id', inplace=True)
-	genotypes_df.reset_index(inplace=True,drop=True)
+	genotypes.sort_values(by='id', inplace=True)
+	genotypes.reset_index(inplace=True,drop=True)
 
 	# use phewas/prowas codes to make a dictionary of indices in the np array
 	if code_type == 'CPT':
@@ -235,10 +242,10 @@ def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, pheno_
 	empty_phewas_df['np_index'] = range(0,empty_phewas_df.shape[0])
 	np_index = empty_phewas_df['np_index'].to_dict()
 
-	feature_matrix = np.zeros((3, genotypes_df.shape[0], empty_phewas_df.shape[0]), dtype=float)
+	feature_matrix = np.zeros((3, genotypes.shape[0], empty_phewas_df.shape[0]), dtype=float)
 
 	# make genotype a dictionary for faster access time
-	genotypes = genotypes_df.set_index('id').to_dict('index')
+	genotypes_dict = genotypes.set_index('id').to_dict('index')
 
 	exclude = []  # list of ids to exclude (in icd list but not in genotype list)
 	last_id = ''  # track last id seen in icd list
@@ -246,7 +253,7 @@ def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, pheno_
 
 	for _,event in tqdm(phenotype.iterrows(), desc="Processing "+code_type+"s", total=phenotype.shape[0]):
 		curr_id = event['id']
-		if not curr_id in genotypes:
+		if not curr_id in genotypes_dict:
 			if not curr_id in exclude:
 				print('%s has records in phenotype file but is not in group file - excluding from study' % curr_id)
 				exclude.append(curr_id)
@@ -254,12 +261,12 @@ def generate_feature_matrix(genotypes_df, phenotype, reg_type, code_type, pheno_
 		# check id to see if a new subject has been found
 		if last_id != curr_id:
 			count += 1
-			while(curr_id != genotypes_df.loc[count,'id']): # subject at genotypes_df.loc[count] does not have ICD codes
-				empty_id = genotypes_df.loc[count,'id']
-				feature_matrix[1][count] = genotypes[empty_id]['MaxAgeAtVisit']
+			while(curr_id != genotypes.loc[count,'id']): # subject at genotypes.loc[count] does not have ICD codes
+				empty_id = genotypes.loc[count,'id']
+				feature_matrix[1][count] = genotypes_dict[empty_id]['MaxAgeAtVisit']
 				count += 1 # continue processing next subject
 			last_id = curr_id  # reset last_id
-			feature_matrix[1][count] = genotypes[curr_id]['MaxAgeAtVisit']
+			feature_matrix[1][count] = genotypes_dict[curr_id]['MaxAgeAtVisit']
 
 		# get column index of event phecode
 		phecode_ix = np_index[event[phecode_col]]
@@ -290,15 +297,24 @@ Statistical Modeling
 """
 
 
-def get_phewas_info(p_index):
+def get_phenotype_info(p_index, code_type):
 	"""
-	Returns all of the info of the phewas code at the given index.
+	Retrieve phenotype info.
+	
+	Return info for the phenotype code at the given index in the phenotype map. The phenotype map (PheWAS or ProWAS)
+	depends on the value of ``code_type``. For ``code_type`` = 'ICD', PheWAS code info is returned. For ``code_type`` =
+	'CPT', ProWAS code info is returned.
+	
+	The returned information consists of (in order) PheWAS/ProWAS code, Phenotype, and ICD-9/ICD-10 or CPT rollup (i.e. all
+	ICD/CPT codes that map to the given PheWAS/ProWAS code)
 
-	:param p_index: The index of the desired phewas code
+	:param p_index: index of the desired phenotype code
+	:param code_type: type of phenotype map to use
 	:type p_index: int
+	:type code_type: str
 
-	:returns: A list including the code, the name, and the rollup of the phewas code. The rollup is a list of all of the ICD-9 and ICD-10 codes that are grouped into this phewas code.
-	:rtype: list of strings
+	:returns: list of phenotype info
+	:rtype: list of str
 	"""
 	p_code = phewas_codes.loc[p_index, 'PheCode']
 	p_name = phewas_codes.loc[p_index, 'Phenotype']
@@ -311,29 +327,43 @@ def get_phewas_info(p_index):
 	return [p_code, p_name, p_icd9_rollup,p_icd10_rollup]
 
 
-def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
-                         response='genotype', phen_vector3='', lr=0,
-                         phenotype=''):
+def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='', covariates='',
+                         response='genotype',  lr=0, phenotype=''):
 	"""
-	Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
+	Runs a logistic regression for a specific phenotype vector
+	
+	Compute a logistic regression of the form:
+	
+	*Pr(response) ~ logit(phen_vector1 + covariates)*
+	
+	``phen_vector1`` is an Nx1 vector of phenotype aggregates, where N = number of subjects.
+	To use the age feature vector (``phen_vector2``), include 'MaxAgeAtICD' or 'MaxAgeAtCPT' in the ``covariates`` string.
+	Other than 'MaxAgeAtICD' and 'MaxAgeAtCPT', all covariates and the response variable must be included in
+	the group DataFrame.
+	
+	The returned results list consists of (in order) the -log10(p-value), p-value, beta, beta's confidence interval,
+	and beta's standard error, estimated from the logit model for the ``phen_vector1`` variable.
 
-	:param genotypes: a DataFrame containing the genotype information
-	:param phen_vector1: a array containing the phenotype vector
-	:param phen_vector2: a array containing the phenotype vector
-	:param covariates: a string containing all desired covariates
+	:param genotypes: group data
+	:param phen_vector1: the aggregate phenotype vector
+	:param phen_vector2: the maximum event age phenotype vector
+	:param phen_vector3: *[optional]* the phenotype covariate vector
+	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
+	:param response: *[optional]* response variable in the logisitc model (default: *genotype*)
+	:param lr: *[optional]* regularized maximum likelihood optimization flag (0 [default] = not regularized; 1 = regularized)
+	:param phenotype: *[optional]* phenotype info [code, description] for this regression (used only for error handling)
 	:type genotypes: pandas DataFrame
 	:type phen_vector1: numpy array
 	:type phen_vector2: numpy array
-	:type covariates: string
+	:type phen_vector3: numpy array
+	:type covariates: str
+	:type response: str
+	:type lr: int [0,1]
+	:type phenotype: list of str
+	
+	:returns: regression results
+	:rtype: list
 
-	.. note::
-		The covariates must be a string that is delimited by '+', not a list.
-		If you are using a list of covariates and would like to convert it to the pyPhewas format, use the following::
-
-			l = ['genotype', 'age'] # a list of your covariates
-			covariates = '+'.join(l) # pyPhewas format
-
-		The covariates that are listed here *must* be headers to your genotype CSV file.
 	"""
 
 	data = genotypes.copy()
@@ -394,17 +424,46 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
 	return reg_result
 
 
-def run_phewas(fm, genotypes, covariates, reg_type, response='genotype'):
+def run_phewas(fm, genotypes, code_type, covariates='', response='genotype'):
 	"""
-	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
+	Run mass phenotype regressions
+	
+	Iterate over all PheWAS/ProWAS codes in the feature matrix, running a logistic regression of the form:
+	
+	*Pr(response) ~ logit(phenotype_aggregate + covariates)*
+	
+	``fm`` is a 3xNxP matrix, where N = number of subjects and P = number of PheWAS/ProWAS Codes; this should only
+	be consutrcted by ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix`` - otherwise results will be untrustworthy.
+	To use the age feature matrix (``fm[1]``), include 'MaxAgeAtICD' or 'MaxAgeAtCPT' in the ``covariates`` string.
+	Other than 'MaxAgeAtICD' and 'MaxAgeAtCPT', all covariates and the response variable must be included in
+	the group DataFrame.
+	
+	The returned DataFrame includes the PheWAS/ProWAS Code, Phenotype (Code description, e.g. 'Pain in joint'),
+	p-value, -log10(p-value), beta, beta's confidence interval, beta's standard error, and lists of the ICD-9/ICD-10 or
+	CPT codes that map to the phenotype.
 
-	:param fm: The phewas feature matrix.
-	:param genotypes: A pandas DataFrame of the genotype file.
-	:param covariates: The covariates that the function is to be run on.
-	:param reg_type: The covariates that the function is to be run on.
-	:param response: The covariates that the function is to be run on.
+	:param fm: phenotype feature matrix derived via ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix``
+	:param genotypes: group data
+	:param code_type:  type of EMR code ('ICD' or 'CPT')
+	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
+	:param response: *[optional]* response variable in the logisitc model (default: *genotype*)
+	:type fm: numpy array
+	:type genotypes: pandas DataFrame
+	:type code_type: str
+	:type covariates: str
+	:type response: str
 
-	:returns: A tuple containing indices, p-values, and all the regression data.
+	:returns: regression results for each phenotype
+	:rtype: pandas DataFrame
+	
+	.. Note:: To prevent false positives & improve statistical power, regressions are only computed for
+		      phenotypes which present for greater than 5 subjects in the cohort. Phenotypes which do not meet
+		      this criteria are not included in the returned regression results.
+		     
+    .. Note:: For phenotypes that present in both the case (``response`` = 1) and control (``response`` = 0) groups, maximum
+              likelihood optimization is used to compute the logistic regression. For phenotypes that only present in
+              one of those groups, regularized maximum likelihood optimization is used.
+    
 	"""
 
 	# sort group data by id
@@ -423,7 +482,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='genotype'):
 	# find all phecodes that only present for a single genotype (ie only controls or only diseased show the phecode) -> have to use regularization
 	inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
 	for index in tqdm(range(num_phecodes), desc='Running Regressions'):
-		phewas_info = get_phewas_info(index)
+		phewas_info = get_phenotype_info(index, code_type)
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
@@ -433,9 +492,8 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='genotype'):
 				use_regular = 1
 			else:
 				use_regular = 0
-			stat_info = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
-			                                 response=response, phen_vector3=phen_vector3, phenotype=phewas_info[0:2],
-			                                 lr=use_regular)
+			stat_info = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3, covariates,
+			                                 response, phenotype = phewas_info[0:2], lr=use_regular)
 		else:
 			# not enough samples to run regression
 			stat_info = [np.nan, np.nan, np.nan, np.nan, np.nan]
@@ -628,7 +686,7 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 				mew = 0.0
 				m = 'o'
 			# Plot PheCode data point & format PheCode label
-			ax.plot(e, logp_ix, m, color=plot_colors[data['category_string']], fillstyle='full', markeredgewidth=mew)
+			ax.plot(e, logp_ix, m, color=new_plot_colors[data['category_string']], fillstyle='full', markeredgewidth=mew)
 			artists.append(ax.text(e, logp_ix, data['Phenotype'], rotation=89, va='bottom', fontsize=6))
 			e += 15
 
@@ -636,8 +694,8 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
-	for lab in plot_colors.keys():
-		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=plot_colors[lab], label=lab))
+	for lab in new_plot_colors.keys():
+		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=new_plot_colors[lab], label=lab))
 	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
 
 	# Plot x axis
@@ -737,7 +795,7 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
-	for lab in plot_colors.keys():
+	for lab in new_plot_colors.keys():
 		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=new_plot_colors[lab], label=lab))
 	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.125), loc='upper center', fancybox=True, ncol=4, prop={'size': text_size}))
 
@@ -857,7 +915,6 @@ def process_args(kwargs, optargs, *args):
 
 
 def display_kwargs(kwargs):
-	print("Arguments: ")
 	for k, v in kwargs.items():
 		num_dots = 80 - len(str(k)) - len(str(v))
 		print(str(k) + '.'*num_dots + str(v))
