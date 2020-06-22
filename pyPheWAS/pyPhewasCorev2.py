@@ -639,7 +639,7 @@ def get_x_label_positions(categories, lines=True):
 
 def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_format=''):
 	"""
-	Plots the data on a Manhattan Plot.
+	Plots significant phnotype data on a Manhattan Plot.
 
 	:param regressions: dataframe containing the regression results
 	:param thresh: the significance threshold
@@ -723,7 +723,7 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 
 def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_format='', label_loc="plot"):
 	"""
-	Plots the data on a Log Odds Plot.
+	Plots significant phnotype data on a Log Odds Plot.
 
 	:param regressions: dataframe containing the regression results
 	:param thresh: the significance threshold
@@ -820,7 +820,7 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 
 def plot_volcano(regressions, save='', save_format=''):
 	"""
-	Plots the data on a Volcano Plot.
+	Plots all phenotype data on a Volcano Plot.
 
 	:param regressions: dataframe containing the regression results
 	:param thresh: the significance threshold
