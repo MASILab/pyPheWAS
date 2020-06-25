@@ -513,39 +513,39 @@ Result Visualization
 """
 
 
-def get_bon_thresh(p_values, alpha):
+def get_bon_thresh(p_values, alpha=0.05):
 	"""
-	Calculate the bonferroni correction threshold.
+	Calculate the Bonferroni multiple comparisons correction threshold for a list of p-values.
 
-	Divide the power by the sum of all finite values (all non-nan values).
+	Divide the power by the number of finite p-values values (all non-nan values).
 
-	:param p_values: a list of p-values obtained by executing the regression
-	:param alpha: the uncorrected significance level being used (usually 0.05)
+	:param p_values: list of p-values
+	:param alpha: the uncorrected significance level being used (default = 0.05)
 	:type p_values: numpy array
 	:type alpha: float
 
-	:returns: The bonferroni correction
+	:returns: The Bonferroni correction threshold
 	:rtype: float
 
 	"""
 	return alpha / sum(np.isfinite(p_values))
 
 
-def get_fdr_thresh(p_values, alpha):
+def get_fdr_thresh(p_values, alpha=0.05):
 	"""
-	Calculate the false discovery rate threshold.
+	Calculate the false discovery rate (FDR) multiple comparisons correction threshold for a list of p-values.
 
-	:param p_values: a list of p-values obtained by executing the regression
-	:param alpha: the uncorrected significance level being used (usually 0.05)
+	:param p_values: list of p-values
+	:param alpha: the uncorrected significance level being used (default = 0.05)
 	:type p_values: numpy array
 	:type alpha: float
 
-	:returns: the false discovery rate
+	:returns: The FDR correction threshold
 	:rtype: float
+	
 	"""
 	sn = np.sort(p_values)
 	sn = sn[np.isfinite(sn)]
-	# sn = sn[::-1]
 	for i in range(len(sn)):
 		p_crit = alpha * float(i+1) / float(len(sn))
 		if sn[i] <= p_crit:
@@ -640,20 +640,28 @@ def get_x_label_positions(categories, lines=True):
 def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_format=''):
 	"""
 	Plots significant phnotype data on a Manhattan Plot.
+	
+	The significance of each phenotype (represented by :math:`-log_{10}(p)`\ ) is plotted along the
+	y-axis, with phenotypes plotted along the x-axis.
+	If ``save`` is provided, the plot is saved to a file; otherwise, the plot may be displayed with
+	matplotlib.pyplot.show() after this function returns.
+	
 
 	:param regressions: dataframe containing the regression results
-	:param thresh: the significance threshold
-	:param save: the output file to save to (if empty, display the plot)
+	:param thresh: p-value significance threshold
 	:param show_imbalance: boolean variable that determines whether or not to show imbalances on the plot (default True)
+	:param save: the output file to save to (if empty, display the plot)
+	:param save_format: format of the save file
 	:type regressions: pandas DataFrame
 	:type thresh: float
-	:type save: str
 	:type show_imbalance: boolean
+	:type save: str
+	:type save_format: str
 
 	"""
 
 	# Initialize figure
-	fig = plt.figure(1)
+	fig = plt.figure(1,tight_layout=True)
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
@@ -661,15 +669,8 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	regressions = pd.merge(regressions, phewas_codes, left_on='PheWAS Code', right_on='PheCode').sort_values(
 		by='category')
 
-	# Determine whether or not to show the imbalance.
-	# show_imbalance = imbalances.size != 0
-
-	# c = icd9_codes.loc[phewas_codes['index']]
-	# c = c.reset_index()
-	# idx = c.sort_values(by='category').index
-
 	# Plot all points w/ labels
-	e = 1
+	e = 1 # x-axis counter
 	artists = []
 	plt.ylabel('-log10(p)')
 
@@ -687,7 +688,7 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 				mew = 0.0
 				m = 'o'
 			# Plot PheCode data point & format PheCode label
-			ax.plot(e, logp_ix, m, color=new_plot_colors[data['category_string']], fillstyle='full', markeredgewidth=mew)
+			ax.plot(e, logp_ix, m, color=cat_colors[data['category_string']], fillstyle='full', markeredgewidth=mew)
 			artists.append(ax.text(e, logp_ix, data['Phenotype'], rotation=89, va='bottom', fontsize=6))
 			e += 15
 
@@ -695,18 +696,13 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
-	for lab in new_plot_colors.keys():
-		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=new_plot_colors[lab], label=lab))
+	for lab in cat_colors.keys():
+		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=cat_colors[lab], label=lab))
 	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
 
 	# Plot x axis
 	ax.axhline(y=0, color='black')
 	frame1.axes.get_xaxis().set_visible(False)
-
-	# If the imbalance is to be shown, draw lines to show the categories.
-	# if show_imbalance:
-	# 	for pos in linepos:
-	# 		ax.axvline(x=pos, color='black', ls='dotted')
 
 	# Save the plot
 	if save:
@@ -721,24 +717,30 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	return
 
 
-def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_format='', label_loc="plot"):
+def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plot"):
 	"""
 	Plots significant phnotype data on a Log Odds Plot.
+	
+	The log odds value & confidence interval is plotted along the x-axis, with Phenotypes sorted by category
+	plotted along the y-axis.
+	If ``save`` is provided, the plot is saved to a file; otherwise, the plot may be displayed with
+	matplotlib.pyplot.show() after this function returns.
 
 	:param regressions: dataframe containing the regression results
-	:param thresh: the significance threshold
+	:param thresh: p-value significance threshold
 	:param save: the output file to save to (if empty, display the plot)
-	:param show_imbalance: boolean variable that determines whether or not to show imbalances on the plot (default True)
-	:param label_loc: the output file to save to (if empty, display the plot)
+	:param save_format: format of the save file
+	:param label_loc: where to plot Phenotype labels ["plot" (defulat) or "axis"]
 	:type regressions: pandas DataFrame
 	:type thresh: float
 	:type save: str
-	:type show_imbalance: boolean
+	:type save_format: str
+	:type label_loc: str
 
 	"""
 
 	# Initialize figure
-	fig = plt.figure(2)
+	fig = plt.figure(2,tight_layout=True)
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
@@ -746,14 +748,6 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 	regressions = pd.merge(regressions, phewas_codes, left_on='PheWAS Code', right_on='PheCode').sort_values(
 		by='category')
 
-
-	# determine whether or not to show imbalances
-	# show_imbalance = imbalances.size != 0
-
-	# Sort the phewas codes by category.
-	# c = icd9_codes.loc[phewas_codes['index']]
-	# c = c.reset_index()
-	# idx = c.sort_values(by='category').index
 
 	# Plot all points w/ labels
 	e = 1 # vertical index
@@ -768,20 +762,17 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 		if  data['p-val'] < thresh:
 			# Add Phecode label
 			if label_loc == "plot":
-				if show_imbalance:
-					if beta_ix > 0:
-						artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, ha='left', fontsize=text_size))
-					else:
-						artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, ha='right', fontsize=text_size))
+				if beta_ix > 0: # only difference is ha (horizontal alignment)
+					artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, ha='left', fontsize=text_size))
 				else:
-					artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, va='bottom', fontsize=text_size))
+					artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, ha='right', fontsize=text_size))
 			else: # location = "axis"
 				phecode_labels.append(data['Phenotype'])
 				phecode_locs.append(e)
 
 			# Plot Phecode Data
-			ax.plot(beta_ix, e, 'o', color=new_plot_colors[data['category_string']], fillstyle='full', markeredgewidth=0.0)
-			ax.plot([data['lowlim'], data['uplim']], [e, e], color=new_plot_colors[data['category_string']])
+			ax.plot(beta_ix, e, 'o', color=cat_colors[data['category_string']], fillstyle='full', markeredgewidth=0.0)
+			ax.plot([data['lowlim'], data['uplim']], [e, e], color=cat_colors[data['category_string']])
 			e += 15
 
 	# Plot y axis
@@ -796,14 +787,10 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
-	for lab in new_plot_colors.keys():
-		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=new_plot_colors[lab], label=lab))
+	for lab in cat_colors.keys():
+		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=cat_colors[lab], label=lab))
 	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.125), loc='upper center', fancybox=True, ncol=4, prop={'size': text_size}))
 
-	# If the imbalance is to be shown, draw lines to show the categories.
-	# if show_imbalance:
-	# 	for pos in linepos:
-	# 		ax.axvline(x=pos, color='black', ls='dotted')
 
 	# Save the plot
 	if save:
@@ -821,15 +808,19 @@ def plot_odds_ratio(regressions, thresh, show_imbalance=True, save='', save_form
 def plot_volcano(regressions, save='', save_format=''):
 	"""
 	Plots all phenotype data on a Volcano Plot.
+	
+	The significance of each phenotype (represented by :math:`-log_{10}(p)`\ ) is plotted along the
+	y-axis, with log odds value (effect size) plotted along the x-axis. To improve plot legibility, only those
+	phenotypes which surpass the FDR/Bonferroni significance thresholds have labels displayed.
+	If ``save`` is provided, the plot is saved to a file; otherwise, the plot may be displayed with
+	matplotlib.pyplot.show() after this function returns.
 
 	:param regressions: dataframe containing the regression results
-	:param thresh: the significance threshold
 	:param save: the output file to save to (if empty, display the plot)
-	:param show_imbalance: boolean variable that determines whether or not to show imbalances on the plot (default True)
+	:param save_format: format of the save file
 	:type regressions: pandas DataFrame
-	:type thresh: float
 	:type save: str
-	:type show_imbalance: boolean
+	:type save_format: str
 
 	"""
 
@@ -838,7 +829,7 @@ def plot_volcano(regressions, save='', save_format=''):
 	fdr = get_fdr_thresh(regressions["p-val"].values, 0.05)
 
 	# Initialize figure
-	fig = plt.figure(3)
+	fig = plt.figure(3,tight_layout=True)
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
@@ -874,12 +865,7 @@ def plot_volcano(regressions, save='', save_format=''):
 	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="midnightblue", label="FDR"))
 	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="slategray", label="Insignificant"))
 
-
 	artists.append(ax.legend(handles=line1, loc='best', fancybox=True, ncol=4, prop={'size': 6}))
-
-	# Plot x axis
-	# ax.axhline(y=0, color='black')
-	# frame1.axes.get_xaxis().set_visible(False)
 
 	# Save the plot
 	if save:
@@ -931,7 +917,7 @@ output_columns = ['PheWAS Code',
 				  'ICD-9',
 				  'ICD-10']
 
-new_plot_colors = {'other': 'gold',
+cat_colors = {'other': 'gold',
                'circulatory system': 'xkcd:bright red',
                'congenital anomalies': 'mediumspringgreen',
                'dermatologic': 'xkcd:dark peach',
@@ -950,7 +936,7 @@ new_plot_colors = {'other': 'gold',
                'sense organs': 'darkviolet',
                'symptoms': 'aqua'}
 
-plot_colors = {'-': 'gold',
+old_plot_colors = {'-': 'gold',
 			   'circulatory system': 'red',
 			   'congenital anomalies': 'mediumspringgreen',
 			   'dermatologic': 'maroon',

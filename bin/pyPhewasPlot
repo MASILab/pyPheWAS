@@ -7,6 +7,8 @@ import argparse
 import time
 import math
 import matplotlib.pyplot as plt
+from pathlib import Path
+import os.path as osp
 
 def parse_args():
     parser = argparse.ArgumentParser(description="pyPheWAS Plotting Tool")
@@ -14,8 +16,8 @@ def parse_args():
     parser.add_argument('--statfile', required=True, type=str, help='Name of the statistics/regressions file')
     parser.add_argument('--thresh_type', required=True, type=str, help=' the type of threshold to be used in the plot')
     parser.add_argument('--custom_thresh', required=False, default=None, type=float, help='Custom threshold value (float between 0 and 1)')
-    parser.add_argument('--imbalance', required=False, default=True, help = 'Whether or not to show the direction of imbalance in the plot (default=True)')
-    parser.add_argument('--phewas_label', required=False, default="plot", type=str, help='Where to put PheCode labels - plot (default) or axis')
+    parser.add_argument('--imbalance', required=False, default="True", help = 'Show the direction of imbalance in the Manhattan plot [True (default) or False]')
+    parser.add_argument('--phewas_label', required=False, default="plot", type=str, help='Location of PheCode labels on Log Odds plot [plot (default) or axis]')
     parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files')
     parser.add_argument('--outfile', required=False, default=None, type=str, help='Name of the output file for the plot')
 
@@ -23,108 +25,112 @@ def parse_args():
     return args
 
 """
-Retrieve and validate all arguments.
+Print Start Message
 """
 start = time.time()
+print_start_msg()
+print('\npyPhewasPlot: Plot Mass PheCode Regression Results\n')
+
+
+"""
+Retrieve and validate all arguments.
+"""
 args = parse_args()
-kwargs = {'path': os.path.join(os.path.abspath(args.path),''),
+kwargs = {'path': Path(args.path),
           'statfile': args.statfile,
-          'show_imbalance': eval(args.imbalance),
+          'thresh_type': args.thresh_type,
+          'imbalance': eval(args.imbalance),
           'custom_thresh':args.custom_thresh,
+          'phewas_label': args.phewas_label,
           'outfile':args.outfile,
-          'phewas_label': args.phewas_label
 }
-str_thresh_type = args.thresh_type
 
 # Assert that a valid threshold type was used
-assert str_thresh_type in threshold_map.keys(), "%s is not a valid regression type" % (kwargs['thresh_type'])
-kwargs['thresh_type'] = threshold_map[args.thresh_type]
-if kwargs['thresh_type'] == 2:
+assert kwargs['thresh_type'] in threshold_map.keys(), "%s is not a valid regression type" % (kwargs['thresh_type'])
+if kwargs['thresh_type'] == 'custom':
+    assert kwargs['custom_thresh'] is not None, "Custom threshold specified. Please define --custom_thresh"
     assert (kwargs['custom_thresh'] < 1.0) & (kwargs['custom_thresh'] > 0.0), "%s is not a valid threshold (should be between 0.0 and 1.0)" % (kwargs['custom_thresh'])
 
 # Assert that valid files were given
 assert kwargs['statfile'].endswith('.csv'), "%s is not a valid phenotype file (must be a .csv file)" % (kwargs['feature_matrix'])
+assert osp.exists(kwargs['path'] / kwargs['statfile']), "%s does not exist" %(kwargs['path'] / kwargs['statfile'])
 
 assert kwargs['phewas_label'] in ["plot","axis"], "%s is not a valid PheCode label location" % (kwargs['phewas_label'])
 
-# Specify no output if output file was not given
-# if kwargs['outfile'] is None:
-#     kwargs['outfile'] = ''
-# else:
-    # assert kwargs['outfile'].endswith('.pdf') or kwargs['outfile'].endswith('.eps'), "%s is not a valid plot file, must be a .pdf" % (kwargs['outfile'])
-
-ff = open(kwargs['path'] + kwargs['statfile'])
-header = ff.readline().strip().split(',')
-for i in range(0,len(header),2):
-    kwargs[header[i]] = header[i+1]
-
 # Print Arguments
 display_kwargs(kwargs)
-
-"""
-Create plots
-"""
-
 # Make all arguments local variables
 locals().update(kwargs)
+
+
+"""
+Load Data
+"""
+
+ff = open(path / statfile)
+header = ff.readline().strip().split(',')
+reg_args = {}
+for i in range(0,len(header),2):
+    reg_args[header[i]] = header[i+1]
+print('\nRegression Info')
+display_kwargs(reg_args)
 
 # Read in the remaining data (the pandas DataFrame)
 regressions = pd.read_csv(ff,dtype={'PheWAS Code':str})
 
-# y = regressions['"-log(p)"']
-
 try:
+    # make confidence interval numberic instead of a string
     regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
     regressions['uplim'] = regressions.uplim.str.replace(']', '')
     regressions['lowlim'] = regressions.lowlim.str.replace('[', '')
     regressions = regressions.astype(dtype={'uplim':float,'lowlim':float})
-    # yb = regressions[['beta', 'lowlim', 'uplim']].values
-    # yb = yb.astype(float)
 except Exception as e:
     print('Error reading regression file:')
     print(e)
     sys.exit()
 
-# Check if an imbalance will be used
-# if show_imbalance:
-#     imbalances = get_imbalances(regressions)
-# else:
-#     imbalances = np.array([])
 
-# Get the regular p-values using a numpy vectorized function
-# regpvalues = np.vectorize(lambda x: 10**(-x))(y)
+"""
+Create plots
+"""
 
+# Get the threshold
 pvalues = regressions['p-val'].values
 
-# Get the threshold type
-if thresh_type == 0:
+if thresh_type == 'bon':
     thresh = get_bon_thresh(pvalues,0.05)
-elif thresh_type == 1:
+elif thresh_type == 'fdr':
     thresh = get_fdr_thresh(pvalues,0.05)
-elif thresh_type == 2:
-    thresh = kwargs['custom_thresh']
-print('%s threshold: %0.5f'%(str_thresh_type,thresh))
+elif thresh_type == 'custom':
+    thresh = custom_thresh
+print('%s threshold: %0.5f'%(thresh_type,thresh))
 
+# figure out file names
 if outfile is not None:
-    save = path + outfile
-    file_name, file_format = os.path.splitext(save)
-    savem = file_name + '_Manhattan' + file_format
-    saveb = file_name + '_LogOdds' + file_format
-    savev = file_name + '_Volcano' + file_format
+    file_name, file_format = osp.splitext(outfile)
+    savem = path / (file_name + '_Manhattan' + file_format)
+    saveb = path / (file_name + '_LogOdds' + file_format)
+    savev = path / (file_name + '_Volcano' + file_format)
     file_format = file_format[1:] # remove '.' from from first index
 else:
-    save = ''
-    saveb=''
-    file_format=''
+    savem = ''
+    saveb = ''
+    savev = ''
+    file_format = ''
 
-plot_manhattan(regressions, thresh, show_imbalance, savem, file_format)
-plot_odds_ratio(regressions, thresh, show_imbalance, saveb, file_format, phewas_label)
+plot_manhattan(regressions, thresh, imbalance, savem, file_format)
+plot_odds_ratio(regressions, thresh, saveb, file_format, phewas_label)
 plot_volcano(regressions, savev, file_format)
 
-if save:
-    print("Saving plot to %s" % (save))
+if outfile is not None:
+    print("Saving plots to %s" % (path))
 else:
     plt.show()
+
+
+"""
+Calculate runtime
+"""
 
 interval = time.time() - start
 hour = math.floor(interval/3600.0)
@@ -138,4 +144,4 @@ elif minute > 0:
 else:
     time_str = '%ds' % second
 
-print('pyPhewasPlot Complete\nRuntime: %s' %time_str)
+print('pyPhewasPlot Complete [Runtime: %s]' %time_str)
