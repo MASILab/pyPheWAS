@@ -661,7 +661,7 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	"""
 
 	# Initialize figure
-	fig = plt.figure(1,tight_layout=True)
+	fig = plt.figure(1)
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
@@ -712,7 +712,7 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 					bbox_inches ='tight',
 					dpi = 300
 					)
-		plt.clf()
+		plt.close()
 
 	return
 
@@ -740,7 +740,7 @@ def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plo
 	"""
 
 	# Initialize figure
-	fig = plt.figure(2,tight_layout=True)
+	fig = plt.figure(2)
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
@@ -800,7 +800,7 @@ def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plo
 					bbox_inches ='tight',
 					dpi = 300
 					)
-		plt.clf()
+		plt.close()
 
 	return
 
@@ -829,7 +829,7 @@ def plot_volcano(regressions, save='', save_format=''):
 	fdr = get_fdr_thresh(regressions["p-val"].values, 0.05)
 
 	# Initialize figure
-	fig = plt.figure(3,tight_layout=True)
+	fig = plt.figure(3)
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
@@ -875,7 +875,7 @@ def plot_volcano(regressions, save='', save_format=''):
 					bbox_inches ='tight',
 					dpi = 300
 					)
-		plt.clf()
+		plt.close()
 
 	return
 
