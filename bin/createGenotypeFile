@@ -92,7 +92,9 @@ if case_codes.endswith('.csv') | case_codes.endswith('.txt'):
 	print('Reading case group codes from file')
 	with open(path/case_codes,'r') as code_f:
 		case_codes = code_f.readlines()[0]
-case_codes = case_codes.replace(" ","").split(',')
+# remove white space and split into an array
+case_codes = case_codes.replace(" ","").replace("\n","").split(',')
+
 
 # Controls
 if len(ctrl_codes) > 0:
@@ -100,7 +102,8 @@ if len(ctrl_codes) > 0:
 		print('Reading control group codes from file')
 		with open(path/ctrl_codes,'r') as code_f:
 			ctrl_codes = code_f.readlines()[0]
-	ctrl_codes = ctrl_codes.replace(" ","").split(',')
+	# remove white space and split into an array
+	ctrl_codes = ctrl_codes.replace(" ", "").replace("\n", "").split(',')
 
 
 """
@@ -111,6 +114,9 @@ phen['genotype'] = -1
 
 # Cases
 print('Finding cases with codes: %s' % '|'.join(case_codes))
+# append \Z to force regex to find exact match
+for ix in range(len(case_codes)):
+	case_codes[ix] = case_codes[ix] + '\Z'
 phen['gen'] = phen['ICD_CODE'].str.match('|'.join(case_codes)) # find all ICD code matches
 phen['gen'] = phen['gen']*1 # convert to integer
 phen['genc'] = phen.groupby('id')['gen'].transform('sum') # count all instances
@@ -120,6 +126,9 @@ phen.loc[case_mask,'genotype'] = 1
 # Controls
 if len(ctrl_codes) > 0:
 	print('Finding controls with codes: %s' % '|'.join(ctrl_codes))
+	# append \Z to force regex to find exact match
+	for ix in range(len(ctrl_codes)):
+		ctrl_codes[ix] = ctrl_codes[ix] + '\Z'
 	phen['gen'] = phen['ICD_CODE'].str.match('|'.join(ctrl_codes))
 	phen['gen'] = phen['gen']*1
 	phen['genc'] = phen.groupby('id')['gen'].transform('sum')
