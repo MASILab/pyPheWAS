@@ -50,7 +50,7 @@ Required Arguments:
 
 Optional Arguments [default value]:
  * ``--path``:		    Path to all input files and destination of output files [current directory]
- * ``--outfile``:	    Base name of the output feature matrix files [*feature_matrix_[group file name].csv*]
+ * ``--outfile``:	    Base name of the output feature matrix files ["feature_matrix _\ ``group``"]
  * ``--phewas_cov``:    A PheCode to use as covariate
 
 Output:
@@ -81,7 +81,7 @@ pyPhewasModel
 
 Perform a mass logistic regression
 
-Iterates over all PheCodes in the feature matrix produced by ``pyPhewasLookup``
+Iterates over all PheCodes in the feature matrix produced by **pyPhewasLookup**
 and estimates a logistic regression of the form:
 
     :math:`Pr(response) \sim logit(PheCode\_aggregate + covariates)`
@@ -106,10 +106,10 @@ Required Arguments:
 
 Optional Arguments [default value]:
  * ``--path``:			Path to all input files and destination of output files [current directory]
- * ``--outfile``:		Name of the output regression data file [*regressions_[group file name].csv*]
+ * ``--outfile``:		Name of the output regression data file ["regressions _\ ``group``"]
  * ``--response``:	    Variable to predict ['genotype']
  * ``--covariates``:	Variables to be used as covariates separated by '+' (e.g. "SEX" or "BMI+MaxAgeAtICD")
- * ``--phewas_cov``:	a PheWAS code to use as covariate
+ * ``--phewas_cov``:	A PheCode to use as covariate
 
 Output:
  Regression results for each PheCode saved to the provided ``outfile``
@@ -142,60 +142,100 @@ Output:
 pyPhewasPlot
 ------------
 
-pyPhewasPlot takes the regressions file and threshold type and generates two plots (Manhattan and Log Odds) based on the regression data.
+Visualizes the regression results through 3 complementary views:
+
+1. *Manhattan Plot*: This view compares statistical significance across PheCodes.
+   PheCodes are presented across the horizontal axis, with -log\ :sub:`10`\ (p) along
+   the vertical axis. If ``imbalances = True``\ , marker shape indicates whether
+   the effect of each PheCode is positive (+) or negative (-).
+2. *Log Odds Plot*: This view compares effect size across PheCodes. The log odds
+   of each PheCode and its confidence interval are plotted on the horizontal axis,
+   with PheCodes presented along the vertical axis. If ``phewas_label = "plot"``\ ,
+   PheCode labels are displayed directly on the plot next to their markers. If ``phewas_label = "axis"``\ ,
+   PheCodes are displayed outside of the axes, along the left edge.
+3. *Volcano Plot*: This view compares statistical significance and effect size
+   across all PheCodes. The log odds of each PheCode is plotted along the
+   horizontal axis, with -log\ :sub:`10`\ (p) along the vertical axis.
+   PheCodes are colored according to significance level (Not significant, FDR, Bonferroni).
+
+In both the Manhattan and Log Odds plots:
+
+* PheCode markers are colored and sorted according to 18 general categories
+  (mostly organ systems and disease groups, e.g. “circulatory system” and
+  “mental disorders”).
+* Only PheCodes which are significant after the chosen multiple comparisons
+  correction is applied are included.
 
 Required Arguments:
- * ``--statfile``:		the name of the regressions CSV file
- * ``--imbalance``:		whether or not to show the direction of imbalance in the plot ("True" or "False")
- * ``--thresh_type``:	the type of threshold to be used in the plot (See the key below for more information)
-Optional Arguments:
- * ``--path``:          the path to all input files and destination of output files (*default*: current directory)
- * ``--outfile``:       the name of the output PDF file for the plot
- * ``--custom_thresh``: custom threshold value, required if *thresh_type* ="custom" (float between 0 and 1)
+ * ``--statfile``:		Name of the output regressions file from **pyPhewasModel**
+ * ``--thresh_type``:	Type of multiple comparisons correction threshold ("bon", "fdr", "custom")
+
+Optional Arguments [default value]:
+ * ``--path``:          Path to all input files and destination of output files [current directory]
+ * ``--outfile``:       Base name of output plot files [don't save; show interactive plot]
+ * ``--imbalance``:		Show the direction of imbalance on the Manhattan plot ([True] or False)
+ * ``--phewas_label``:  Location of the PheCode labels on the Log Odds plot (["plot"] or "axis")
+ * ``--custom_thresh``: Custom threshold value, required if ``thresh_type = "custom"`` (float between 0 and 1)
+
+Threshold Types:
+ * *bon*:	    Use the Bonferroni correction
+ * *fdr*:	    Use the False Discovery Rate
+ * *custom*:	Use a custom threshold specified by ``custom_thresh``
+
+**Example** Plot regression results from the current directory with Bonferroni correction (display results interactively)::
+
+		pyPhewasPlot --thresh_type="bon" --statfile="regressions.csv"
+
+**Example** Plot regression results with FDR correction and the Log Odds labels displayed on the y-axis (save results)::
+
+		pyPhewasPlot --thresh_type="fdr" --phewas_label="axis" --outfile="my_FDR_plot.eps" --statfile="regressions.csv" --path="/Users/me/Documents/EMRdata/"
+
+**Example** Plot regression results with a custom threshold and no imbalance on the Manhattan plot (save results)::
+
+		pyPhewasPlot --thresh_type="custom" --custom_thresh=0.001 --imbalance=False --outfile="my_custom_plot.png" --statfile="regressions.csv" --path="/Users/me/Documents/EMRdata/"
 
 
-The valid options for thresh_type:
- * *bon*:	    Use the Bonferroni correction threshold
- * *fdr*:	    Use the False Discovery Rate threshold
- * *custom*:	Use a custom threshold specified by *--custom_thresh*
+.. note:: **If outfile is not specified, the plots will not be saved automatically**.
+    Instead, all plots will be displayed on the screen by the matplotlib module. It
+    is possible to save the plot with any desired file name directly from this display.
 
-.. note:: **If outfile is not specified, the plot will not be saved automatically**. Instead, a plot will be displayed on the screen by the matplotlib module. It is possible to save the plot with any desired file name in this display.
-
-
-A sample execution of *pyPhewasPlot*::
-
-		pyPhewasPlot --path="/Users/me/Documents/EMRdata/" --statfile="regressions_group.csv" --imbalance="False" --thresh_type="bon" --outfile="pyPheWAS_plot.pdf"
+.. note:: **Output Formats** Accepted output formats partially depend on which backend is
+    active on the user's machine. However, most backends support png, pdf, ps, eps, and svg.
+    Vector-based formats (such as eps) may be opened with image editing software such as Inkscape or
+    Photoshop if the user would like to adjust PheCode text locations.
 
 pyPhewasPipeline
 ----------------
 
-pyPhewasPipeline is a streamlined combination of pyPhewasLookup, pyPhewasModel, and pyPhewasPlot. If using all default
-values for the optional arguments, it takes a group file, phenotype file, and regression type and (1) creates the feature
-matrix, (2) runs the regressions, and (3) saves Manhattan and Log Odds plots with both the BonFerroni and False Discovery
-Rate thresholds. All intermediate files are saved with the *postfix* argument appended to the file name.
+**pyPhewasPipeline** is a streamlined combination of **pyPhewasLookup**, **pyPhewasModel**,
+and **pyPhewasPlot**. If using all default values for optional arguments,
+it takes a group file, phenotype file, and regression type and (1) creates the feature
+matrix, (2) runs the regressions, and (3) saves Manhattan, Log Odds, and Volcano plots with
+both Bonferroni and False Discovery Rate thresholds. All intermediate files
+are saved with the ``postfix`` argument appended to the file name.
 
 
 Required Arguments:
- * ``--phenotype``: 	the name of the phenotype CSV file (e.g. "icd9_data.csv")
- * ``--group``:			the name of the group CSV file (e.g. " group.csv")
- * ``--reg_type``:		the regression type to be used ("log", "lin", or "dur")
-Optional Arguments:
- * ``--path``:          the path to all input files and destination of output files (*default*: current directory)
- * ``--postfix``:       descriptive postfix for output files (*default*: "[covariates]_[group file name]")
- * ``--phewas_cov``:    a PheWAS code to use as covariate
- * ``--covariates``:	the variables to be used as covariates seperated by '+' (e.g. "SEX" or "SEX+MaxAgeAtICD")
- * ``--response``:	    the variable to predict (instead of genotype)
- * ``--imbalance``:		whether or not to show the direction of imbalance in the plot, must be "True" or "False" (*default*: True)
- * ``--thresh_type``:	the type of threshold to be used in the plot (See the key below for more information)
- * ``--custom_thresh``: custom threshold value, required if *thresh_type* ="custom" (float between 0 and 1)
+ * ``--phenotype``: 	Name of the phenotype file
+ * ``--group``:		    Name of the group file
+ * ``--reg_type``:      Type of regression to use ("log", "lin", or "dur")
+
+Optional Arguments [default value]:
+ * ``--path``:		    Path to all input files and destination of output files [current directory]
+ * ``--postfix``:       Descriptive postfix for output files ["_\ ``covariates``\ _\ ``group``"]
+ * ``--response``:	    Variable to predict ['genotype']
+ * ``--covariates``:	Variables to be used as covariates separated by '+' (e.g. "SEX" or "BMI+MaxAgeAtICD")
+ * ``--phewas_cov``:    A PheCode to use as covariate
+ * ``--thresh_type``:	Type of multiple comparisons correction threshold ("bon", "fdr", "custom")
+ * ``--imbalance``:		Show the direction of imbalance on the Manhattan plot ([True] or False)
+ * ``--phewas_label``:  Location of the PheCode labels on the Log Odds plot (["plot"] or "axis")
+ * ``--custom_thresh``: Custom threshold value, required if ``thresh_type = "custom"`` (float between 0 and 1)
 
 
-The valid options for thresh_type:
- * *bon*:	    Use the Bonferroni correction threshold
- * *fdr*:	    Use the False Discovery Rate threshold
- * *custom*:	Use a custom threshold specified by *--custom_thresh*
+**Example** Run a duration experiment with all default arguments::
 
+		pyPhewasPipeline --reg_type="dur" --phenotype="icd_data.csv" --group="group.csv"
 
-A sample execution of *pyPhewasPlot*::
+**Example** Run a binary experiment with covariates sex and race, plotting the results with FDR correction, and saving all files with the postfix "binary_prelim"::
 
-		pyPhewasPipline --path="/Users/me/Documents/EMRdata/" --phenotype="icd9_data.csv" --group="group.csv" --reg_type="log" --postfix="poster_Nov22"
+		pyPhewasPipeline --reg_type="log" --covariates="sex+race" --thresh_type="fdr" --postfix="binary_prelim" --phenotype="icd_data.csv" --group="group.csv"
