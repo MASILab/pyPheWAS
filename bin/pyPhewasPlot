@@ -39,7 +39,7 @@ args = parse_args()
 kwargs = {'path': Path(args.path),
           'statfile': args.statfile,
           'thresh_type': args.thresh_type,
-          'imbalance': eval(args.imbalance),
+          'imbalance': args.imbalance,
           'custom_thresh':args.custom_thresh,
           'phewas_label': args.phewas_label,
           'outfile':args.outfile,
@@ -56,6 +56,9 @@ assert kwargs['statfile'].endswith('.csv'), "%s is not a valid phenotype file (m
 assert osp.exists(kwargs['path'] / kwargs['statfile']), "%s does not exist" %(kwargs['path'] / kwargs['statfile'])
 
 assert kwargs['phewas_label'] in ["plot","axis"], "%s is not a valid PheCode label location" % (kwargs['phewas_label'])
+
+assert kwargs['imbalance'] in ["True", "False"], "%s is not a valid imbalance value (\"True\" or \"False\")" % kwargs['imbalance']
+kwargs['imbalance'] = eval(kwargs['imbalance'])
 
 # Print Arguments
 display_kwargs(kwargs)
