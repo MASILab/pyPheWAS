@@ -542,7 +542,7 @@ def get_fdr_thresh(p_values, alpha=0.05):
 
 	:returns: The FDR correction threshold
 	:rtype: float
-	
+
 	"""
 	sn = np.sort(p_values)
 	sn = sn[np.isfinite(sn)]
@@ -639,13 +639,13 @@ def get_x_label_positions(categories, lines=True):
 
 def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_format=''):
 	"""
-	Plots significant phnotype data on a Manhattan Plot.
-	
+	Plots significant phenotype data on a Manhattan Plot.
+
 	The significance of each phenotype (represented by :math:`-log_{10}(p)`\ ) is plotted along the
 	y-axis, with phenotypes plotted along the x-axis.
 	If ``save`` is provided, the plot is saved to a file; otherwise, the plot may be displayed with
 	matplotlib.pyplot.show() after this function returns.
-	
+
 
 	:param regressions: dataframe containing the regression results
 	:param thresh: p-value significance threshold
@@ -719,8 +719,8 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 
 def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plot"):
 	"""
-	Plots significant phnotype data on a Log Odds Plot.
-	
+	Plots significant phenotype data on a Log Odds Plot.
+
 	The log odds value & confidence interval is plotted along the x-axis, with Phenotypes sorted by category
 	plotted along the y-axis.
 	If ``save`` is provided, the plot is saved to a file; otherwise, the plot may be displayed with
@@ -808,7 +808,7 @@ def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plo
 def plot_volcano(regressions, save='', save_format=''):
 	"""
 	Plots all phenotype data on a Volcano Plot.
-	
+
 	The significance of each phenotype (represented by :math:`-log_{10}(p)`\ ) is plotted along the
 	y-axis, with log odds value (effect size) plotted along the x-axis. To improve plot legibility, only those
 	phenotypes which surpass the FDR/Bonferroni significance thresholds have labels displayed.
