@@ -89,8 +89,11 @@ h = ','.join(columns)
 np.savetxt(path /('agg_measures_' + outfile), fm[0],delimiter=',',header=h)
 print("...")
 np.savetxt(path /('icd_age_' + outfile), fm[1],delimiter=',',header=h)
-print("...")
-np.savetxt(path /('phewas_cov_' + outfile), fm[2],delimiter=',',header=h)
+
+if phewas_cov is not None:
+	# only save this if it actually means something
+	print("...")
+	np.savetxt(path /('phewas_cov_' + outfile), fm[2],delimiter=',',header=h)
 
 """
 Calculate runtime
