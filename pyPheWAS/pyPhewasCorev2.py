@@ -171,7 +171,7 @@ def get_cpt_codes(path, filename, reg_type):
 
 	"""
 
-	wholefname = path + filename
+	wholefname = path / filename
 	cptfile = pd.read_csv(wholefname,dtype={'CPT_CODE':str})
 	cptfile['CPT_CODE'] = cptfile['CPT_CODE'].str.strip()
 	phenotypes = pd.merge(cptfile, cpt_codes, on='CPT_CODE')
