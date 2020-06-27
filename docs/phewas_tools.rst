@@ -1,37 +1,34 @@
 PheWAS Tools
 ============
 This page describes the command line tools available for running PheWAS analyses.
-These tools require **phenotype** and **group**
-files. The formats of these files are explained in the :ref:`Basics` section.
+These tools require **phenotype** and **group** files, which are described in the
+:ref:`File Formats` section.
 
-Using pyPheWAS Research Tools
------------------------------
+Overview of pyPheWAS Research Tools
+-----------------------------------
+Phenome-Wide Association Studies (PheWAS) compare EMR phenotypes with a single dependent variable,
+historically a genetic marker. The tools described on this page are specifically for the study of
+phenotypes derived from *International Classification of Disease* (ICD) codes.
+They employ a mapping from ICD-9 and ICD-10 codes to 1,866 hierarchical phenotype codes (PheCodes).
+This mapping was originally constructed solely for ICD-9 codes [Denny2013]_,
+with later improvements to the ICD-9 mapping [Wei2017]_ and the addition of the
+ICD-10 code mapping [Wu2019]_. More information about the mapping can be found
+at the `PheWAS Catalog website <https://phewascatalog.org>`_.
 
-PheWAS analysis consists of 4 primary phases (illustrated below): 1) data preparation, 2) PheCode mapping
-and aggregation, 3) mass PheCode regression, and 4) result visualization. This page
+PheWAS consist of four primary phases: 1) data preparation, 2) PheCode mapping
+and aggregation, 3) mass PheCode regression, and 4) result visualization. (For more
+information, see :ref:`What is PheWAS?`) This page
 covers phases 2-4, which are accomplished by the following functions (in order):
 
-* **pyPhewasLookup**: map ICD-9 and ICD-10 codes to PheCodes & aggregate
+* :ref:`pyPhewasLookup`: map ICD-9 and ICD-10 codes to PheCodes & aggregate
   according to the desired regression type
-* **pyPhewasModel**: estimate logistic regression model between genotype and
+* :ref:`pyPhewasModel`: estimate logistic regression model between genotype and
   each PheCode
-* **pyPhewasPlot**: visualize the regression results from pyPhewasModel
+* :ref:`pyPhewasPlot`: visualize the regression results from pyPhewasModel
 
-
-.. figure:: pyPheWAS_Research_Tools.png
-
+The streamlined tool :ref:`pyPhewasPipeline` encompasses all three phases/tools above.
 
 .. note:: For information on the data preparation phase, please see the :ref:`Data Preparation` section.
-
-
-
-Regression Type
----------------
-Three regression types are available for PheWAS analyses.
-
- 1. **log**: binary aggregates (Is a PheCode present for a subject?)
- 2. **lin**: count aggregates (How many times is a PheCode present for a subject?)
- 3. **dur**: duration aggregates (What is the time interval [years] between the first and last instances of a PheCode for a subject?)
 
 
 pyPhewasLookup
@@ -39,9 +36,13 @@ pyPhewasLookup
 Generate a subject x PheCode feature matrix from ICD data.
 
 Maps ICD-9 and ICD-10 codes from the phenotype file to their corresponding PheCodes,
-then aggregates PheCode data across each subject according to the chosen :ref:`Regression Type`.
-This is saved as a 3xNxP feature matrix, where N = number of subjects and
+then aggregates PheCode data across each subject according to the chosen ``reg_type``.
+(Regression types are described in :ref:`Phenotype Aggregation`.)
+This is saved as an NxP feature matrix, where N = number of subjects and
 P = number of PheCodes.
+
+The ICD-9 map currently being used is `version 1.2 <https://phewascatalog.org/phecodes>`_
+and the ICD-10 map is `version 1.2beta <https://phewascatalog.org/phecodes_icd10>`_.
 
 Required Arguments:
  * ``--phenotype``: 	Name of the phenotype file
@@ -54,11 +55,14 @@ Optional Arguments [default value]:
  * ``--phewas_cov``:    A PheCode to use as covariate
 
 Output:
- Feature matrix with PheCodes as columns and subjects as rows, split into 3 files
+ Feature matrix with PheCodes as columns and subjects as rows, split into 2-3 files
 
  * **agg_measures**: aggregate PheCode measurement (log/lin/dur)
- * **icd_age**: maximum age on record for each PheCode, may be used as a covariate in pyPhewasModel by specifying "MaxAgeAtICD" in covariates list
- * **phewas_cov**: covarying PheCode matrix, tracks if a subject has at least one record of the PheCode specified by ``phewas_cov``
+ * **icd_age**: maximum age on record for each PheCode, may be used as a covariate
+   in **pyPhewasModel** by specifying "MaxAgeAtICD" in covariates list
+ * **phewas_cov**: covarying PheCode matrix, tracks if a subject has at least one
+   record of the PheCode specified by ``phewas_cov`` (This file will only be
+   created if ``phewas_cov`` is provided)
 
 
 **Example** Generate a feature matrix for a duration regression::
