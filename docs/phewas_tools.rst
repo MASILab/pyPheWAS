@@ -201,7 +201,7 @@ Threshold Types:
 
 .. note:: **Output Formats** Accepted output formats partially depend on which backend is
     active on the user's machine. However, most backends support png, pdf, ps, eps, and svg.
-    Vector-based formats (such as eps) may be opened with image editing software such as Inkscape or
+    Vector-based formats (such as svg or svgz) may be opened with image editing software such as Inkscape or
     Photoshop if the user would like to adjust PheCode text locations.
 
 pyPhewasPipeline
@@ -230,6 +230,7 @@ Optional Arguments [default value]:
  * ``--imbalance``:		Show the direction of imbalance on the Manhattan plot ([True] or False)
  * ``--phewas_label``:  Location of the PheCode labels on the Log Odds plot (["plot"] or "axis")
  * ``--custom_thresh``: Custom threshold value, required if ``thresh_type = "custom"`` (float between 0 and 1)
+ * ``--plot_format``:   Format for plot files ["png"]
 
 
 **Example** Run a duration experiment with all default arguments::
