@@ -44,9 +44,11 @@ Contents
    :maxdepth: 1
 
    basic
-   dataprep
-   researchtools
    tutorial
+   dataprep
+   phewas_tools
+   prowas_tools
+   references
    api
 
 Indices and tables
