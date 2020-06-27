@@ -1,10 +1,6 @@
-Basics
-======
+Getting Started
+===============
 
-Purpose
--------
-
-This tutorial is meant to help get a user started with pyPhewas and troubleshoot problems.
 
 Installation
 ------------
@@ -20,23 +16,76 @@ As long as the install is successful, the pyPheWAS package can now be run from a
 .. note:: If installing on a computing cluster (or other environment in which you do not have admin privileges) it may necessary to install pyPheWAS locally using pip's *--user* flag.
 
 
-What are Phewas codes?
-----------------------
+What is PheWAS?
+---------------
 
-**PheWAS**:  Phenome Wide Association Studies
+**PheWAS**:  Phenome-Wide Association Studies
 
-PheWAS codes categorize ICD codes into groups of related codes. There are over 15,000 ICD-9 and ICD-10 codes
-included in the Phewas categorization. All of these are mapped to 1865 PheWAS codes. The mappings used for this package
-and more information about PheWAS codes can be found `here <https://phewascatalog.org/>`_. The ICD-9 map currently used
-used is `version 1.2 <https://phewascatalog.org/phecodes>`_ and the ICD-10 map is
-`version 1.2b1 <https://phewascatalog.org/phecodes_icd10>`_.
+In brief, PheWAS examine the relationship between a large number of Electronic
+Medical Record (EMR) phenotypes and a single dependent variable, typically
+a genetic marker (see note). These studies, which were first proposed by Denny et al
+in 2010 [Denny2010]_, are a complement of the popular Genome-Wide Association Study
+(GWAS) framework, which compares many genetic markers to a single clinical phenotype.
+
+An overview of the PheWAS workflow is shown below. The pyPheWAS package covers
+all steps in the pipeline for two types of EMR data: International Classification
+of Disease (ICD) codes and Current Procedural Terminology (CPT) codes. To
+differentiate the two, studies of ICD codes are referred
+to as **PheWAS**, while studies of CPT codes are referred to as **ProWAS**.
+
+.. figure:: imgs/phewas_workflow.png
+
+* **Input files** consist of group demographic data and EMR event data. These files
+  are described in detail under :ref:`File Formats`.
+* The **Data Preparation** phase includes converting EMR event dates to subject ages,
+  case-control matching, censoring events, etc. These tools are covered in the
+  :ref:`Data Preparation` section.
+* In the **Phenotype Mapping & Aggregation** phase, individual EMR events are mapped
+  to their corresponding phenotypes and aggregated across each subject's record.
+  This phase is described in :ref:`pyPhewasLookup` for ICD data and
+  :ref:`pyProwasLookup` for CPT data. (Details regarding the phenotype mappings
+  used for ICD/CPT codes are included in these sections.)
+* In the **Mass Multivariate Regression** phase, a mass logistic regression is performed
+  across the Phenome, comparing the dependent variable with each aggregated phenotype and
+  any provided covariates. This phase is described in :ref:`pyPhewasModel` for ICD data and
+  :ref:`pyProwasModel` for CPT data.
+* Finally, the **Result Visualization** phase generates plots of the mass
+  regression results, comparing statistical significance and effect size across
+  the Phenome. This phase is described in :ref:`pyPhewasPlot` for ICD data and
+  :ref:`pyProwasPlot` for CPT data.
+
+.. note:: pyPheWAS tools are agnostic to the dependent regression variable, so long as
+  it is a binary quantity. Due to this, pyPheWAS may be used to study diseases
+  instead of traditional genetic markers. In order to avoid confusion with the
+  genetic roots of the term PheWAS, studies
+  such as this are referred to as *Phenome-Disease Association Studies* (PheDAS)
+  [Chaganti2019]_.
+
+
+Phenotype Aggregation
+---------------------
+There are three phenotype aggregation options for the :ref:`pyPhewasLookup`
+and :ref:`pyProwasLookup` tools.
+
+ 1. **log**: binary aggregates (Is a phenotype present/absent for a subject?)
+ 2. **lin**: count aggregates (How many times is a phenotype present for a subject?)
+ 3. **dur**: duration aggregates (What is the time interval [years] between the first
+    and last instances of a phenotype for a subject?)
 
 
 File Formats
 ------------
+All tools described in :ref:`Data Preparation`, :ref:`PheWAS Tools`, and
+:ref:`ProWAS tools` require EMR data contained in a phenotype file and/or group
+file. The formats of these files are described below.
 
-Phenotype File
-^^^^^^^^^^^^^^
+Phenotype File (ICD data)
+^^^^^^^^^^^^^^^^^^^^^^^^^
+The PheWAS phenotype file format is shown below; this phenotype file
+contains ICD event data for each subject in the group file, with one event per line.
+All ages are in years. If your ICD event records were provided with dates instead
+of ages, *AgeAtICD* may be calculated using the :ref:`convertEventToAge` tool.
+*ICD_TYPE* is restricted to the values *9* and *10*.
 
 ==== ======== ======== ========
 id   ICD_CODE ICD_TYPE AgeAtICD
@@ -47,26 +96,45 @@ id   ICD_CODE ICD_TYPE AgeAtICD
 9999 740.2    9        0.2
 ==== ======== ======== ========
 
-This is the file format that is required for the phenotype file. This file is processed by pyPhewas into either
 
- * For the logarithmic regression, all id-phewas combinations and a 0/1 of whether or not they occurred.
- * For the linear regression, all id-phewas combinations and the count of times that the id corresponded to the given phewas codes
+Phenotype File (CPT data)
+^^^^^^^^^^^^^^^^^^^^^^^^^
+The ProWAS phenotype file format is shown below; this phenotype file
+contains CPT event data for each subject in the group file, with one event per line.
+All ages are in years. If your CPT event records were provided with dates instead
+of ages, *AgeAtCPT* may be calculated using the :ref:`convertEventToAge` tool.
 
-Genotype File
-^^^^^^^^^^^^^
+==== ======== ========
+id   CPT_CODE AgeAtCPT
+==== ======== ========
+A52   790.29   10.4
+A76   580.8    11.5
+B01   A03.2    60.0
+B21   740.2    0.2
+==== ======== ========
 
-===== ======== ==================
-id    genotype *other covariates*
-===== ======== ==================
-1     0        ...
-32    0        ...
-131   1        ...
-200   0        ...
-===== ======== ==================
 
-The genotype column and the 0/1 denote the presence or absence of some other condition that the patient may have. The
-'genotype' is the default prediction variable that is passed by the Phewas object into the logarithmic and linear
-regressions. If you would prefer to use other covariates, they must be specified as outlined in the documentation. While
-using the genotype column is not required, it is highly recommended for the use of Phewas.
+Group File
+^^^^^^^^^^
+The group file format is shown below; this file contains the dependent variable
+for the mass logistic regression, in addition to demographic information
+(e.g. sex, race, age at diagnosis, etc.) for each subject.
 
-.. note:: The order of the columns as shown above is not required, but it does encourage readability when opening and reading the files that are input into pyPhewas.
+===== ======== ============= ==================
+id    genotype MaxAgeAtVisit *other covariates*
+===== ======== ============= ==================
+1     0        10.365         ...
+32    0        15.444         ...
+131   1        13.756         ...
+200   0        12.887         ...
+===== ======== ============= ==================
+
+By default, the PheWAS and ProWAS tools use the **genotype** column as the dependent variable, but
+any column in the group file may be specified as the dependent variable via the
+``response`` argument so long as the column contains only the values 0 and 1.
+
+*MaxAgeAtVisit* is the maximum recorded event age for each subject; this column is optional.
+If not provided, it will be calculated at runtime from the phenotype data provided. This
+column is used to generate a maximum age covariate feature matrix, which records the
+maximum age of each subject at each PheCode/ProCode; *MaxAgeAtVisit* is used as the default
+value for PheCodes/ProCodes not in the subject's record.
