@@ -149,21 +149,16 @@ Visualizes the regression results through 3 complementary views:
    the effect of each ProCode is positive (+) or negative (-).
 2. *Log Odds Plot*: This view compares effect size across ProCodes. The log odds
    of each ProCode and its confidence interval are plotted on the horizontal axis,
-   with ProCodes presented along the vertical axis. If ``ProWAS_label = "plot"``\ ,
-   ProCode labels are displayed directly on the plot next to their markers. If ``ProWAS_label = "axis"``\ ,
+   with ProCodes presented along the vertical axis. If ``prowas_label = "plot"``\ ,
+   ProCode labels are displayed directly on the plot next to their markers. If ``prowas_label = "axis"``\ ,
    ProCodes are displayed outside of the axes, along the left edge.
 3. *Volcano Plot*: This view compares statistical significance and effect size
    across all ProCodes. The log odds of each ProCode is plotted along the
    horizontal axis, with -log\ :sub:`10`\ (p) along the vertical axis.
    ProCodes are colored according to significance level (Not significant, FDR, Bonferroni).
 
-In both the Manhattan and Log Odds plots:
-
-* ProCode markers are colored and sorted according to 18 general categories
-  (mostly organ systems and disease groups, e.g. “circulatory system” and
-  “mental disorders”).
-* Only ProCodes which are significant after the chosen multiple comparisons
-  correction is applied are included.
+In both the Manhattan and Log Odds plots only ProCodes which are significant
+after the chosen multiple comparisons correction is applied are included.
 
 Required Arguments:
  * ``--statfile``:		Name of the output regressions file from **pyProwasModel**
