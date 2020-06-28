@@ -336,7 +336,7 @@ def get_phenotype_info(p_index, code_type):
 		return [p_code, p_name, p_cpt_rollup]
 
 
-def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='', covariates='',
+def fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3='', covariates='',
                          response='genotype',  lr=0, phenotype='', code_type='ICD'):
 	"""
 	Runs a logistic regression for a specific phenotype vector
@@ -422,12 +422,14 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='',
 		reg_result = [-math.log10(p), p, beta, conf_int, stderr]  # collect results
 
 	except ValueError as ve:
+		print('\n')
 		if phenotype is not '':
 			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
 		print(ve)
 		print('lr = % d' %lr)
 		reg_result = [np.nan, np.nan, np.nan, np.nan, np.nan]
 	except Exception as e:
+		print('\n')
 		if phenotype is not '':
 			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
 		print(e)
@@ -512,7 +514,7 @@ def run_phewas(fm, genotypes, code_type, covariates='', response='genotype'):
 				use_regular = 1
 			else:
 				use_regular = 0
-			stat_info = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3, covariates,
+			stat_info = fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3, covariates,
 			                                 response, phenotype = phen_info[0:2], lr=use_regular, code_type=code_type)
 		else:
 			# not enough samples to run regression
