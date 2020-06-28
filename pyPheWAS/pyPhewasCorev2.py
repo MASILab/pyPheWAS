@@ -316,19 +316,28 @@ def get_phenotype_info(p_index, code_type):
 	:returns: list of phenotype info
 	:rtype: list of str
 	"""
-	p_code = phewas_codes.loc[p_index, 'PheCode']
-	p_name = phewas_codes.loc[p_index, 'Phenotype']
-	icd9_ix = icd9_codes['PheCode'] == p_code
-	icd10_ix = icd10_codes['PheCode'] == p_code
-
-	p_icd9_rollup = '/'.join(icd9_codes.loc[icd9_ix, 'ICD_CODE'].tolist())
-	p_icd10_rollup = '/'.join(icd10_codes.loc[icd10_ix, 'ICD_CODE'].tolist())
-
-	return [p_code, p_name, p_icd9_rollup,p_icd10_rollup]
+	if code_type == 'ICD':
+		p_code = phewas_codes.loc[p_index, 'PheCode']
+		p_name = phewas_codes.loc[p_index, 'Phenotype']
+		icd9_ix = icd9_codes['PheCode'] == p_code
+		icd10_ix = icd10_codes['PheCode'] == p_code
+	
+		p_icd9_rollup = '/'.join(icd9_codes.loc[icd9_ix, 'ICD_CODE'].tolist())
+		p_icd10_rollup = '/'.join(icd10_codes.loc[icd10_ix, 'ICD_CODE'].tolist())
+		
+		return [p_code, p_name, p_icd9_rollup, p_icd10_rollup]
+	
+	else:
+		p_code = prowas_codes.loc[p_index, 'prowas_code']
+		p_name = prowas_codes.loc[p_index, 'prowas_desc']
+		cpt_ix = cpt_codes['prowas_code'] == p_code
+		p_cpt_rollup = '/'.join(cpt_codes.loc[cpt_ix, 'CPT_CODE'].tolist())
+		
+		return [p_code, p_name, p_cpt_rollup]
 
 
 def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='', covariates='',
-                         response='genotype',  lr=0, phenotype=''):
+                         response='genotype',  lr=0, phenotype='', code_type='ICD'):
 	"""
 	Runs a logistic regression for a specific phenotype vector
 
@@ -352,6 +361,7 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='',
 	:param response: *[optional]* response variable in the logit model (default: *genotype*)
 	:param lr: *[optional]* regularized maximum likelihood optimization flag (0 [default] = not regularized; 1 = regularized)
 	:param phenotype: *[optional]* phenotype info [code, description] for this regression (used only for error handling)
+	:param code_type: *[optional]*  EMR data type ('ICD' [default], or 'CPT')
 	:type genotypes: pandas DataFrame
 	:type phen_vector1: numpy array
 	:type phen_vector2: numpy array
@@ -360,6 +370,7 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='',
 	:type response: str
 	:type lr: int [0,1]
 	:type phenotype: list of str
+	:type code_type: str
 
 	:returns: regression results
 	:rtype: list
@@ -374,15 +385,15 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='',
 		covariates = '+' + covariates
 
 	# add MaxAgeAtEvent to data (if needed)
-	if 'MaxAgeAtICD' in covariates:
+	if (code_type == 'ICD') and ('MaxAgeAtICD' in covariates):
 		data['MaxAgeAtICD'] = phen_vector2
-	elif 'MaxAgeAtCPT' in covariates:
+	elif (code_type == 'CPT') and ('MaxAgeAtCPT' in covariates):
 		data['MaxAgeAtCPT'] = phen_vector2
 
 	# add phewas_cov feature matrix to data & covariates (if needed)
 	if phen_vector3.any():
-		data['phe'] = phen_vector3
-		covariates = covariates + '+ phe'
+		data['phe_cov'] = phen_vector3
+		covariates = covariates + '+ phe_cov'
 
 	# define model ('f') for the logisitc regression
 	if lr == 1:
@@ -403,10 +414,10 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3='',
 		else:
 			linreg = smf.logit(f, data).fit(method='bfgs', disp=False)
 		# get results
-		p = model.pvalues.y  # yes
-		beta = model.params.y  # yes
-		conf = model.conf_int()  # yes
-		conf_int = '[%s,%s]' % (conf[0]['y'], conf[1]['y'])  # yes
+		p = model.pvalues.y
+		beta = model.params.y
+		conf = model.conf_int()
+		conf_int = '[%s,%s]' % (conf[0]['y'], conf[1]['y'])
 		stderr = model.bse.y
 		reg_result = [-math.log10(p), p, beta, conf_int, stderr]  # collect results
 
@@ -472,18 +483,26 @@ def run_phewas(fm, genotypes, code_type, covariates='', response='genotype'):
 	genotypes.sort_values(by='id', inplace=True)
 	genotypes.reset_index(inplace=True,drop=True)
 
-	num_phecodes = len(fm[0, 0])
-	# thresh = math.ceil(genotypes.shape[0] * 0.03)
+	num_pheno = len(fm[0, 0])
+	# check number of phenotypes in the feature matrix
+	if code_type == 'ICD':
+		assert num_pheno == phewas_codes.shape[0], "Expected %d columns in PheWAS feature matrix, but found %d. Please check the feature matrix" %(phewas_codes.shape[0], num_pheno)
+	else:
+		assert num_pheno == prowas_codes.shape[0], "Expected %d columns in ProWAS feature matrix, but found %d. Please check the feature matrix" %(prowas_codes.shape[0], num_pheno)
 
 	# store all of the pertinent data from the regressions
-	regressions = pd.DataFrame(columns=output_columns)
+	if code_type == 'ICD':
+		out_cols = phewas_reg_cols
+	else:
+		out_cols = prowas_reg_cols
+	regressions = pd.DataFrame(columns=out_cols)
 
-	control = fm[0][genotypes.genotype == 0, :]
-	disease = fm[0][genotypes.genotype == 1, :]
-	# find all phecodes that only present for a single genotype (ie only controls or only diseased show the phecode) -> have to use regularization
+	control = fm[0][genotypes[response] == 0, :]
+	disease = fm[0][genotypes[response] == 1, :]
+	# find all phecodes that only present for a single group (ie only controls or only case show the phecode) -> have to use regularization
 	inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
-	for index in tqdm(range(num_phecodes), desc='Running Regressions'):
-		phewas_info = get_phenotype_info(index, code_type)
+	for index in tqdm(range(num_pheno), desc='Running Regressions'):
+		phen_info = get_phenotype_info(index, code_type)
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
@@ -494,16 +513,17 @@ def run_phewas(fm, genotypes, code_type, covariates='', response='genotype'):
 			else:
 				use_regular = 0
 			stat_info = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, phen_vector3, covariates,
-			                                 response, phenotype = phewas_info[0:2], lr=use_regular)
+			                                 response, phenotype = phen_info[0:2], lr=use_regular, code_type=code_type)
 		else:
 			# not enough samples to run regression
 			stat_info = [np.nan, np.nan, np.nan, np.nan, np.nan]
 
 		# save regression data
-		info = phewas_info[0:2] + stat_info + [phewas_info[2]] + [phewas_info[3]]
+		info = phen_info[0:2] + stat_info + phen_info[2:]
+			
 		regressions.loc[index] = info
 
-	return regressions.dropna(subset=['p-val']).sort_values(by='PheWAS Code')
+	return regressions.dropna(subset=['p-val']).sort_values(by='p-val') # sort by significance
 
 
 """
@@ -907,7 +927,7 @@ def display_kwargs(kwargs):
 		print(str(k) + '.'*num_dots + str(v))
 
 
-output_columns = ['PheWAS Code',
+phewas_reg_cols = ['PheWAS Code',
 				  'PheWAS Name',
 				  '\"-log(p)\"',
 				  'p-val',
@@ -916,6 +936,15 @@ output_columns = ['PheWAS Code',
 				  'std_error',
 				  'ICD-9',
 				  'ICD-10']
+
+prowas_reg_cols = ['ProWAS Code',
+				  'ProWAS Name',
+				  '\"-log(p)\"',
+				  'p-val',
+				  'beta',
+				  'Conf-interval beta',
+				  'std_error',
+				  'CPT']
 
 cat_colors = {'other': 'gold',
                'circulatory system': 'xkcd:bright red',
