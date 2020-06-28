@@ -659,7 +659,7 @@ def get_x_label_positions(categories, lines=True):
 	return label_positions
 
 
-def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_format=''):
+def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, save='', save_format=''):
 	"""
 	Plots significant phenotype data on a Manhattan Plot.
 
@@ -671,11 +671,13 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 
 	:param regressions: dataframe containing the regression results
 	:param thresh: p-value significance threshold
+	:param code_type: type of EMR data ('ICD' or 'CPT')
 	:param show_imbalance: boolean variable that determines whether or not to show imbalances on the plot (default True)
 	:param save: the output file to save to (if empty, display the plot)
 	:param save_format: format of the save file
 	:type regressions: pandas DataFrame
 	:type thresh: float
+	:type code_type: str
 	:type show_imbalance: boolean
 	:type save: str
 	:type save_format: str
@@ -687,9 +689,21 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
-	# Merge regressions with Phewas data to get categories
-	regressions = pd.merge(regressions, phewas_codes, left_on='PheWAS Code', right_on='PheCode').sort_values(
-		by='category')
+	# Merge regressions with phenotype data to get categories
+	if code_type == 'ICD':
+		pheno_codes = phewas_codes
+		reg_key = 'PheWAS Code'
+		map_key = 'PheCode'
+		cat_key = 'category'
+		pheno_name = 'Phenotype'
+	else:
+		pheno_codes = prowas_codes
+		reg_key = 'ProWAS Code'
+		map_key = 'prowas_code'
+		cat_key = 'ccs'
+		pheno_name = 'prowas_desc'
+		
+	regressions = pd.merge(regressions, pheno_codes, left_on=reg_key, right_on=map_key).sort_values(by=cat_key)
 
 	# Plot all points w/ labels
 	e = 1 # x-axis counter
@@ -710,17 +724,20 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 				mew = 0.0
 				m = 'o'
 			# Plot PheCode data point & format PheCode label
-			ax.plot(e, logp_ix, m, color=cat_colors[data['category_string']], fillstyle='full', markeredgewidth=mew)
-			artists.append(ax.text(e, logp_ix, data['Phenotype'], rotation=89, va='bottom', fontsize=6))
+			if code_type == 'ICD': c = cat_colors[data['category_string']]
+			else: c = 'xkcd:aqua' # constant color
+			ax.plot(e, logp_ix, m, color=c, fillstyle='full', markeredgewidth=mew)
+			artists.append(ax.text(e, logp_ix, data[pheno_name], rotation=89, va='bottom', fontsize=6))
 			e += 15
 
-	# Legend
-	line1 = []
-	box = ax.get_position()
-	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
-	for lab in cat_colors.keys():
-		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=cat_colors[lab], label=lab))
-	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
+	# Category Legend
+	if code_type == 'ICD':
+		line1 = []
+		box = ax.get_position()
+		ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
+		for lab in cat_colors.keys():
+			line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=cat_colors[lab], label=lab))
+		artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, 0), loc='upper center', fancybox=True, ncol=4, prop={'size': 6}))
 
 	# Plot x axis
 	ax.axhline(y=0, color='black')
@@ -739,7 +756,7 @@ def plot_manhattan(regressions, thresh, show_imbalance=True, save='', save_forma
 	return
 
 
-def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plot"):
+def plot_odds_ratio(regressions, thresh, code_type='ICD', save='', save_format='', label_loc="plot"):
 	"""
 	Plots significant phenotype data on a Log Odds Plot.
 
@@ -750,11 +767,13 @@ def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plo
 
 	:param regressions: dataframe containing the regression results
 	:param thresh: p-value significance threshold
+	:param code_type: type of EMR data ('ICD' or 'CPT')
 	:param save: the output file to save to (if empty, display the plot)
 	:param save_format: format of the save file
 	:param label_loc: where to plot Phenotype labels ["plot" (defulat) or "axis"]
 	:type regressions: pandas DataFrame
 	:type thresh: float
+	:type code_type: str
 	:type save: str
 	:type save_format: str
 	:type label_loc: str
@@ -766,9 +785,21 @@ def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plo
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
-	# Merge regressions with Phewas data to get categories
-	regressions = pd.merge(regressions, phewas_codes, left_on='PheWAS Code', right_on='PheCode').sort_values(
-		by='category')
+	# Merge regressions with phenotype data to get categories
+	if code_type == 'ICD':
+		pheno_codes = phewas_codes
+		reg_key = 'PheWAS Code'
+		map_key = 'PheCode'
+		cat_key = 'category'
+		pheno_name = 'Phenotype'
+	else:
+		pheno_codes = prowas_codes
+		reg_key = 'ProWAS Code'
+		map_key = 'prowas_code'
+		cat_key = 'ccs'
+		pheno_name = 'prowas_desc'
+	
+	regressions = pd.merge(regressions, pheno_codes, left_on=reg_key, right_on=map_key).sort_values(by=cat_key)
 
 
 	# Plot all points w/ labels
@@ -785,16 +816,18 @@ def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plo
 			# Add Phecode label
 			if label_loc == "plot":
 				if beta_ix > 0: # only difference is ha (horizontal alignment)
-					artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, ha='left', fontsize=text_size))
+					artists.append(ax.text(beta_ix, e, data[pheno_name], rotation=0, ha='left', fontsize=text_size))
 				else:
-					artists.append(ax.text(beta_ix, e, data['Phenotype'], rotation=0, ha='right', fontsize=text_size))
+					artists.append(ax.text(beta_ix, e, data[pheno_name], rotation=0, ha='right', fontsize=text_size))
 			else: # location = "axis"
-				phecode_labels.append(data['Phenotype'])
+				phecode_labels.append(data[pheno_name])
 				phecode_locs.append(e)
 
 			# Plot Phecode Data
-			ax.plot(beta_ix, e, 'o', color=cat_colors[data['category_string']], fillstyle='full', markeredgewidth=0.0)
-			ax.plot([data['lowlim'], data['uplim']], [e, e], color=cat_colors[data['category_string']])
+			if code_type == 'ICD': c = cat_colors[data['category_string']]
+			else: c = 'xkcd:aqua' # constant color
+			ax.plot(beta_ix, e, 'o', color=c, fillstyle='full', markeredgewidth=0.0)
+			ax.plot([data['lowlim'], data['uplim']], [e, e], color=c)
 			e += 15
 
 	# Plot y axis
@@ -806,12 +839,13 @@ def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plo
 		frame1.axes.get_yaxis().set_visible(False)
 
 	# Legend
-	line1 = []
-	box = ax.get_position()
-	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
-	for lab in cat_colors.keys():
-		line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=cat_colors[lab], label=lab))
-	artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.125), loc='upper center', fancybox=True, ncol=4, prop={'size': text_size}))
+	if code_type == 'ICD':
+		line1 = []
+		box = ax.get_position()
+		ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
+		for lab in cat_colors.keys():
+			line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor=cat_colors[lab], label=lab))
+		artists.append(ax.legend(handles=line1, bbox_to_anchor=(0.5, -0.125), loc='upper center', fancybox=True, ncol=4, prop={'size': text_size}))
 
 
 	# Save the plot
@@ -827,7 +861,7 @@ def plot_odds_ratio(regressions, thresh, save='', save_format='', label_loc="plo
 	return
 
 
-def plot_volcano(regressions, save='', save_format=''):
+def plot_volcano(regressions, code_type='ICD', save='', save_format=''):
 	"""
 	Plots all phenotype data on a Volcano Plot.
 
@@ -838,9 +872,11 @@ def plot_volcano(regressions, save='', save_format=''):
 	matplotlib.pyplot.show() after this function returns.
 
 	:param regressions: dataframe containing the regression results
+	:param code_type: type of EMR data ('ICD' or 'CPT')
 	:param save: the output file to save to (if empty, display the plot)
 	:param save_format: format of the save file
 	:type regressions: pandas DataFrame
+	:type code_type: str
 	:type save: str
 	:type save_format: str
 
@@ -859,6 +895,11 @@ def plot_volcano(regressions, save='', save_format=''):
 	artists = []
 	plt.ylabel('-log10(p)')
 	plt.xlabel('Log Odds Ratio')
+	
+	if code_type == 'ICD':
+		pheno_name = 'PheWAS Name'
+	else:
+		pheno_name = 'ProWAS Name'
 
 	for ix,data in regressions.iterrows():
 		logp_ix = data['"-log(p)"']
@@ -866,10 +907,10 @@ def plot_volcano(regressions, save='', save_format=''):
 		# determine marker color & label based on thresholds
 		if  data['p-val'] < bon:
 			c = 'gold'
-			phe = data['PheWAS Name']
+			phe = data[pheno_name]
 		elif data['p-val'] < fdr:
 			c = 'midnightblue'
-			phe = data['PheWAS Name']
+			phe = data[pheno_name]
 		else:
 			c = 'slategray'
 			phe = ''
