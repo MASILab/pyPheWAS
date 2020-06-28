@@ -76,11 +76,16 @@ Load Data
 print("Retrieving group data.")
 genotypes = get_group_file(path, group)
 
+# check response variable
+assert response in genotypes.columns, "response %s is not a column in the group file" % response
+
 # check covariates
 if covariates != '':
-    for cov in covariates.split('+'):
+    for cov in covariates.replace(" ", "").split('+'):
         if cov != 'MaxAgeAtICD':
             assert cov in genotypes.columns, "covariate %s is not a column in the group file" % cov
+        else:
+            assert 'MaxAgeAtICD' not in genotypes.columns, "covariate %s is a reserved covariate name; please remove or rename this column in the group file" % cov
 
 print('Loading feature matrices.')
 
