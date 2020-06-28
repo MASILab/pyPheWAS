@@ -73,16 +73,27 @@ locals().update(kwargs)
 """
 Load Data
 """
-print("Retrieving group data...")
+print("Retrieving group data.")
 genotypes = get_group_file(path, group)
+
+# check covariates
+if covariates != '':
+    for cov in covariates.split('+'):
+        if cov != 'MaxAgeAtICD':
+            assert cov in genotypes.columns, "covariate %s is not a column in the group file" % cov
+
+print('Loading feature matrices.')
 
 a = np.loadtxt(path / ('agg_measures_' + feature_matrix), delimiter=',')
 
 if 'MaxAgeAtICD' in covariates:
+    assert osp.exists(kwargs['path'] / ('icd_age_' + kwargs['feature_matrix'])), "%s does not exist" % (kwargs['path'] / ('icd_age_' + kwargs['feature_matrix']))
     b = np.loadtxt(path / ('icd_age_' + feature_matrix), delimiter=',')
 else:
     b = np.zeros_like(a)
+
 if phewas_cov is not None:
+    assert osp.exists(kwargs['path'] / ('phewas_cov_' + kwargs['feature_matrix'])), "%s does not exist" % (kwargs['path'] / ('phewas_cov_' + kwargs['feature_matrix']))
     c = np.loadtxt(path / ('phewas_cov_' + feature_matrix), delimiter=',')
 else:
     c = np.zeros_like(a)
