@@ -78,7 +78,7 @@ else:
 
 # Assign the output postfix if none was assigned
 if kwargs['postfix'] is None:
-    kwargs['postfix'] = osp.splitext(kwargs['groupfile'])[0]
+    kwargs['postfix'] = osp.splitext(kwargs['group'])[0]
     if kwargs['covariates'] is not '':
         kwargs['postfix'] = kwargs['covariates'] + '_' + kwargs['postfix']
 else:

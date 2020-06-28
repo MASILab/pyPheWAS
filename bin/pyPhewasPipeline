@@ -78,7 +78,7 @@ else:
 
 # Assign the output postfix if none was assigned
 if kwargs['postfix'] is None:
-    kwargs['postfix'] = osp.splitext(kwargs['groupfile'])[0]
+    kwargs['postfix'] = osp.splitext(kwargs['group'])[0]
     if kwargs['covariates'] is not '':
         kwargs['postfix'] = kwargs['covariates'] + '_' + kwargs['postfix']
 else:
@@ -106,6 +106,17 @@ phenotypes = get_icd_codes(path, phenotype, regression_map[reg_type])
 
 print("Retrieving group data...")
 genotypes = get_group_file(path, group)
+
+# check response variable
+assert response in genotypes.columns, "response %s is not a column in the group file" % response
+
+# check covariates
+if covariates != '':
+    for cov in covariates.replace(" ", "").split('+'):
+        if cov != 'MaxAgeAtICD':
+            assert cov in genotypes.columns, "covariate %s is not a column in the group file" % cov
+        else:
+            assert 'MaxAgeAtICD' not in genotypes.columns, "covariate %s is a reserved covariate name; please remove or rename this column in the group file" % cov
 
 if not {'MaxAgeAtVisit'}.issubset(genotypes.columns):
 	print('WARNING: MaxAgeAtVisit was not found in group file. Calculating MaxAgeAtVisit from phenotype data')
@@ -181,11 +192,11 @@ for t in thresh_type:
     savem = path / ('Manhattan_%s_%s.%s' %(t, postfix, plot_format))
     saveb = path / ('LogOdds_%s_%s.%s' %(t, postfix, plot_format))
 
-    plot_manhattan(regressions, thresh, imbalance, savem, plot_format)
-    plot_odds_ratio(regressions, thresh, saveb, plot_format, phewas_label)
+    plot_manhattan(regressions, thresh, 'ICD', imbalance, savem, plot_format)
+    plot_odds_ratio(regressions, thresh, 'ICD', saveb, plot_format, phewas_label)
    
-savev = path / ('Volcano_%s_%s.%s' %(t, postfix, plot_format))
-plot_volcano(regressions, savev, plot_format)
+savev = path / ('Volcano_%s.%s' %(postfix, plot_format))
+plot_volcano(regressions, 'ICD', savev, plot_format)
 
 
 """
