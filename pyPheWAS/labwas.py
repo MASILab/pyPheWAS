@@ -36,7 +36,7 @@ def get_bon_thresh(normalized, power):  # same
     return power / sum(np.isfinite(normalized))
 
 for index in range(m):
-    print index
+    print(index)
     phen_vector1 = fm[:, index]
     res = calculate_odds_ratio(genotypes, phen_vector1,0)
 

@@ -292,7 +292,7 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
         phen_vector3 = fm[2][:, index]
         if sum(phen_vector1)>5:
             if index in inds:
-                print index
+                print(index)
                 res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, reg_type, covariates, lr=1, response=response,
                                    phen_vector3=phen_vector3)
             else:
@@ -750,4 +750,3 @@ def phewas(path, filename, groupfile, covariates, response='', phewas_cov='', re
     if output:
         sig_regressions.to_csv(path + output, index=False)
     return (results[0], results[1], regressions)
-

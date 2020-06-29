@@ -886,7 +886,7 @@ def phewas(path, filename, groupfile, covariates, response='', phewas_cov='', re
         plot_odds_ratio(y, normalized, -math.log10(thresh0), -math.log10(thresh1), -math.log10(thresh2), thresh_type,
                         saveb, path, imbalances)
     except:
-        print 'no corr'
+        print('no corr')
 
     sig_regressions = regressions.dropna(subset=['"-log(p)"']).sort_values('"-log(p)"', ascending=False)
     if thresh_type == 0:
@@ -898,4 +898,3 @@ def phewas(path, filename, groupfile, covariates, response='', phewas_cov='', re
     if output:
         sig_regressions.to_csv(path + output, index=False)
     return (results[0], results[1], regressions)
-
