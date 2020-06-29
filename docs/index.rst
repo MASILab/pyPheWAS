@@ -13,7 +13,7 @@ Features
 * Compute mass logistic regressions on patient data
 * Visualize results
 
-Latest Release: pyPheWAS 3.1.0
+Latest Release: pyPheWAS 3.1.1
 ------------------------------
 
 This release includes:
