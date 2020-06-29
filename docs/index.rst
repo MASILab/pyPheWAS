@@ -8,7 +8,7 @@ line tools. If this tools contributes to a scientific publication, please cite u
 
 Features
 --------
-* Analysis of International Classification of Disease codes (v9 and v10) and Current Procedural Terminology codes
+* Analysis of International Classification of Disease codes (both ICD-9 and ICD-10) and Current Procedural Terminology codes
 * EMR data cleaning and preparation
 * Compute mass logistic regressions on patient data
 * Visualize results
