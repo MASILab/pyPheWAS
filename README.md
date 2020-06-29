@@ -4,18 +4,31 @@ Repository for the pyPheWAS project.
 Full documentation at https://pyphewas.readthedocs.io/en/latest/
 
 ### Developers
-Bennett Landman, PhD
+Cailey Kerley, B.S.
 
 Shikha Chaganti, PhD
 
-Cailey Kerley, B.S.
+Bennett Landman, PhD
 
-## Latest Release: pyPheWAS 3.0.1
+## Latest Release: pyPheWAS 3.1.1
+This release includes:
+
+- New Analysis Type: ProWAS Tools
+- New Plot Type: Volcano Plot (see pyPhewasPlot)
+- maximizeControls now saves explicit Case/Control matches
+- New PheCode category colors in plots are more distinguishable
+- Improved command line tool argument handling
+- Improved error handling
+- Documentation overhaul
+- API update
+- Minor bug fixes
+
+### Older Releases
+
+#### pyPheWAS 3.0.1
 - Bug fixes including __FDR & Bonferroni threshold calculations__
 - Header saved in feature matrices
 - More file formats available for saving plots
-
-### Older Releases
 
 #### pyPheWAS 3.0.0
 - Support for both ICD 9 and ICD 10
