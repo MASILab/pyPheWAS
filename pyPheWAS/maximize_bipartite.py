@@ -1,3 +1,9 @@
+"""
+**Case/Control Matching functions**
+
+Contains all functions that implement the :ref:`maximizeControls` data preparation tool.
+"""
+
 import pandas as pd
 from hopcroftkarp import HopcroftKarp
 import numpy as np
@@ -54,8 +60,43 @@ def output_matches(path, outputfile, data, all_used, success, goal, matched):
 	new_data.to_csv(path / outputfile, index=False)
 	print("New group file in %s" % (path / outputfile))
 
+	return
+
 
 def control_match(path, input, output, keys, deltas, condition='genotype', goal=1):
+	"""
+	Estimate an optimal case-control mapping.
+
+	Match cases/controls (defined by value of ``condition``\ ) with a ``goal``\ :1 ratio
+	based on similarity of ``keys``\ . Specify tolerance interval for ``keys`` via ``deltas``\ .
+	For an exact match, specify a delta of 0. The order of
+	``deltas`` values must match the order of the ``keys``\ .
+
+	Optimal matches are estimated via the HopcroftKarp algorithm. A new group file
+	with all matched subjects is saved to ``output``\ . The explicit matching of
+	cases to controls is saved to ``output``\ __matched_pairs.csv
+
+	:param path: path to input and output
+	:param input: name of file containing group data
+	:param output: name of output matched group file
+	:param keys: comma-separated list of matching criteria (columns in input file)
+	:param deltas: comma-separated list of tolerance intervals for the matching criteria
+	:param condition: Field denoting group assignments [default: genotype]
+	:param goal: n, target matching ratio (control:case => n:1) [default: 1]
+
+	:type path: pathlib Path
+	:type input: str
+	:type output: str
+	:type keys: str
+	:type deltas: str
+	:type condition: str
+	:type goal: int
+
+	:returns: None
+
+	.. note:: If the matching algorithm cannot achieve the specified matching ratio, it will issue a warning and report the achieved ratio.
+
+	"""
 	# Reformat arguments
 	keys = keys.replace(" ", "").split(',')
 	deltas = deltas.replace(" ", "").split(',')
@@ -63,7 +104,7 @@ def control_match(path, input, output, keys, deltas, condition='genotype', goal=
 
 	# save original goal value
 	orig_goal = goal
-	
+
 	# Assign new value for outputfile
 	if output is None:
 		inname = input.strip('.csv')
@@ -156,7 +197,7 @@ def control_match(path, input, output, keys, deltas, condition='genotype', goal=
 	# export matching pairs
 	print('Saving case/control mapping to %s' %match_file)
 	targets.to_csv(match_file,index=False, columns=cols)
-	
+
 	if len(tid) != orig_num_target:
 		g = 'controls' if match_by_group0 else 'cases'
 		print('WARNING: Some %s were dropped during matching (%d out of %d %s remain)' %(g,len(tid),orig_num_target,g))
@@ -168,4 +209,4 @@ def control_match(path, input, output, keys, deltas, condition='genotype', goal=
 
 	output_matches(path, output, data, all_used, matching_success, orig_goal, final_ratio)
 
-
+	return
