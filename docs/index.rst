@@ -1,32 +1,38 @@
 Welcome to pyPheWAS's documentation!
 ====================================
 
-The pyPhewas module is used to execute a variety of different analyses on large sets of patient phenotype data.
+The pyPheWAS module executes PheWAS analyses on large EMR datasets via command
+line tools. If this tools contributes to a scientific publication, please cite us.
+
+.. todo:: Add citation.
 
 Features
 --------
-* Data cleaning and preparation
-* Run logarithmic regressions on patient data
-* Plot results
+* Analysis of International Classification of Disease codes (v9 and v10) and Current Procedural Terminology codes
+* EMR data cleaning and preparation
+* Compute mass logistic regressions on patient data
+* Visualize results
 
-Latest Release: pyPheWAS 3.0.0
+Latest Release: pyPheWAS 3.1.0
 ------------------------------
 
 This release includes:
 
-* Support for both ICD 9 and ICD 10
-* All 3 regression types (binary, count, & duration) optimized for big data
-* pyPhewasPipeline: a streamlined combination of pyPhewasLookup, pyPhewasModel, and pyPhewasPlot
-* Compatibility with Python 3
-* Age matching now saves the explicit mapping between controls/cases in addition to the resulting group file
-* Operation of the ICD censoring function matches the description in the documentation
+* **New Analysis Type:** :ref:`ProWAS Tools`
+* **New Plot Type:** Volcano Plot (see :ref:`pyPhewasPlot`)
+* :ref:`maximizeControls` now saves explicit Case/Control matches
+* New PheCode category colors in plots are more distinguishable
+* Improved command line tool argument handling
+* Improved error handling
+* Documentation overhaul
+* API update
 * Minor bug fixes
 
 Support
 -------
 
-* Issue Tracker: github.com/MASILab/pyPheWAS/issues
-* Source Code: github.com/MASILab/pyPheWAS
+* `Issue Tracker <https://github.com/MASILab/pyPheWAS/issues>`_
+* `Source Code <https://github.com/MASILab/pyPheWAS>`_
 
 If you are having issues, please let us know! Email me at:
 
@@ -35,7 +41,7 @@ cailey.i.kerley@vanderbilt.edu
 License
 -------
 
-This project is licensed under the MIT license.
+This project is licensed under the `MIT license <https://github.com/MASILab/pyPheWAS/blob/master/LICENSE>`_.
 
 Contents
 --------

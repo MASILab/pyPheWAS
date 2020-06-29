@@ -98,6 +98,8 @@ beta's confidence interval, and beta's standard error for the *ProCode_aggregate
 term in the logit model. Additionally, lists of the CPT
 codes that map to each ProCode are included.
 
+Logistic regressions are estimated using the [Statsmodels]_ package.
+
 Required Arguments:
  * ``--feature_matrix``: Base name of the feature matrix files
  * ``--group``:			Name of the group file
@@ -159,6 +161,8 @@ Visualizes the regression results through 3 complementary views:
 
 In both the Manhattan and Log Odds plots only ProCodes which are significant
 after the chosen multiple comparisons correction is applied are included.
+
+All plots are created using [Matplotlib]_.
 
 Required Arguments:
  * ``--statfile``:		Name of the output regressions file from **pyProwasModel**

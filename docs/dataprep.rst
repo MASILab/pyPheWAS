@@ -2,7 +2,7 @@ Data Preparation
 ================
 This page describes the command line tools available for preparing your data before running
 a PheWAS or ProWAS analysis. These tools all require **phenotype** and/or **group**
-files. The formats of these files are explained in the :ref:`Basics` section.
+files. The formats of these files are explained in the :ref:`File Formats` section.
 
 
 censorData
@@ -201,9 +201,10 @@ Output:
  * Group file (``groupout``) containing merged group data
  * Phenotype file (``phenotypeout``) containing merged phenotype data
 
- The grouping tool allows you to merge two or more phenotype files together, and/or two or
- more group files together. It removes any duplicate records in both file types,
- so that the resulting data files are ready to be run through the pyPheWAS Research Tools.
+
+The grouping tool allows you to merge two or more phenotype files together, and/or two or
+more group files together. It removes any duplicate records in both file types,
+so that the resulting data files are ready to be run through the pyPheWAS Research Tools.
 
 
 **Example** Merge 2 ICD9 phenotype files together and 2 group files together::

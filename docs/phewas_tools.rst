@@ -103,6 +103,8 @@ beta's confidence interval, and beta's standard error for the *PheCode_aggregate
 term in the logit model. Additionally, lists of the ICD-9/ICD-10
 codes that map to each PheCode are included.
 
+Logistic regressions are estimated using the [Statsmodels]_ package.
+
 Required Arguments:
  * ``--feature_matrix``: Base name of the feature matrix files
  * ``--group``:			Name of the group file
@@ -169,6 +171,8 @@ In both the Manhattan and Log Odds plots:
   “mental disorders”).
 * Only PheCodes which are significant after the chosen multiple comparisons
   correction is applied are included.
+
+All plots are created using [Matplotlib]_.
 
 Required Arguments:
  * ``--statfile``:		Name of the output regressions file from **pyPhewasModel**

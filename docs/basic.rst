@@ -5,16 +5,23 @@ Getting Started
 Installation
 ------------
 
-pyPheWAS is compatible with Python 2.7+ and Python 3. Install the pyPheWAS package by running::
+pyPheWAS is compatible with Python 3. Install the pyPheWAS package by running::
 
 		pip install pyPheWAS
 
-If this command fails, make sure that you are running Python 2.7+ and that you have pip set up on your machine.
+If this command fails, make sure that you are running Python 3+ and that you have
+pip set up on your machine.
 
-As long as the install is successful, the pyPheWAS package can now be run from any directory.
+* `python3 <https://wiki.python.org/moin/BeginnersGuide/Download>`_ installation
+* `pip <https://pip.pypa.io/en/stable/installing/>`_ installation
+  *(should be installed automatically with python3)*
+
+The pyPheWAS command line tools can now be run from any directory.
 
 .. note:: If installing on a computing cluster (or other environment in which you do not have admin privileges) it may necessary to install pyPheWAS locally using pip's *--user* flag.
 
+.. note:: pyPheWAS was originally developed in python2, and may still be compatible.
+    However, the most recent releases have not been tested against python2.
 
 What is PheWAS?
 ---------------
@@ -33,7 +40,7 @@ of Disease (ICD) codes and Current Procedural Terminology (CPT) codes. To
 differentiate the two, studies of ICD codes are referred
 to as **PheWAS**, while studies of CPT codes are referred to as **ProWAS**.
 
-.. figure:: imgs/phewas_workflow.png
+.. figure:: _static/phewas_workflow.png
 
 * **Input files** consist of group demographic data and EMR event data. These files
   are described in detail under :ref:`File Formats`.
