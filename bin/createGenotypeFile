@@ -151,7 +151,7 @@ Save Output
 """
 if len(str(group)) > 0:
 	print('Merging genotype assignment with provided group file')
-	phen = pd.merge(phen, group_data, how='left',on='id', suffixes=('','_old'))
+	phen = pd.merge(phen, group_data, how='inner',on='id', suffixes=('','_old'))
 
 num_case = phen[phen['genotype']==1].shape[0]
 num_ctrl = phen[phen['genotype']==0].shape[0]
