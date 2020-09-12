@@ -17,6 +17,7 @@ def parse_args():
     parser.add_argument('--thresh_type', required=True, type=str, help=' the type of threshold to be used in the plot')
     parser.add_argument('--custom_thresh', required=False, default=None, type=float, help='Custom threshold value (float between 0 and 1)')
     parser.add_argument('--imbalance', required=False, default="True", help = 'Show the direction of imbalance in the Manhattan plot [True (default) or False]')
+    parser.add_argument('--plot_all_pts', required=False, default="True", help='Show all points regardless of significance in the Manhattan plot [True (default) or False]')
     parser.add_argument('--phewas_label', required=False, default="plot", type=str, help='Location of PheCode labels on Log Odds plot [plot (default) or axis]')
     parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files')
     parser.add_argument('--outfile', required=False, default=None, type=str, help='Name of the output file for the plot')
@@ -40,6 +41,7 @@ kwargs = {'path': Path(args.path),
           'statfile': args.statfile,
           'thresh_type': args.thresh_type,
           'imbalance': args.imbalance,
+          'plot_all_pts': args.plot_all_pts,
           'custom_thresh':args.custom_thresh,
           'phewas_label': args.phewas_label,
           'outfile':args.outfile,
@@ -59,6 +61,8 @@ assert kwargs['phewas_label'] in ["plot","axis"], "%s is not a valid PheCode lab
 
 assert kwargs['imbalance'] in ["True", "False"], "%s is not a valid imbalance value (\"True\" or \"False\")" % kwargs['imbalance']
 kwargs['imbalance'] = eval(kwargs['imbalance'])
+assert kwargs['plot_all_pts'] in ["True", "False"], "%s is not a valid plot_all_pts value (\"True\" or \"False\")" % kwargs['plot_all_pts']
+kwargs['plot_all_pts'] = eval(kwargs['plot_all_pts'])
 
 # Print Arguments
 display_kwargs(kwargs)
@@ -121,7 +125,7 @@ else:
     savev = ''
     file_format = ''
 
-plot_manhattan(regressions, thresh, 'ICD', imbalance, savem, file_format)
+plot_manhattan(regressions, thresh, 'ICD', imbalance, plot_all_pts, savem, file_format)
 plot_odds_ratio(regressions, thresh, 'ICD', saveb, file_format, phewas_label)
 plot_volcano(regressions, 'ICD', savev, file_format)
 

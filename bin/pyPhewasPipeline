@@ -24,6 +24,7 @@ def parse_args():
     parser.add_argument('--legacy', required=False, default="False", type=str, help='Use legacy solver scheme (default: False)')
 
     parser.add_argument('--imbalance', required=False, default="True", type=str, help='Whether or not to show the direction of imbalance in the plot')
+    parser.add_argument('--plot_all_pts', required=False, default="True", help='Show all points regardless of significance in the Manhattan plot [True (default) or False]')
     parser.add_argument('--phewas_label', required=False, default="plot", type=str, help='Where to put PheCode labels - plot (default) or axis')
     parser.add_argument('--thresh_type', required=False, default=None, type=str, help='Type of threshold to be used in the plot (fdr, bon, or custom)')
     parser.add_argument('--custom_thresh', required=False, default=None, type=float, help='Custom threshold value (float between 0 and 1)')
@@ -56,6 +57,7 @@ kwargs = {'path': Path(args.path),
           'legacy': args.legacy,
           'thresh_type': args.thresh_type,
           'imbalance': args.imbalance,
+          'plot_all_pts': args.plot_all_pts,
           'custom_thresh': args.custom_thresh,
           'phewas_label': args.phewas_label,
           'plot_format': args.plot_format
@@ -91,10 +93,12 @@ else:
 
 assert kwargs['phewas_label'] in ["plot","axis"], "%s is not a valid PheCode label location" % (kwargs['phewas_label'])
 
-assert kwargs['imbalance'] in ["True", "False"], "%s is not a valid imbalance value (True or False)" % kwargs['imbalance']
-kwargs['imbalance'] = eval(kwargs['imbalance'])
 assert kwargs['legacy'] in ["True", "False"], "%s is not a valid legacy value (True or False)" % kwargs['legacy']
 kwargs['legacy'] = eval(kwargs['legacy'])
+assert kwargs['imbalance'] in ["True", "False"], "%s is not a valid imbalance value (True or False)" % kwargs['imbalance']
+kwargs['imbalance'] = eval(kwargs['imbalance'])
+assert kwargs['plot_all_pts'] in ["True", "False"], "%s is not a valid plot_all_pts value (\"True\" or \"False\")" % kwargs['plot_all_pts']
+kwargs['plot_all_pts'] = eval(kwargs['plot_all_pts'])
 
 # Print Arguments
 display_kwargs(kwargs)
@@ -203,7 +207,7 @@ for t in thresh_type:
     savem = path / ('Manhattan_%s_%s.%s' %(t, postfix, plot_format))
     saveb = path / ('LogOdds_%s_%s.%s' %(t, postfix, plot_format))
 
-    plot_manhattan(regressions, thresh, 'ICD', imbalance, savem, plot_format)
+    plot_manhattan(regressions, thresh, 'ICD', imbalance, plot_all_pts, savem, plot_format)
     plot_odds_ratio(regressions, thresh, 'ICD', saveb, plot_format, phewas_label)
    
 savev = path / ('Volcano_%s.%s' %(postfix, plot_format))
