@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
   name = 'pyPheWAS',
   packages = ['pyPheWAS'], # this must be the same as the name above
-  version = '3.1.1',
+  version = '3.2.0',
   description = 'MASI Lab Port of PheWAS into Python',
   author = 'MASI Lab',
   author_email = 'bennett.landman@vanderbilt.edu',
