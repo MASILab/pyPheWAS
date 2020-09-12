@@ -8,7 +8,6 @@ from collections import Counter
 import getopt
 import math
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import os
 import pandas as pd
@@ -188,7 +187,6 @@ def get_cpt_codes(path, filename, reg_type):
 	return phenotypes
 
 
-
 def generate_feature_matrix(genotypes, phenotype, reg_type, code_type, pheno_cov=None):
 	"""
 	Generates the feature matrix that will be used to run the PheWAS or ProWAS analysis. Feature matrix is 3xNxP,
@@ -331,10 +329,11 @@ def get_phenotype_info(p_index, code_type):
 	else:
 		p_code = prowas_codes.loc[p_index, 'prowas_code']
 		p_name = prowas_codes.loc[p_index, 'prowas_desc']
+		p_cat = prowas_codes.loc[p_index, 'CCS Label']
 		cpt_ix = cpt_codes['prowas_code'] == p_code
 		p_cpt_rollup = '/'.join(cpt_codes.loc[cpt_ix, 'CPT_CODE'].tolist())
 		
-		return [p_code, p_name, p_cpt_rollup]
+		return [p_code, p_name, p_cat, p_cpt_rollup]
 
 
 def fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3='', covariates='',
@@ -744,7 +743,7 @@ def get_x_label_positions(categories, lines=True):
 	return label_positions
 
 
-def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, save='', save_format=''):
+def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, plot_all_pts=True, save='', save_format=''):
 	"""
 	Plots significant phenotype data on a Manhattan Plot.
 
@@ -758,6 +757,7 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, sa
 	:param thresh: p-value significance threshold
 	:param code_type: type of EMR data ('ICD' or 'CPT')
 	:param show_imbalance: boolean variable that determines whether or not to show imbalances on the plot (default True)
+	:param plot_all_pts: plot all points regardless of significance (default True)
 	:param save: the output file to save to (if empty, display the plot)
 	:param save_format: format of the save file
 	:type regressions: pandas DataFrame
@@ -774,21 +774,26 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, sa
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
-	# Merge regressions with phenotype data to get categories
 	if code_type == 'ICD':
 		pheno_codes = phewas_codes
 		reg_key = 'PheWAS Code'
 		map_key = 'PheCode'
 		cat_key = 'category'
-		pheno_name = 'Phenotype'
+		cat_label = 'category_string'
+		pheno_name = 'PheWAS Name'
 	else:
 		pheno_codes = prowas_codes
 		reg_key = 'ProWAS Code'
 		map_key = 'prowas_code'
 		cat_key = 'ccs'
-		pheno_name = 'prowas_desc'
-		
-	regressions = pd.merge(regressions, pheno_codes, left_on=reg_key, right_on=map_key).sort_values(by=cat_key)
+		cat_label = 'CCS Label'
+		pheno_name = 'ProWAS Name'
+
+	if not cat_key in regressions.columns:
+		# Merge regressions with phenotype data to get categories
+		regressions = pd.merge(regressions, pheno_codes, left_on=reg_key, right_on=map_key, suffixes=[None, '_y'])
+
+	regressions.sort_values(by=cat_key, inplace=True)
 
 	# Plot all points w/ labels
 	e = 1 # x-axis counter
@@ -799,20 +804,25 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, sa
 
 	for ix,data in regressions.iterrows():
 		logp_ix = data['"-log(p)"']
-		if  data['p-val'] < thresh:
-			# determine marker type based on whether/not showing imbalance
-			if show_imbalance:
-				mew = 1.5
-				if data['beta'] > 0: m = '+'
-				else: m = '_'
-			else:
-				mew = 0.0
-				m = 'o'
-			# Plot PheCode data point & format PheCode label
-			if code_type == 'ICD': c = cat_colors[data['category_string']]
-			else: c = 'xkcd:aqua' # constant color
+		# determine marker type based on whether/not showing imbalance
+		if show_imbalance:
+			mew = 1.5
+			if data['beta'] > 0: m = '+'
+			else: m = '_'
+		else:
+			mew = 0.0
+			m = 'o'
+		# Plot PheCode data point & format PheCode label
+		if code_type == 'ICD': c = cat_colors[data[cat_label]]
+		else: c = 'xkcd:aqua' # constant color
+		if data['p-val'] < thresh:
+			# plot significant PheCode/ProCode with label
 			ax.plot(e, logp_ix, m, color=c, fillstyle='full', markeredgewidth=mew)
-			artists.append(ax.text(e, logp_ix, data[pheno_name], rotation=89, va='bottom', fontsize=6))
+			artists.append(ax.text(e, logp_ix, data[pheno_name], rotation=45, va='bottom', fontsize=6))
+			e += 15
+		elif plot_all_pts:
+			# plot insignificant PheCode/ProCode without label
+			ax.plot(e, logp_ix, m, color=c, fillstyle='full', markeredgewidth=mew)
 			e += 15
 
 	# Category Legend
@@ -870,21 +880,26 @@ def plot_odds_ratio(regressions, thresh, code_type='ICD', save='', save_format='
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
-	# Merge regressions with phenotype data to get categories
 	if code_type == 'ICD':
 		pheno_codes = phewas_codes
 		reg_key = 'PheWAS Code'
 		map_key = 'PheCode'
 		cat_key = 'category'
-		pheno_name = 'Phenotype'
+		cat_label = 'category_string'
+		pheno_name = 'PheWAS Name'
 	else:
 		pheno_codes = prowas_codes
 		reg_key = 'ProWAS Code'
 		map_key = 'prowas_code'
 		cat_key = 'ccs'
-		pheno_name = 'prowas_desc'
-	
-	regressions = pd.merge(regressions, pheno_codes, left_on=reg_key, right_on=map_key).sort_values(by=cat_key)
+		cat_label = 'CCS Label'
+		pheno_name = 'ProWAS Name'
+
+	if not cat_key in regressions.columns:
+		# Merge regressions with phenotype data to get categories
+		regressions = pd.merge(regressions, pheno_codes, left_on=reg_key, right_on=map_key, suffixes=[None, '_y'])
+
+	regressions.sort_values(by=cat_key, inplace=True)
 
 
 	# Plot all points w/ labels
@@ -909,7 +924,7 @@ def plot_odds_ratio(regressions, thresh, code_type='ICD', save='', save_format='
 				phecode_locs.append(e)
 
 			# Plot Phecode Data
-			if code_type == 'ICD': c = cat_colors[data['category_string']]
+			if code_type == 'ICD': c = cat_colors[data[cat_label]]
 			else: c = 'xkcd:aqua' # constant color
 			ax.plot(beta_ix, e, 'o', color=c, fillstyle='full', markeredgewidth=0.0)
 			ax.plot([data['lowlim'], data['uplim']], [e, e], color=c)
@@ -1062,7 +1077,7 @@ phewas_reg_cols = ['PheWAS Code',
 				  'beta',
 				  'Conf-interval beta',
 				  'std_error',
-				  'Category',
+				  'category_string',
 				  'ICD-9',
 				  'ICD-10']
 
@@ -1073,6 +1088,7 @@ prowas_reg_cols = ['ProWAS Code',
 				  'beta',
 				  'Conf-interval beta',
 				  'std_error',
+				  'CCS Label',
 				  'CPT']
 
 cat_colors = {'other': 'gold',
