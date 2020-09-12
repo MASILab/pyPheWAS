@@ -319,13 +319,14 @@ def get_phenotype_info(p_index, code_type):
 	if code_type == 'ICD':
 		p_code = phewas_codes.loc[p_index, 'PheCode']
 		p_name = phewas_codes.loc[p_index, 'Phenotype']
+		p_cat = phewas_codes.loc[p_index, 'category_string']
 		icd9_ix = icd9_codes['PheCode'] == p_code
 		icd10_ix = icd10_codes['PheCode'] == p_code
 	
 		p_icd9_rollup = '/'.join(icd9_codes.loc[icd9_ix, 'ICD_CODE'].tolist())
 		p_icd10_rollup = '/'.join(icd10_codes.loc[icd10_ix, 'ICD_CODE'].tolist())
 		
-		return [p_code, p_name, p_icd9_rollup, p_icd10_rollup]
+		return [p_code, p_name, p_cat, p_icd9_rollup, p_icd10_rollup]
 	
 	else:
 		p_code = prowas_codes.loc[p_index, 'prowas_code']
@@ -437,9 +438,9 @@ def fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3='', cova
 	return reg_result
 
 
-def run_phewas(fm, genotypes, code_type, covariates='', response='genotype'):
+def run_phewas_legacy(fm, genotypes, code_type, covariates='', response='genotype', phe_thresh=5):
 	"""
-	Run mass phenotype regressions
+	Run mass phenotype regressions (legacy version)
 
 	Iterate over all PheWAS/ProWAS codes in the feature matrix, running a logistic regression of the form:
 
@@ -460,18 +461,20 @@ def run_phewas(fm, genotypes, code_type, covariates='', response='genotype'):
 	:param code_type:  type of EMR code ('ICD' or 'CPT')
 	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
 	:param response: *[optional]* response variable in the logisitc model (default: *genotype*)
+	:param phe_thresh: *[optional]* threshold for running regression; see note (default: *5*)
 	:type fm: numpy array
 	:type genotypes: pandas DataFrame
 	:type code_type: str
 	:type covariates: str
 	:type response: str
+	:type phe_thresh: int
 
 	:returns: regression results for each phenotype
 	:rtype: pandas DataFrame
 
 
 	.. note:: To prevent false positives & improve statistical power, regressions are only computed for
-		  phenotypes which present for greater than 5 subjects in the cohort. Phenotypes which do not meet
+		  phenotypes which present for greater than ``phe_thresh`` subjects in the cohort. Phenotypes which do not meet
 		  this criteria are not included in the returned regression results.
 
 	.. note:: For phenotypes that present in both the case (``response`` = 1) and control (``response`` = 0) groups, maximum
@@ -508,8 +511,8 @@ def run_phewas(fm, genotypes, code_type, covariates='', response='genotype'):
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
 		phen_vector3 = fm[2][:, index]
-		# to prevent false positives, only run regressions if more than 5 records have positive values
-		if np.where(phen_vector1 > 0)[0].shape[0] > 5:
+		# to prevent false positives, only run regressions if more than phe_thresh records have positive values
+		if np.where(phen_vector1 > 0)[0].shape[0] > phe_thresh:
 			if index in inds: # decide whether or not to use regularization in logistic regression
 				use_regular = 1
 			else:
@@ -526,6 +529,88 @@ def run_phewas(fm, genotypes, code_type, covariates='', response='genotype'):
 		regressions.loc[index] = info
 
 	return regressions.dropna(subset=['p-val']).sort_values(by='p-val') # sort by significance
+
+
+
+def run_phewas(fm, genotypes, code_type, covariates='', response='genotype', phe_thresh=5):
+	"""
+	Run mass phenotype regressions
+
+	Iterate over all PheWAS/ProWAS codes in the feature matrix, running a logistic regression of the form:
+
+	:math:`Pr(response) \sim logit(phenotype\_aggregate + covariates)`
+
+	``fm`` is a 3xNxP matrix, where N = number of subjects and P = number of PheWAS/ProWAS Codes; this should only
+	be consutrcted by ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix`` - otherwise results will be untrustworthy.
+	To use the age feature matrix (``fm[1]``), include 'MaxAgeAtICD' or 'MaxAgeAtCPT' in the ``covariates`` string.
+	Other than 'MaxAgeAtICD' and 'MaxAgeAtCPT', all covariates and the response variable must be included in
+	the group DataFrame.
+
+	The returned DataFrame includes the PheWAS/ProWAS code, Phenotype (code description, e.g. 'Pain in joint'),
+	-log\ :sub:`10`\ (p-value), p-value, beta, beta's confidence interval, beta's standard error, and lists of the ICD-9/ICD-10 or
+	CPT codes that map to the phenotype.
+
+	:param fm: phenotype feature matrix derived via ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix``
+	:param genotypes: group data
+	:param code_type:  type of EMR code ('ICD' or 'CPT')
+	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
+	:param response: *[optional]* response variable in the logisitc model (default: *genotype*)
+	:param phe_thresh: *[optional]* threshold for running regression; see note (default: *5*)
+	:type fm: numpy array
+	:type genotypes: pandas DataFrame
+	:type code_type: str
+	:type covariates: str
+	:type response: str
+	:type phe_thresh: int
+
+	:returns: regression results for each phenotype
+	:rtype: pandas DataFrame
+
+
+	.. note:: To prevent false positives & improve statistical power, regressions are only computed for
+		  phenotypes which present for greater than ``phe_thresh`` subjects in the cohort. Phenotypes which do not meet
+		  this criteria are not included in the returned regression results.
+
+	"""
+
+	# sort group data by id
+	print('Sorting group data...')
+	genotypes.sort_values(by='id', inplace=True)
+	genotypes.reset_index(inplace=True, drop=True)
+
+	num_pheno = len(fm[0, 0])
+	# check number of phenotypes in the feature matrix
+	if code_type == 'ICD':
+		assert num_pheno == phewas_codes.shape[0], "Expected %d columns in PheWAS feature matrix, but found %d. Please check the feature matrix" % (phewas_codes.shape[0], num_pheno)
+	else:
+		assert num_pheno == prowas_codes.shape[0], "Expected %d columns in ProWAS feature matrix, but found %d. Please check the feature matrix" % (prowas_codes.shape[0], num_pheno)
+
+	# store all of the pertinent data from the regressions
+	if code_type == 'ICD':
+		out_cols = phewas_reg_cols
+	else:
+		out_cols = prowas_reg_cols
+	regressions = pd.DataFrame(columns=out_cols)
+
+	for index in tqdm(range(num_pheno), desc='Running Regressions'):
+		phen_info = get_phenotype_info(index, code_type)
+		phen_vector1 = fm[0][:, index]
+		phen_vector2 = fm[1][:, index]
+		phen_vector3 = fm[2][:, index]
+		# to prevent false positives, only run regressions if more than phe_thresh records have positive values
+		if np.where(phen_vector1 > 0)[0].shape[0] > phe_thresh:
+			stat_info = fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3, covariates,
+										response, phenotype=phen_info[0:2], lr=1, code_type=code_type)
+		else:
+			# not enough samples to run regression
+			stat_info = [np.nan, np.nan, np.nan, np.nan, np.nan]
+
+		# save regression data
+		info = phen_info[0:2] + stat_info + phen_info[2:]
+
+		regressions.loc[index] = info
+
+	return regressions.dropna(subset=['p-val']).sort_values(by='p-val')  # sort by significance
 
 
 """
@@ -977,6 +1062,7 @@ phewas_reg_cols = ['PheWAS Code',
 				  'beta',
 				  'Conf-interval beta',
 				  'std_error',
+				  'Category',
 				  'ICD-9',
 				  'ICD-10']
 
