@@ -10,9 +10,18 @@ Shikha Chaganti, PhD
 
 Bennett Landman, PhD
 
-## Latest Release: pyPheWAS 3.1.1
+## Latest Release: pyPheWAS 3.2.0
 This release includes:
+- Configurable threshold for number of subjects required to run the regression on an individual PheCode
+- All regressions are now fit with regularization (old scheme available with 'legacy' option)
+- Minor changes to Manhattan plot
+- PheCode/ProCode categories added to regression file
+- Minor bug fixes
 
+
+### Older Releases
+
+#### pyPheWAS 3.1.1
 - New Analysis Type: ProWAS Tools
 - New Plot Type: Volcano Plot (see pyPhewasPlot)
 - maximizeControls now saves explicit Case/Control matches
@@ -22,8 +31,6 @@ This release includes:
 - Documentation overhaul
 - API update
 - Minor bug fixes
-
-### Older Releases
 
 #### pyPheWAS 3.0.1
 - Bug fixes including __FDR & Bonferroni threshold calculations__
