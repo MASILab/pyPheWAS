@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from pyPheWAS.pyPhewasCorev2 import *
-import os
 import argparse
 import time
 import math
@@ -19,6 +18,9 @@ def parse_args():
     parser.add_argument('--covariates', required=False, default='', type=str, help='Variables to be used as covariates')
     parser.add_argument('--response', required=False, default='genotype', type=str, help='Variable to predict (default: genotype)')
     parser.add_argument('--phewas_cov', required=False, default=None, type=str, help='PheCode to use as a covariate in regression')
+    parser.add_argument('--reg_thresh', required=False, default=5, type=int, help='Threshold of subjects presenting a PheCode required for running regression (default: 5)')
+    parser.add_argument('--legacy', required=False, default="False", type=str, help='Use legacy solver scheme (default: False)')
+
 
     args = parser.parse_args()
     return args
@@ -43,7 +45,9 @@ kwargs = {'path': Path(args.path),
           'covariates':args.covariates,
 		  'phewas_cov':args.phewas_cov,
           'response':args.response,
-          'outfile':args.outfile,
+          'reg_thresh':args.reg_thresh,
+          'legacy':args.legacy,
+          'outfile':args.outfile
 }
 
 # Assert that a valid regression type was used
@@ -111,7 +115,12 @@ fm = np.array([a,b,c])
 Run Regressions
 """
 print("Running PheWAS regressions...")
-regressions = run_phewas(fm, genotypes, 'ICD', covariates, response)
+if legacy:
+    # regressions are run with regularization is only one target group has them; regressions are run without regularization otherwise
+    regressions = run_phewas_legacy(fm, genotypes, 'ICD', covariates, response, reg_thresh)
+else:
+    # all regressions are run with regularization
+    regressions = run_phewas(fm, genotypes, 'ICD', covariates, response, reg_thresh)
 
 print("Saving regression data to %s" % (path / outfile))
 if phewas_cov is not None:

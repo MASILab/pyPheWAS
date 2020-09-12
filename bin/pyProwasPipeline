@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from pyPheWAS.pyPhewasCorev2 import *
-import os
 import time
 import math
 import argparse
@@ -21,6 +20,9 @@ def parse_args():
     parser.add_argument('--prowas_cov', required=False, default=None, type=str, help='ProCodes to use as covariates in the regression')
     parser.add_argument('--covariates', required=False, default='', type=str, help='Variables to be used as covariates')
     parser.add_argument('--response', required=False, default='genotype', type=str, help='Variable to predict instead of genotype')
+    parser.add_argument('--reg_thresh', required=False, default=5, type=int,help='Threshold of subjects presenting a ProCode required for running regression (default: 5)')
+    parser.add_argument('--legacy', required=False, default="False", type=str, help='Use legacy solver scheme (default: False)')
+
     parser.add_argument('--imbalance', required=False, default="True", type=str, help='Whether or not to show the direction of imbalance in the plot')
     parser.add_argument('--prowas_label', required=False, default="plot", type=str, help='Where to put ProCode labels - plot (default) or axis')
     parser.add_argument('--thresh_type', required=False, default=None, type=str, help='Type of threshold to be used in the plot (fdr, bon, or custom)')
@@ -48,8 +50,10 @@ kwargs = {'path': Path(args.path),
           'reg_type': args.reg_type,
           'postfix': args.postfix,
           'response': args.response,
+          'reg_thresh':args.reg_thresh,
           'covariates': args.covariates,
           'prowas_cov': args.prowas_cov,
+          'legacy':args.legacy,
           'thresh_type': args.thresh_type,
           'imbalance': args.imbalance,
           'custom_thresh': args.custom_thresh,
@@ -149,7 +153,12 @@ pyProwasModel
 """
 
 print("Running ProWAS regressions...")
-regressions = run_phewas(fm, genotypes, 'CPT', covariates, response)
+if legacy:
+    # regressions are run with regularization is only one target group has them; regressions are run without regularization otherwise
+    regressions = run_phewas_legacy(fm, genotypes, 'CPT', covariates, response, reg_thresh)
+else:
+    # all regressions are run with regularization
+    regressions = run_phewas(fm, genotypes, 'CPT', covariates, response, reg_thresh)
 
 reg_outfile = "regressions_" + postfix + ".csv"
 print("Saving regression data to %s" % (path / reg_outfile))
