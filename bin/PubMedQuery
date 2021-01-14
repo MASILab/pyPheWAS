@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+from pyPheWAS.pyPhewasCorev2 import codes
+from pyPheWAS.PubMedFunctions import *
+import pandas as pd
+import sys, os
+from pathlib import Path
+import os.path as osp
+import time
+import argparse
+import math
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="PubMed Query Tool")
+
+    parser.add_argument('--mode', required=False, default='all', type=str, help='Query Mode (all Phecodes [\'all\'] or a specific diagnosis [\'dx\'])')
+    parser.add_argument('--umls', required=True, type=str, help='Path to UMLS Metathesaurus (MRCONSO.RRF)')
+    parser.add_argument('--outdir', required=True, type=str, help='Path to output directory')
+
+    args = parser.parse_args()
+    return args
