@@ -65,7 +65,7 @@ def main():
     missed = []
     missed_phe = []
     weird = []
-    weird_phw = []
+    weird_phe = []
 
     print('Making subset tables... ')
     phecode_list = icd9.drop_duplicates(subset=['PheCode']).sort_values(by=['PheCode']).reset_index(drop=True).copy()

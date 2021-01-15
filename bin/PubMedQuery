@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-from pyPheWAS.pyPhewasCorev2 import codes
+from pyPheWAS.pyPhewasCorev2 import print_start_msg, display_kwargs
 from pyPheWAS.PubMedFunctions import *
 import pandas as pd
 import sys, os
 from pathlib import Path
-import os.path as osp
 import time
 import argparse
 import math
@@ -13,9 +12,83 @@ import math
 def parse_args():
     parser = argparse.ArgumentParser(description="PubMed Query Tool")
 
-    parser.add_argument('--mode', required=False, default='all', type=str, help='Query Mode (all Phecodes [\'all\'] or a specific diagnosis [\'dx\'])')
+    parser.add_argument('--mode', required=False, default='all', type=str, help='Query Mode (all Phecodes [\'all\'] or a specific disease [\'dx\'])')
     parser.add_argument('--umls', required=True, type=str, help='Path to UMLS Metathesaurus (MRCONSO.RRF)')
     parser.add_argument('--outdir', required=True, type=str, help='Path to output directory')
+    parser.add_argument('--dx', required=False, default=None, type=str,help='UMLS CUI(s) to search for (e.g. C0013080+C0852113)')
 
     args = parser.parse_args()
     return args
+
+"""
+Print Start Message
+"""
+start = time.time()
+print_start_msg()
+print('\nPubMedQuery: PubMed Search Tool\n')
+
+"""
+Retrieve and validate all arguments.
+"""
+args = parse_args()
+kwargs = {'outdir': Path(args.outdir),
+          'umls':Path(args.umls),
+		  'mode': args.mode,
+		  'dx':args.dx,
+}
+
+# Assert that valid file names were given
+assert kwargs['umls'].endswith('.RRF'), "%s is not a valid UMLS file, must be a .RRF file" % (kwargs['umls'])
+# Assert that valid files were given
+assert kwargs['umls'].exists(), "%s does not exist" % kwargs['umls']
+assert kwargs['outdir'].exists(), "%s does not exist" % kwargs['outdir']
+# Assert that the mode is valid
+assert kwargs['mode'] in ['all','dx'], "%s is not a valid query mode" % kwargs['mode']
+# check disease keywords
+if kwargs['mode']  == 'dx':
+    assert kwargs['dx'] is not None, "Mode=dx, but no disease keywords were provided"
+
+# Print Arguments
+display_kwargs(kwargs)
+# Make all arguments local variables
+locals().update(kwargs)
+
+"""
+Load UMLS Metathesaurus
+"""
+
+
+"""
+Mode == all -> trigger PubMed Query
+"""
+
+
+"""
+Mode == dx -> use UMLS to get keywords
+"""
+
+"""
+Mode == dx -> write to file & ask user to confirm search terms
+"""
+
+"""
+Mode == dx -> run PubMed search for all strings
+"""
+
+
+"""
+Calculate runtime
+"""
+interval = time.time() - start
+hour = math.floor(interval/3600.0)
+minute = math.floor((interval - hour*3600)/60)
+second = math.floor(interval - hour*3600 - minute*60)
+
+if hour > 0:
+    time_str = '%dh:%dm:%ds' %(hour,minute,second)
+elif minute > 0:
+    time_str = '%dm:%ds' % (minute, second)
+else:
+    time_str = '%ds' % second
+
+print('PubMedQuery Complete [Runtime: %s]' %time_str)

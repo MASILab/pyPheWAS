@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-from pyPheWAS.pyPhewasCorev2 import codes
-from pyPheWAS.PubMedFunctions import *
+from pyPheWAS.pyPhewasCorev2 import print_start_msg, display_kwargs
 from pyPheWAS.NoveltyPheDAS import *
 import pandas as pd
 import sys, os
@@ -15,11 +14,77 @@ import math
 def parse_args():
     parser = argparse.ArgumentParser(description="Run pyPheWAS Novelty Analysis")
 
-    parser.add_argument('--statfile', required=True, type=str, help='Name of the stat file (e.g. regressions.csv)')
-    parser.add_argument('--dx_pm', required=True, type=str,help='Name of the Dx PubMED file (e.g. dx_PubMED_results.csv)')
-    parser.add_argument('--pm_dir', required=True, type=str, help='Path to PheCode PubMED directory')
+    parser.add_argument('--statfile', required=True, type=str, help='Name of the pyPheWAS stat file (e.g. regressions.csv)')
+    parser.add_argument('--dx_pm', required=True, type=str,help='Name of the Disease Search PubMed file (e.g. dx_PubMED_results.csv)')
+    parser.add_argument('--pm_dir', required=True, type=str, help='Path to PheCode PubMed directory')
     parser.add_argument('--path', required=False, default='.', type=str,help='Path to all input files and destination of output files')
     parser.add_argument('--postfix', required=False, default=None, type=str,help='Descriptive postfix for output files (e.g. poster or ages50-60)')
 
     args = parser.parse_args()
     return args
+
+
+"""
+Print Start Message
+"""
+start = time.time()
+print_start_msg()
+print('\nNoveltyAnalysis: pyPheWAS Novelty Finding Index Tool\n')
+
+"""
+Retrieve and validate all arguments.
+"""
+args = parse_args()
+kwargs = {'path': Path(args.path),
+          'pm_dir':Path(args.pm_dir),
+		  'statfile': args.statfile,
+		  'dx_pm': args.dx_pm,
+		  'postfix':args.postfix,
+}
+
+# Assert that valid file names were given
+assert kwargs['statfile'].endswith('.csv'), "%s is not a valid stat file, must be a .csv file" % (kwargs['statfile'])
+assert kwargs['dx_pm'].endswith('.csv'), "%s is not a valid Dx PubMed file, must be a .csv file" % (kwargs['dx_pm'])
+# Assert that valid files were given
+assert (kwargs['path'] / kwargs['statfile']).exists(), "%s does not exist" %(kwargs['path'] / kwargs['statfile'])
+assert (kwargs['path'] / kwargs['dx_pm']).exists(), "%s does not exist" %(kwargs['path'] / kwargs['dx_pm'])
+assert kwargs['pm_dir'].exists(), "%s does not exist" % kwargs['pm_dir']
+
+# Print Arguments
+display_kwargs(kwargs)
+# Make all arguments local variables
+locals().update(kwargs)
+
+"""
+Combine Mass PheCode & Dx PubMed results
+"""
+
+
+"""
+Run Novelty Calculations
+"""
+
+
+"""
+Plot Novelty Finding Index Results
+"""
+
+
+
+
+"""
+Calculate runtime
+"""
+interval = time.time() - start
+hour = math.floor(interval/3600.0)
+minute = math.floor((interval - hour*3600)/60)
+second = math.floor(interval - hour*3600 - minute*60)
+
+if hour > 0:
+    time_str = '%dh:%dm:%ds' %(hour,minute,second)
+elif minute > 0:
+    time_str = '%dm:%ds' % (minute, second)
+else:
+    time_str = '%ds' % second
+
+print('NoveltyAnalysis Complete [Runtime: %s]' %time_str)
