@@ -188,7 +188,7 @@ def run_PheWAS_PubMed_Query(umls, outdir):
 
         # write results to a file every 10 PheCodes
         if np.mod(ix+1, 10) == 0:
-            uid_df = pd.DataFrame(pubmed_list.items(), columns=['PheCode', 'IdsList'])
+            uid_df = pd.DataFrame(pubmed_list.items(), columns=['PheWAS Code', 'IdsList'])
             uid_df['Publication_Count'] = pubmed_counts
             uid_df.to_csv(outdir / ('phecode_pubmed_articles_' + str(ix) + '.csv'), index=False)
             pubmed_list = {}
