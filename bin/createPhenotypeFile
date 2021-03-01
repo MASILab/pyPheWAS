@@ -9,14 +9,15 @@ import time
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="pyPheWAS Genotype Assignment Tool")
+    parser = argparse.ArgumentParser(description="pyPheWAS Phenotype Assignment Tool")
 
     parser.add_argument('--phenotype', required=True, type=str, help='Name of the input phenotype file')
-    parser.add_argument('--group', required=False, default='', type=str, help='Name of the group file to add genotype map to')
+    parser.add_argument('--group', required=False, default='', type=str, help='Name of the group file to add target variable map to')
     parser.add_argument('--groupout', required=True, type=str, help ='Name of the output group file')
     parser.add_argument('--case_codes', required=True, type=str, help='Case ICD codes (filename or comma-separated list)')
     parser.add_argument('--ctrl_codes', required=False, default='', type=str,  help='Control ICD codes (filename or comma-separated list)')
-    parser.add_argument('--code_freq', required=True, type=str, help='Minimum frequency of codes (If 2 comma-separated values are given and ctrl_codes is given, 2nd argument is applied to controls)')
+    parser.add_argument('--code_freq', required=True, type=str, help='Minimum frequency of codes (If 2 comma-separated values aregiven and ctrl_codes is given, 2nd argument is applied to controls)')
+    parser.add_argument('--response_var', required=False, type=str,default='target', help='Name of response variable (e.g. target, genotype, response [default=target])')
     parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files (default = current directory)')
 
     args = parser.parse_args()
@@ -28,7 +29,7 @@ Print Start Message
 """
 start = time.time()
 print_start_msg()
-print('\ncreateGenotypeFile: Genotype Assignment Tool\n')
+print('\ncreatePhenotypeFile: Response Variable Assignment Tool\n')
 
 
 """
@@ -44,6 +45,7 @@ kwargs = {
 	'case_codes':args.case_codes,
 	'ctrl_codes': args.ctrl_codes,
 	'code_freq':args.code_freq,
+    'response_var':args.response_var,
 }
 
 # Change path to absolute path
@@ -110,7 +112,7 @@ if len(ctrl_codes) > 0:
 Find codes & make groups
 """
 phen = pd.read_csv(phenotype)
-phen['genotype'] = -1
+phen[response_var] = -1
 
 # Cases
 print('Finding cases with codes: %s' % '|'.join(case_codes))
@@ -122,7 +124,7 @@ phen['gen'] = phen['gen']*1 # convert to integer
 phen['genc'] = phen.groupby('id')['gen'].transform('sum') # count all instances
 case_mask = phen['genc']>=code_freq[0]
 rm_mask = (phen['genc'] < code_freq[0]) & (phen['genc'] > 0) # need to remove these later
-phen.loc[case_mask,'genotype'] = 1
+phen.loc[case_mask,response_var] = 1
 
 # Controls
 if len(ctrl_codes) > 0:
@@ -138,29 +140,29 @@ if len(ctrl_codes) > 0:
 	else:
 		cf = code_freq[0]
 	ctrl_mask = (phen['genc_ctrl']>=cf) & ~ case_mask
-	phen.loc[ctrl_mask, 'genotype'] = 0
+	phen.loc[ctrl_mask, response_var] = 0
 	# drop other subjects
 	sub_mask = (case_mask | ctrl_mask) & ~rm_mask
 	phen = phen[sub_mask]
 else:
-	phen.loc[~case_mask,'genotype'] = 0
+	phen.loc[~case_mask,response_var] = 0
     # drop subjects
     phen = phen[~rm_mask]
 
-phen = phen[['id','genotype']].drop_duplicates()
+phen = phen[['id',response_var]].drop_duplicates()
 
 """
 Save Output
 """
 if len(str(group)) > 0:
-	print('Merging genotype assignment with provided group file')
+	print('Merging response variable assignment with provided group file')
 	phen = pd.merge(phen, group_data, how='inner',on='id', suffixes=('','_old'))
 
-num_case = phen[phen['genotype']==1].shape[0]
-num_ctrl = phen[phen['genotype']==0].shape[0]
+num_case = phen[phen[response_var]==1].shape[0]
+num_ctrl = phen[phen[response_var]==0].shape[0]
 print('Cases: %d\nControls: %d' %(num_case, num_ctrl))
 
-print('Saving gentoype mapping to %s' % groupout)
+print('Saving response variable mapping to %s' % groupout)
 phen.to_csv(groupout,index=False)
 
 """
@@ -178,4 +180,4 @@ elif minute > 0:
 else:
     time_str = '%ds' % second
 
-print('createGenotypeFile Complete [Runtime: %s]' %time_str)
+print('createPhenotypeFile Complete [Runtime: %s]' %time_str)

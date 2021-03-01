@@ -78,9 +78,9 @@ to the official pyPheWAS phenotype file format ('AgeAtICD' or 'AgeAtCPT').
 
 
 
-createGenotypeFile
+createPhenotypeFile
 ------------------
-Split subjects into case (genotype=1) / control (genotype=0) groups based on ICD codes.
+Split subjects into case (response=1) / control (response=0) groups based on ICD codes.
 
 Required Arguments:
  * ``--phenotype``: Name of input phenotype file
@@ -92,27 +92,28 @@ Required Arguments:
 Optional Arguments [default value]:
  * ``--path``: Path to all input files and destination of output files [current directory]
  * ``--group``: Name of existing group file to add genotype map to
+ * ``--response_var``: Name of response variable for regression (e.g. target, genotype, response) [target]
  * ``--ctrl_codes``: Control ICD codes (filename or comma-separated list)
 
 Output:
- * File (``groupout``) containing subject IDs and genotype assignments
- * *Optional:* if an existing file is specified with ``group``, the genotype
+ * File (``groupout``) containing subject IDs and response variable assignments
+ * *Optional:* if an existing file is specified with ``group``, the response variable
    assignments will be added as a new column to the data in the existing group file.
 
-Specify a list of ICD-9/10 codes that define the case group (genotype=1) and the minimum
+Specify a list of ICD-9/10 codes that define the case group (response=1) and the minimum
 frequency of those codes required to be included in the group (e.g. if the
 frequency is set to 2, a subject would need to have at least 2 instances of the
-case codes in their record to be in the case group). All subjects not in the
-case group are put in the control group.
+case codes in their record to be in the case group). All subjects without records of the
+case codes are put in the control group.
 
 **Example** Define case group as subjects with at least 3 instances of the codes
-008 or 134.1; make all other subjects controls::
+008 or 134.1; make subjects without those codes controls; set the response variable name to *test_groups*::
 
-        createGenotypeFile --case_codes="008,134.1" --code_freq="3" --phenotype="icd_data.csv" -—groupout="group.csv"
+        createPhenotypeFile --case_codes="008,134.1" --code_freq="3" --phenotype="icd_data.csv" --groupout="group.csv" --response_var="test_groups"
 
 
 Optionally, a list of codes may also be provided for the control group
-(genotype=0) via ``ctrl_codes``. In this case, the control group will be composed of subjects not
+(response=0) via ``ctrl_codes``. In this case, the control group will be composed of subjects not
 in the case group that have at least the minimum frequency of control group codes
 in their record; *all subjects not in the case or control groups are removed.*
 Also optionally, a second argument may be provided to the ``code_freq`` input;
@@ -122,7 +123,7 @@ applied to the control group.
 **Example** Define case group as subjects with at least 3 instances of the codes 008;
 define control group as subjects with at least 2 instances of the codes 480.1 or 041::
 
-        createGenotypeFile --case_codes="008" --ctrl_codes="480.1,041" --code_freq="3,2" --phenotype="icd_data.csv" -—groupout="group.csv"
+        createPhenotypeFile --case_codes="008" --ctrl_codes="480.1,041" --code_freq="3,2" --phenotype="icd_data.csv" -—groupout="group.csv"
 
 
 ICD code lists may alternatively be specified by text or csv files. Contents of the
@@ -136,8 +137,14 @@ command:
 
 **Command**::
 
-    createGenotypeFile --case_codes="case_icd.txt" --code_freq="3" --phenotype="icd_data.csv" -—groupout="group.csv"
+    createPhenotypeFile --case_codes="case_icd.txt" --code_freq="3" --phenotype="icd_data.csv" --groupout="group.csv" --response_var="test_groups"
 
+
+.. note::
+    An older verison of this tool was called ``createGenotypeFile``. The tool's
+    official name was updated to reflect the non-genetic nature of this response
+    variable assignment method, but
+    the older version is still available in the pyPheWAS toolkit.
 
 
 maximizeControls
