@@ -66,7 +66,7 @@ to as **PheWAS**, while studies of CPT codes are referred to as **ProWAS**.
   instead of traditional genetic markers. In order to avoid confusion with the
   genetic roots of the term PheWAS, studies
   such as this are referred to as *Phenome-Disease Association Studies* (PheDAS)
-  [Chaganti2019]_.
+  [Chaganti2019a]_.
 
 
 Phenotype Aggregation

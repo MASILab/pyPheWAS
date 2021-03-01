@@ -25,9 +25,12 @@ ICD-PheCode mapping
 PheDAS
 ------
 
-.. [Chaganti2019] Chaganti, S., Mawn, L. A., Kang, H., et al.Electronic Medical Record
+.. [Chaganti2019a] Chaganti, S., Mawn, L. A., Kang, H., et al. Electronic Medical Record
    Context Signatures Improve Diagnostic Classification Using Medical Image Computing.
    *IEEE JOURNAL OF BIOMEDICAL AND HEALTH INFORMATICS* 2019 Sept; 23(5), 2052–2062
+
+.. [Chaganti2019b] Chaganti, S., Welty, V. F., Taylor, W., et al. Discovering novel disease
+   comorbidities using electronic medical records. *PLoS ONE.* 2019 Nov; 14(11), 1-14.
 
 
 Statistical Modeling

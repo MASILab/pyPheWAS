@@ -54,6 +54,7 @@ Contents
    dataprep
    phewas_tools
    prowas_tools
+   novelty_tools
    references
    api
 
