@@ -19,6 +19,7 @@ setup(
                      'hopcroftkarp',
                      'tqdm',
                      'pathlib',
+                     'biopython',
                      ],
   package_data={
     '':['resources/*.csv', 'resources/*.txt']
@@ -35,6 +36,7 @@ setup(
            'bin/convertEventToAge',
            'bin/createGenotypeFile',
            'bin/maximizeControls',
-           'bin/mergeGroups'
+           'bin/mergeGroups',
+           'bin/PubMedQuery'
            ],
 )

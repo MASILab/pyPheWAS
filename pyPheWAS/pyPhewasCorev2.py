@@ -381,7 +381,7 @@ def fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3='', cova
 	data['y'] = phen_vector1 # aggregate phenotype data
 
 	# append '+' to covariates (if there are any) -> makes definition of 'f' more elegant
-	if covariates is not '':
+	if covariates != '':
 		covariates = '+' + covariates
 
 	# add MaxAgeAtEvent to data (if needed)
@@ -423,14 +423,14 @@ def fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3='', cova
 
 	except ValueError as ve:
 		print('\n')
-		if phenotype is not '':
+		if phenotype != '':
 			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
 		print(ve)
 		print('lr = % d' %lr)
 		reg_result = [np.nan, np.nan, np.nan, np.nan, np.nan]
 	except Exception as e:
 		print('\n')
-		if phenotype is not '':
+		if phenotype != '':
 			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
 		print(e)
 		reg_result = [np.nan, np.nan, np.nan, np.nan, np.nan]
