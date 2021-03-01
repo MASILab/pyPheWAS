@@ -126,7 +126,7 @@ else:
     file_format = ''
 
 plot_manhattan(regressions, thresh, 'ICD', imbalance, plot_all_pts, savem, file_format)
-plot_odds_ratio(regressions, thresh, 'ICD', saveb, file_format, phewas_label)
+plot_log_odds_ratio(regressions, thresh, 'ICD', saveb, file_format, phewas_label)
 plot_volcano(regressions, 'ICD', savev, file_format)
 
 if outfile is not None:

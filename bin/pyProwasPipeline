@@ -213,7 +213,7 @@ for t in thresh_type:
     saveb = path / ('LogOdds_%s_%s.%s' %(t, postfix, plot_format))
 
     plot_manhattan(regressions, thresh, 'CPT', imbalance, plot_all_pts, savem, plot_format)
-    plot_odds_ratio(regressions, thresh, 'CPT', saveb, plot_format, prowas_label)
+    plot_log_odds_ratio(regressions, thresh, 'CPT', saveb, plot_format, prowas_label)
    
 savev = path / ('Volcano_%s.%s' %(postfix, plot_format))
 plot_volcano(regressions, 'CPT', savev, plot_format)

@@ -851,7 +851,7 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, pl
 	return
 
 
-def plot_odds_ratio(regressions, thresh, code_type='ICD', save='', save_format='', label_loc="plot"):
+def plot_log_odds_ratio(regressions, thresh, code_type='ICD', save='', save_format='', label_loc="plot"):
 	"""
 	Plots significant phenotype data on a Log Odds Plot.
 
