@@ -35,8 +35,10 @@ setup(
            'bin/censorData',
            'bin/convertEventToAge',
            'bin/createGenotypeFile',
+           'bin/createPhenotypeFile',
            'bin/maximizeControls',
            'bin/mergeGroups',
-           'bin/PubMedQuery'
+           'bin/PubMedQuery',
+           'bin/NoveltyAnalysis'
            ],
 )
