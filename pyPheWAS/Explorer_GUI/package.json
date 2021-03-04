@@ -1,0 +1,14 @@
+{
+  "name": "e38221a5df1e64b8",
+  "main": "e38221a5df1e64b8@2919.js",
+  "version": "2919.0.0",
+  "homepage": "https://observablehq.com/d/e38221a5df1e64b8",
+  "author": {
+    "name": "clineci",
+    "url": "https://observablehq.com/@clineci"
+  },
+  "type": "module",
+  "peerDependencies": {
+    "@observablehq/runtime": "4"
+  }
+}
