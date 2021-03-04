@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
   name = 'pyPheWAS',
   packages = ['pyPheWAS'], # this must be the same as the name above
-  version = '3.2.0',
+  version = '3.2.7',
   description = 'MASI Lab Port of PheWAS into Python',
   author = 'MASI Lab',
   author_email = 'bennett.landman@vanderbilt.edu',
@@ -20,9 +20,11 @@ setup(
                      'tqdm',
                      'pathlib',
                      'biopython',
+                     'flask',
+					 'flask_cors',
                      ],
   package_data={
-    '':['resources/*.csv', 'resources/*.txt']
+    '':['resources/*.csv', 'resources/*.txt','Explorer_GUI/*'],
   },
   scripts=['bin/pyPhewasLookup',
            'bin/pyPhewasModel',
@@ -39,6 +41,8 @@ setup(
            'bin/maximizeControls',
            'bin/mergeGroups',
            'bin/PubMedQuery',
-           'bin/NoveltyAnalysis'
+           'bin/NoveltyAnalysis',
+           'bin/pyPhewasExplorer',
+           'bin/pyPhewasExplorerBackEnd'
            ],
 )

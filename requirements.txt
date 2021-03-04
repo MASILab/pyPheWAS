@@ -5,3 +5,5 @@ pandas
 statsmodels
 tqdm
 hopcroftkarp
+biopython
+flask
