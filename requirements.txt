@@ -7,3 +7,4 @@ tqdm
 hopcroftkarp
 biopython
 flask
+flask_cors

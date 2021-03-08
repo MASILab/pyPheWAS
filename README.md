@@ -10,16 +10,22 @@ Shikha Chaganti, PhD
 
 Bennett Landman, PhD
 
-## Latest Release: pyPheWAS 3.2.0
+## Latest Release: pyPheWAS 4.0.0
 This release includes:
+- **Novelty Analysis** tools: examine the relative literary novelty of disease-phecode pairings
+- **pyPheWAS Explorer**: an interactive visualization of PheDAS experiments
+- createGenotypeFile updated - now called createPhenotypeFile
+- Minor bug fixes
+
+
+### Older Releases
+
+### pyPheWAS 3.2.0
 - Configurable threshold for number of subjects required to run the regression on an individual PheCode
 - All regressions are now fit with regularization (old scheme available with 'legacy' option)
 - Minor changes to Manhattan plot
 - PheCode/ProCode categories added to regression file
 - Minor bug fixes
-
-
-### Older Releases
 
 #### pyPheWAS 3.1.1
 - New Analysis Type: ProWAS Tools
@@ -43,5 +49,5 @@ This release includes:
 - pyPhewasPipeline: a streamlined combination of pyPhewasLookup, pyPhewasModel, and pyPhewasPlot
 - Compatibility with Python 3
 - Age matching now saves the explicit mapping between controls/cases in addition to the resulting group file
-- Operation of the ICD censoring function matches the description in the documentation 
+- Operation of the ICD censoring function matches the description in the documentation
 - Minor bug fixes
