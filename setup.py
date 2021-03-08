@@ -9,7 +9,7 @@ setup(
   author_email = 'bennett.landman@vanderbilt.edu',
   url = 'https://github.com/MASILab/pyPheWAS', # use the URL to the github repo
   download_url = 'https://github.com/MASILab/pyPheWAS/tarball/0.1', # I'll explain this in a second
-  keywords = ['PheWAS', 'PheDAS', 'ICD-9', 'ICD-10', 'EMR', 'CPT'], # arbitrary keywords
+  keywords = ['PheWAS', 'ICD-9', 'ICD-10', 'EMR', 'CPT'], # arbitrary keywords
   classifiers = [],
   install_requires=[ 'numpy>=1.16.4',
                      'matplotlib',

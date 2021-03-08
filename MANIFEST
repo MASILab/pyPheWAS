@@ -22,17 +22,9 @@ bin/pyProwasPlot
 pyPheWAS/NoveltyPheDAS.py
 pyPheWAS/PubMedFunctions.py
 pyPheWAS/__init__.py
-pyPheWAS/censor_diagnosis.py
-pyPheWAS/labwas.py
 pyPheWAS/maximize_bipartite.py
-pyPheWAS/maximize_control_matching.py
-pyPheWAS/prowas_reg.py
-pyPheWAS/pyPhewasCore.py
 pyPheWAS/pyPhewasCorev2.py
 pyPheWAS/pyPhewasExplorerCore.py
-pyPheWAS/pyPhewasv2.py
-pyPheWAS/pyPhewasv3.py
-pyPheWAS/pyProWAS.py
 pyPheWAS/rt_censor_diagnosis.py
 pyPheWAS/Explorer_GUI/023fbd237e5020d0@76.js
 pyPheWAS/Explorer_GUI/29d10840f83e2527@465.js
