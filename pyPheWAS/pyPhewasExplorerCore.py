@@ -60,6 +60,7 @@ def get_group_file(filename):  # same
 	"""
 	genotypes_df = pd.read_csv(filename)
 	genotypes_df = genotypes_df.dropna(subset=['id'])
+	genotypes_df.sort_values(by='id', inplace=True)
 	return genotypes_df
 
 
@@ -107,6 +108,8 @@ def get_icd_codes(filename):
 	phenotypes['duration'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max') - \
 							 phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('min') + 1
 
+	icds.sort_values(by='id', inplace=True)
+
 	return phenotypes
 
 
@@ -127,10 +130,6 @@ def generate_feature_matrix(genotypes_df, icds):
 	fm_bin = np.zeros((genotypes_df.shape[0], phewas_codes.shape[0]), dtype=float)
 	fm_cnt = np.zeros((genotypes_df.shape[0], phewas_codes.shape[0]), dtype=float)
 	fm_dur = np.zeros((genotypes_df.shape[0], phewas_codes.shape[0]), dtype=float)
-
-	# Sort by subject ID
-	genotypes_df.sort_values(by='id', inplace=True)
-	icds.sort_values(by='id', inplace=True)
 
 	# make genotype a dictionary for faster access time
 	genotypes = genotypes_df.set_index('id').to_dict('index')
@@ -174,13 +173,13 @@ def generate_feature_matrix(genotypes_df, icds):
 Group Var Analysis
 """
 
-def get_1D_histogram(group, var_name):
+def get_1D_histogram(group, var_name, response):
 
 	bin_max = max(group[var_name])
 	bin_min = min(group[var_name])
 
-	geno0 = group[group['genotype'] == 0]
-	geno1 = group[group['genotype'] == 1]
+	geno0 = group[group[response] == 0]
+	geno1 = group[group[response] == 1]
 
 	H0, edges0 = np.histogram(geno0[var_name].to_numpy(),range=(bin_min,bin_max))
 	H1, edges1 = np.histogram(geno1[var_name].to_numpy(),range=(bin_min,bin_max))
@@ -189,13 +188,13 @@ def get_1D_histogram(group, var_name):
 	H_df0['count'] = H0
 	H_df0['xmin'] = edges0[0:-1]
 	H_df0['xmax'] = edges0[1:]
-	H_df0['genotype'] = 0
+	H_df0['response'] = 0
 
 	H_df1 = pd.DataFrame(index=range(0, len(H1)))
 	H_df1['count'] = H1
 	H_df1['xmin'] = edges1[0:-1]
 	H_df1['xmax'] = edges1[1:]
-	H_df1['genotype'] = 1
+	H_df1['response'] = 1
 
 	H_df = H_df0.append(H_df1)
 
@@ -203,7 +202,7 @@ def get_1D_histogram(group, var_name):
 	return H_df.reset_index(drop=True)
 
 
-def get_2D_histogram(group, var1, var2):
+def get_2D_histogram(group, var1, var2, response):
 
 	v1_bin_max = max(group[var1])
 	v1_bin_min = min(group[var1])
@@ -212,18 +211,18 @@ def get_2D_histogram(group, var1, var2):
 
 	bin_range = [[v1_bin_min,v1_bin_max],[v2_bin_min,v2_bin_max]]
 
-	geno0 = group[group['genotype'] == 0]
-	geno1 = group[group['genotype'] == 1]
+	geno0 = group[group[response] == 0]
+	geno1 = group[group[response] == 1]
 
 	H0, v1_edges0, v2_edges0 = np.histogram2d(geno0[var1].to_numpy(),geno0[var2].to_numpy(),range=bin_range)
 	H1, v1_edges1, v2_edges1 = np.histogram2d(geno1[var1].to_numpy(),geno1[var2].to_numpy(),range=bin_range)
 
-	H_df = pd.DataFrame(columns=['genotype','v1_ix','v2_ix','count','v1_min','v1_max','v2_min','v2_max'])
+	H_df = pd.DataFrame(columns=['response','v1_ix','v2_ix','count','v1_min','v1_max','v2_min','v2_max'])
 	k = 0
 	for i in range(0, H0.shape[0]):
 		for j in range(0, H0.shape[1]):
-			# genotype = 0
-			H_df.loc[k, 'genotype'] = 0
+			# response = 0
+			H_df.loc[k, 'response'] = 0
 			H_df.loc[k, 'v1_ix'] = i
 			H_df.loc[k, 'v2_ix'] = j
 			H_df.loc[k, 'count'] = H0[i,j]
@@ -232,8 +231,8 @@ def get_2D_histogram(group, var1, var2):
 			H_df.loc[k, 'v2_min'] = v2_edges0[j]
 			H_df.loc[k, 'v2_max'] = v2_edges0[j+1]
 			k+=1
-			# genotype = 1
-			H_df.loc[k, 'genotype'] = 1
+			# response = 1
+			H_df.loc[k, 'response'] = 1
 			H_df.loc[k, 'v1_ix'] = i
 			H_df.loc[k, 'v2_ix'] = j
 			H_df.loc[k, 'count'] = H1[i,j]
@@ -318,7 +317,7 @@ Statistical Modeling
 """
 
 
-def get_phewas_info(p_index):  # same
+def get_phenotype_info(p_index):  # same
 	"""
 	Returns all of the info of the phewas code at the given index.
 
@@ -350,19 +349,23 @@ def get_phewas_info(p_index):  # same
 	return [p_code, p_name, p_id, cat_id, cat, p_icd9_rollup, p_icd10_rollup]
 
 
-def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0, response='',
-						 phen_vector3=''):  # diff - done
+def fit_pheno_model(genotypes, phen_vector, response, covariates='', phenotype=''):
 	"""
 	Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
 
 	:param genotypes: a DataFrame containing the genotype information
-	:param phen_vector1: a array containing the phenotype vector
-	:param phen_vector2: a array containing the phenotype vector
-	:param covariates: a string containing all desired covariates
+	:param phen_vector: a array containing the aggregate phenotype vector
+	:param response: response variable in the logit model
+	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
+	:param phenotype: *[optional]* phenotype info [code, description] for this regression (used only for error handling)
 	:type genotypes: pandas DataFrame
-	:type phen_vector1: numpy array
-	:type phen_vector2: numpy array
+	:type phen_vector: numpy array
+	:type response: string
 	:type covariates: string
+	:type phenotype: list of strings
+
+	:returns: regression statistics
+	:rtype: list
 
 	.. note::
 		The covariates must be a string that is delimited by '+', not a list.
@@ -374,54 +377,37 @@ def calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates, lr=0
 		The covariates that are listed here *must* be headers to your genotype CSV file.
 	"""
 
-	data = genotypes
-	data['y'] = phen_vector1
-	data['MaxAgeAtICD'] = phen_vector2
-	# f='y~'+covariates
+	data = genotypes.copy()
+	data['y'] = phen_vector
+
+	# append '+' to covariates (if there are any) -> makes definition of 'f' more elegant
 	if covariates != '':
 		covariates = '+' + covariates
-	if response:
-		f = response + '~ y + genotype' + covariates
-		if phen_vector3.any():
-			data['phe'] = phen_vector3
-			f = response + '~ y + phe + genotype' + covariates
-	else:
-		f = 'genotype ~ y' + covariates
-		if phen_vector3.any():
-			data['phe'] = phen_vector3
-			f = 'genotype ~ y + phe' + covariates
+
+	# define model ('f') for the logisitc regression
+	predictors = covariates.replace(" ", "").split('+')
+	predictors[0] = 'y'
+	f = [response.strip(), predictors]
+
 	try:
-		if lr == 0: # fit logit without regulatization
-			logreg = smf.logit(f, data).fit(disp=False)
-			p = logreg.pvalues.y
-			conf = logreg.conf_int()
-			od = [-math.log10(p), p, logreg.params.y, conf[0]['y'], conf[1]['y']]
-		elif lr == 1: # fit logit with regularization
-			f1 = f.split(' ~ ')
-			f1[1] = f1[1].replace(" ", "")
-			logit = sm.Logit(data[f1[0].strip()], data[f1[1].split('+')])
-			lf = logit.fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
-			p = lf.pvalues.y
-			conf = lf.conf_int()
-			od = [-math.log10(p), p, lf.params.y, conf[0]['y'], conf[1]['y']]
-		else:
-			linreg = smf.logit(f, data).fit(method='bfgs', disp=False)
-			p = linreg.pvalues.y
-			conf = linreg.conf_int()
-			od = [-math.log10(p), p, linreg.params.y, conf[0]['y'], conf[1]['y']]
-	except ValueError as ve:
-		print(ve)
-		print('lr = % d' %lr)
-		p = np.nan
-		od = [np.nan, p, np.nan, np.nan, np.nan]
+		# fit logit with regularization
+		logit = sm.Logit(data[f[0]], data[f[1]])
+		model = logit.fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
+		# get results
+		p = model.pvalues.y
+		beta = model.params.y
+		conf = model.conf_int()
+		reg_result = [-math.log10(p), p, beta, conf[0]['y'], conf[1]['y']]  # collect results
 	except Exception as e:
+		print('\n')
+		if phenotype != '':
+			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
 		print(e)
-		p = np.nan
-		od = [np.nan, p, np.nan, np.nan, np.nan]
-	return od
+		reg_result = [np.nan, np.nan, np.nan, np.nan, np.nan]
+	return reg_result
 
 
-def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):  # same
+def run_phewas(fm, genotypes, covariates, response):
 	"""
 	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
 
@@ -435,60 +421,44 @@ def run_phewas(fm, genotypes, covariates, reg_type, response='', phewas_cov=''):
 	:returns: A tuple containing indices, p-values, and all the regression data.
 	"""
 
-	num_phecodes = len(fm[0, 0])
-	thresh = math.ceil(genotypes.shape[0] * 0.03)
+	num_phecodes = fm.shape[1]
+	thresh = math.ceil(genotypes.shape[0] * 0.05)
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
-	control = fm[0][genotypes.genotype == 0, :]
-	disease = fm[0][genotypes.genotype == 1, :]
-	# find all phecodes that only present for a single genotype (ie only controls or only diseased show the phecode) -> have to use regularization
-	inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
+	control = fm[genotypes.genotype == 0, :]
+	disease = fm[genotypes.genotype == 1, :]
+
 	for index in tqdm(range(num_phecodes), desc='Running Regressions'):
-		phen_vector1 = fm[0][:, index]
-		phen_vector2 = fm[1][:, index]
-		phen_vector3 = fm[2][:, index]
+		phen_info = get_phenotype_info(index)
+		phen_vector = fm[:, index]
 		# to prevent false positives, only run regressions if more than thresh records have positive values
-		if np.where(phen_vector1 > 0)[0].shape[0] > thresh:
-			if index in inds:
-				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
-										   lr=1,
-										   response=response,
-										   phen_vector3=phen_vector3)
-			else:
-				res = calculate_odds_ratio(genotypes, phen_vector1, phen_vector2, covariates,
-										   lr=0,
-										   response=response,
-										   phen_vector3=phen_vector3)
-
-		else: # default (non-significant) values if not enough samples to run regression
-			p = np.nan
-			res = [np.nan, p, np.nan, np.nan, np.nan]
-
+		if np.where(fm > 0)[0].shape[0] > thresh:
+			stat_info = fit_pheno_model(genotypes, phen_vector, response, covariates=covariates, phenotype=phen_info[0:2])
+		else:
+			# not enough samples to run regression
+			stat_info = [np.nan, np.nan, np.nan, np.nan, np.nan]
 		# save all of the regression data
-		phewas_info = get_phewas_info(index)
-		info = phewas_info[0:3] + [np.where(phen_vector1 > 0)[0].shape[0]] + res + phewas_info[3:5] + [phewas_info[5]] + [phewas_info[6]]
-
+		info = phen_info[0:3] + [np.where(phen_vector > 0)[0].shape[0]] + stat_info + phen_info[3:5] + [phen_info[5]] + [phen_info[6]]
 		regressions.loc[index] = info
 
 	return regressions.dropna(subset=['pval']).sort_values(by='PheCode')
+
 
 """
 Start the JavaScript GUI
 """
 
 def run_Explorer_GUI():
-    PORT = 8000
+	PORT = 8000
 
-    web_dir = os.path.join(os.path.dirname(__file__), 'Explorer_GUI')
-    print(os.path.dirname(__file__))
-    print(web_dir)
+	web_dir = os.path.join(os.path.dirname(__file__), 'Explorer_GUI')
+	print(os.path.dirname(__file__))
+	print(web_dir)
 
-    os.chdir(web_dir)
+	os.chdir(web_dir)
 
-    Handler = http.server.SimpleHTTPRequestHandler
-    httpd = socketserver.TCPServer(("", PORT), Handler)
-    print("pyPheWAS Explorer Ready")
-    print("Please open http://localhost:8000/ in a web brower (preferably Google Chrome)")
+	Handler = http.server.SimpleHTTPRequestHandler
+	httpd = socketserver.TCPServer(("", PORT), Handler)
 
-    httpd.serve_forever()
-    return # kind of unnecessay but whatever
+	httpd.serve_forever()
+	return # kind of unnecessay but whatever
