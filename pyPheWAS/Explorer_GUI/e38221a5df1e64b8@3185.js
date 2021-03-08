@@ -4,17 +4,14 @@ export default function define(runtime, observer) {
   const main = runtime.module();
   main.variable(observer()).define(["md"], function(md){return(
 md `# pyPheWAS Explorer
+#### A visualization tool for exploratory analysis of phenome-disease association 
 `
 )});
-  main.variable(observer()).define(["md"], function(md){return(
-md `#### A visualization tool for exploratory analysis of phenome-disease association 
-`
-)});
-  main.variable(observer("viewof c")).define("viewof c", ["width","reg_panel_size","margin","d3","group_panel_size","group_panel","reg_panel"], function(width,reg_panel_size,margin,d3,group_panel_size,group_panel,reg_panel)
+  main.variable(observer()).define(["group_panel_size","margin","d3","group_panel"], function(group_panel_size,margin,d3,group_panel)
 {
-  // Master SVG Element
-  let full_width = width
-  let full_height = reg_panel_size+(2*margin.y)
+  // Master SVG Element for the Regression Builder Panel
+  let full_width = group_panel_size+(2*margin.y)
+  let full_height = group_panel_size+(2*margin.y)
   let svg_elem = d3.create('svg')
     .attr('id', 'group_panel')
     .attr('width', full_width)
@@ -25,18 +22,27 @@ md `#### A visualization tool for exploratory analysis of phenome-disease associ
   let reg_group = svg_elem.append('g').attr('transform', 'translate('+(group_panel_size+margin.x)+','+margin.y+')')
   
   group_panel (svg_elem)
-  reg_panel(reg_group)
   
-  
-  var c = svg_elem.node()
-  
-  return c
+  return svg_elem.node()
   }
 );
-  main.variable(observer("c")).define("c", ["Generators", "viewof c"], (G, _) => G.input(_));
-  main.variable(observer()).define(["md","fullscreen"], function(md,fullscreen){return(
-md`${fullscreen()}`
-)});
+  main.variable(observer()).define(["reg_panel_size","margin","d3","reg_panel"], function(reg_panel_size,margin,d3,reg_panel)
+{
+  // Master SVG Element for the Regression Evaluation Panel
+  let full_width = reg_panel_size+(2*margin.y)
+  let full_height = reg_panel_size+(2*margin.y)
+  let svg_elem = d3.create('svg')
+    .attr('id', 'reg_panel')
+    .attr('width', full_width)
+    .attr('height', full_height)
+    .style('font-family', 'sans-serif')
+    .style('font-size', 10)
+
+  reg_panel(svg_elem)
+  
+  return svg_elem.node()
+  }
+);
   main.variable(observer()).define(["md"], function(md){return(
 md `### Group Panel Functions`
 )});
@@ -86,37 +92,41 @@ function group_panel (svg_elem) {
   return svg_elem.node()
 }
 )});
-  main.variable(observer("plot_groupvar_hists")).define("plot_groupvar_hists", ["var_dist_size","d3","group_vars","z","hist_data","buffer","cor_scale","group_data","draw_groupvar_buttons"], function(var_dist_size,d3,group_vars,z,hist_data,buffer,cor_scale,group_data,draw_groupvar_buttons){return(
+  main.variable(observer("plot_groupvar_hists")).define("plot_groupvar_hists", ["d3","group_vars","var_dist_size","z","hist_data","cor_scale","group_data","draw_groupvar_buttons"], function(d3,group_vars,var_dist_size,z,hist_data,cor_scale,group_data,draw_groupvar_buttons){return(
 function plot_groupvar_hists(hist_group) {
-  
-  const cell_height = var_dist_size.height / 4;
-  const cell_width = var_dist_size.width;
-  const hist_height = 50;
-  const hist_width = 100;
-  const hist_margin = 27;
-  const cor_height = 25;
-  const cor_width = 50;
   
   let hgroups = []
   let hgroup_scale = d3.scaleBand().domain(group_vars).range([0,var_dist_size.height])
   
+  const gvar_buffer = 5;
+  const cell_height = hgroup_scale(group_vars[1]) - hgroup_scale(group_vars[0]);
+  const cell_width = var_dist_size.width;
+  const hist_height = cell_height / 2.3;
+  const hist_width = 100;
+  const hist_margin = 27;
+  const cor_height = cell_height / 3.0;
+  const cor_width = 40;
+  var y_offset1 = (cell_height/2) - (hist_height / 2) - (gvar_buffer*2); // approximately 1/4 of the way down the cell
+  var y_offset2 = (cell_height/2) - (gvar_buffer*2); // approximately 1/2 of the way down the cell
+  
+  
   for (var i=0; i < group_vars.length; i++){
     let v = group_vars[i]
     let v_data = z.filter(d => d.var_name === v, hist_data)
-    let v_data0 = z.filter(d => d.genotype === 0, v_data)
-    let v_data1 = z.filter(d => d.genotype === 1, v_data)
+    let v_data0 = z.filter(d => d.response === 0, v_data)
+    let v_data1 = z.filter(d => d.response === 1, v_data)
     
     hgroups[i] = hist_group.append('g')
-      .attr("transform", `translate(${buffer},${hgroup_scale(v)+buffer})`)
+      .attr("transform", `translate(${gvar_buffer},${hgroup_scale(v)+gvar_buffer})`)
       .attr('class',v)
     
     // seperating line
     if (i !== 0) {
       hgroups[i].append('line')
-        .attr('x1',-buffer)
-        .attr('x2',cell_width-buffer)
-        .attr('y1',-10)
-        .attr('y2',-10)
+        .attr('x1',-gvar_buffer)
+        .attr('x2',cell_width-gvar_buffer)
+        .attr('y1',-gvar_buffer)
+        .attr('y2',-gvar_buffer)
         .attr('stroke', d3.hcl(0,0,70))
         .attr('stroke-width',2)
     }
@@ -125,7 +135,7 @@ function plot_groupvar_hists(hist_group) {
       .text(v)
       .attr('class', v)
       .attr('x', (cell_width*(1/2)))
-      .attr('y',15)
+      .attr('y', y_offset1 + gvar_buffer)
       .attr('font-size', '12px')
       .attr('font-weight', 'bold')
       .attr('text-anchor','start')
@@ -135,7 +145,7 @@ function plot_groupvar_hists(hist_group) {
     hgroups[i].append('rect')
       .attr('class', v)
       .attr('x', (cell_width*(1/2)))
-      .attr('y',25)
+      .attr('y', y_offset2)
       .attr('width',cor_width)
       .attr('height',cor_height)
       .attr('fill', cor_scale(group_data[i].corr))
@@ -149,21 +159,20 @@ function plot_groupvar_hists(hist_group) {
       .domain([0, d3.max(v_data, d => d.count)]).nice()
       .range([hist_height,0])
     
-
     hgroups[i].append("g")
       .attr('class', v)
-      .attr("transform", `translate(${hist_margin},0)`)
+      .attr("transform", `translate(${hist_margin},${y_offset1})`)
       .attr("fill", "purple")
       .attr("opacity",0.6)
       .selectAll("empty").data(v_data0).enter().append("rect")
         .attr("x", d => x_scale(d.xmin))
         .attr("y", d=> y_scale(d.count))
         .attr("width", d => x_scale(d.xmax) - x_scale(d.xmin))
-        .attr("height",d=> hist_height - y_scale(d.count))
+        .attr("height", d=> hist_height - y_scale(d.count))
     
     hgroups[i].append("g")
       .attr('class', v)
-      .attr("transform", `translate(${hist_margin},0)`)
+      .attr("transform", `translate(${hist_margin},${y_offset1})`)
       .attr("fill", "green")
       .attr("opacity",0.4)
       .selectAll("empty").data(v_data1).enter().append("rect")
@@ -173,11 +182,11 @@ function plot_groupvar_hists(hist_group) {
         .attr("height",d=> hist_height - y_scale(d.count))
     
     const yAxis = g => g
-      .attr("transform", `translate(${hist_margin},0)`)
+      .attr("transform", `translate(${hist_margin},${y_offset1})`)
       .call(d3.axisLeft(y_scale).ticks(3))
       .call(g => g.select(".domain").remove())
     const xAxis = g => g
-      .attr("transform", `translate(${hist_margin},${hist_height})`)
+      .attr("transform", `translate(${hist_margin},${y_offset1 + hist_height})`)
       .call(d3.axisBottom(x_scale).ticks(5).tickSizeOuter(0))
 
     hgroups[i].append("g")
@@ -187,14 +196,13 @@ function plot_groupvar_hists(hist_group) {
     hgroups[i].append("g")
       .attr('class', v)
       .call(yAxis);
-
   }
   
-  draw_groupvar_buttons(hist_group, hgroup_scale,cell_height,cell_width)
+  draw_groupvar_buttons(hist_group, hgroup_scale,cell_height,cell_width,y_offset2 + (cor_height/2))
 }
 )});
   main.variable(observer("draw_groupvar_buttons")).define("draw_groupvar_buttons", ["var_comp","d3","z","mutable var_comp","cov_select","mutable cov_select"], function(var_comp,d3,z,$0,cov_select,$1){return(
-function draw_groupvar_buttons(hist_group, groupvar_scale,cell_height,cell_width) {
+function draw_groupvar_buttons(hist_group, groupvar_scale, cell_height, cell_width, y_offset) {
   let button_color = ["grey","yellow","black"]
   const button_size = 12
   
@@ -204,7 +212,7 @@ function draw_groupvar_buttons(hist_group, groupvar_scale,cell_height,cell_width
 
   varcomp_button_group.append('rect')
     .attr('class','varcomp_button')
-    .attr('transform', d=> `translate(${cell_width*0.8},${groupvar_scale(d.vname)+cell_height*0.35})`)
+    .attr('transform', d=> `translate(${cell_width*0.8},${groupvar_scale(d.vname) + y_offset})`)
     .attr('width',button_size)
     .attr('height',button_size)
     .attr('stroke',d3.hcl(0,0,70))
@@ -237,11 +245,10 @@ function draw_groupvar_buttons(hist_group, groupvar_scale,cell_height,cell_width
       }
   })
   
-  let y_delta = button_size+cell_height*0.35+5
-  let x_delta = cell_width*0.8  + button_size
+  let x_delta = cell_width*0.8  - 4
     varcomp_button_group.append('text')
       .text("Comp")
-      .attr('transform', d=> `translate(${x_delta},${y_delta+groupvar_scale(d.vname)}), rotate(-45)`)
+      .attr('transform', d=> `translate(${x_delta},${y_offset+10+groupvar_scale(d.vname)})`)
       .attr('font-size', '11px')
       .attr('text-anchor', 'end')
   
@@ -251,7 +258,7 @@ function draw_groupvar_buttons(hist_group, groupvar_scale,cell_height,cell_width
 
   cov_button_group.append('rect')
     .attr('class','varcomp_button')
-    .attr('transform', d=> `translate(${cell_width*0.9},${groupvar_scale(d.vname)+cell_height*0.35})`)
+    .attr('transform', d=> `translate(${cell_width*0.94},${groupvar_scale(d.vname)+y_offset})`)
     .attr('width',button_size)
     .attr('height',button_size)
     .attr('stroke',d3.hcl(0,0,70))
@@ -269,12 +276,11 @@ function draw_groupvar_buttons(hist_group, groupvar_scale,cell_height,cell_width
         $1.value = z.addCol("s",curr_select,cov_select)
       }
   })
-  
-  y_delta = button_size+cell_height*0.35+5
-  x_delta = cell_width*0.9  + button_size
+
+  x_delta = cell_width*0.94  - 3
     varcomp_button_group.append('text')
       .text("Cov")
-      .attr('transform', d=> `translate(${x_delta},${y_delta+groupvar_scale(d.vname)}), rotate(-45)`)
+      .attr('transform', d=> `translate(${x_delta},${y_offset+10+groupvar_scale(d.vname)})`)
       .attr('font-size', '11px')
       .attr('text-anchor', 'end')
 
@@ -290,6 +296,15 @@ function indep_comp(var_comp_group) {
       .attr('text-anchor','middle')
       .attr('transform',`translate(${var_dist2_size.width/2},150)`)
       .attr('font-size','24px')
+      .attr('font-weight','bold')
+  }
+  else if (jhist_data.length < 200 && jhist_data[0].msg === "select_2nd_var"){
+    var_comp_group.append('text')
+      .attr('class','placeholder')
+      .text('Please select a second variable for comparison')
+      .attr('text-anchor','middle')
+      .attr('transform',`translate(${var_dist2_size.width/2},150)`)
+      .attr('font-size','18px')
       .attr('font-weight','bold')
   }
   else{
@@ -333,7 +348,7 @@ function indep_comp(var_comp_group) {
       .attr("transform", `translate(${mw},${panel_scale('jh1')})`)
 
     // Joint plot
-    let jhist_data0 = z.filter(d => d.genotype === 0, jhist_data)
+    let jhist_data0 = z.filter(d => d.response === 0, jhist_data)
     // scales
     let count0_color_scale = d3.scaleLinear()
       .domain([0,1,d3.max(jhist_data0,d=>d.count)])
@@ -369,7 +384,7 @@ function indep_comp(var_comp_group) {
       })
 
     // Var 1 Histogram (Y-axis)
-    let v1_data0 = z.filter(d => d.genotype === 0, var1_data)
+    let v1_data0 = z.filter(d => d.response === 0, var1_data)
     var x_scale = d3.scaleLinear()
       .domain([d3.min(var1_data, d => d.xmin),d3.max(var1_data, d => d.xmax)])
       .range([0, jhist_size]);
@@ -398,7 +413,7 @@ function indep_comp(var_comp_group) {
       .call(var1_Axis0);
 
     // Var 2 Histogram (X-axis)
-    let v2_data0 = z.filter(d => d.genotype === 0, var2_data)
+    let v2_data0 = z.filter(d => d.response === 0, var2_data)
     var x_scale = d3.scaleLinear()
       .domain([d3.min(var2_data, d => d.xmin),d3.max(var2_data, d => d.xmax)])
       .range([0, jhist_size]);
@@ -420,7 +435,7 @@ function indep_comp(var_comp_group) {
       .attr("transform", `translate(${mw},${panel_scale('jh2')})`)
 
     // Joint Plot
-    let jhist_data1 = z.filter(d => d.genotype === 1, jhist_data)
+    let jhist_data1 = z.filter(d => d.response === 1, jhist_data)
     // scales
     let count1_color_scale = d3.scaleLinear()
       .domain([0,1,d3.max(jhist_data1,d=>d.count)])
@@ -456,7 +471,7 @@ function indep_comp(var_comp_group) {
       })
 
     // Var 1 Histogram (Y-axis)
-    let v1_data1 = z.filter(d => d.genotype === 1, var1_data)
+    let v1_data1 = z.filter(d => d.response === 1, var1_data)
     var x_scale = d3.scaleLinear()
       .domain([d3.min(var1_data, d => d.xmin),d3.max(var1_data, d => d.xmax)])
       .range([0, jhist_size]);
@@ -485,7 +500,7 @@ function indep_comp(var_comp_group) {
       .call(var1_Axis1);
 
     // Var 2 Histogram (X-axis)
-    let v2_data1 = z.filter(d => d.genotype === 1, var2_data)
+    let v2_data1 = z.filter(d => d.response === 1, var2_data)
     var x_scale = d3.scaleLinear()
       .domain([d3.min(var2_data, d => d.xmin),d3.max(var2_data, d => d.xmax)])
       .range([0, jhist_size]);
@@ -616,7 +631,7 @@ function comp_stats (stats_comp_group){
   
 }
 )});
-  main.variable(observer("reg_builder")).define("reg_builder", ["group_data","reg_builder_size","var_dist_size","d3","math","reg_types","mutable reg_types","z","cov_selection"], function(group_data,reg_builder_size,var_dist_size,d3,math,reg_types,$0,z,cov_selection){return(
+  main.variable(observer("reg_builder")).define("reg_builder", ["group_data","reg_builder_size","var_dist_size","d3","response_var","math","reg_types","mutable reg_types","z","cov_selection"], function(group_data,reg_builder_size,var_dist_size,d3,response_var,math,reg_types,$0,z,cov_selection){return(
 function reg_builder(main_group){
   
   const num_g0 = group_data[0].g0.length
@@ -649,7 +664,7 @@ function reg_builder(main_group){
     .attr('font-size', '14px')
     .attr('font-weight', 'bold')
   reg_builder_group.append('text')
-    .text("Group")
+    .text(response_var[0].msg)
     .attr('text-anchor', 'middle')
     .attr('transform', `rotate(270), translate(${-geno_offset.y},${geno_offset.x})`)
     .attr('font-size', '14px')
@@ -730,7 +745,7 @@ function reg_builder(main_group){
 
 }
 )});
-  main.variable(observer("cov_selection")).define("cov_selection", ["z","cov_select","reg_builder_size","d3","reg_types","reg_list","mutable reg_list","mutable reg_args","mutable start_ix","hist_data"], function(z,cov_select,reg_builder_size,d3,reg_types,reg_list,$0,$1,$2,hist_data){return(
+  main.variable(observer("cov_selection")).define("cov_selection", ["z","cov_select","reg_builder_size","d3","response_var","run_status","reg_types","reg_list","mutable reg_list","mutable reg_args","mutable start_ix","mutable run_status","hist_data"], function(z,cov_select,reg_builder_size,d3,response_var,run_status,reg_types,reg_list,$0,$1,$2,$3,hist_data){return(
 function cov_selection(cov_select_group,reg_panel_width){
   
   let selected = z.getCol("vname", z.filter(r => r.s === 1, cov_select))
@@ -746,7 +761,7 @@ function cov_selection(cov_select_group,reg_panel_width){
     .lower()
   
   cov_select_group.append('text')
-    .text("Target ~ Phecode +")
+    .text(response_var[0].msg + " ~ Phecode +")
     .attr('text-anchor', 'middle')
     .attr('x', reg_panel_width/2)
     .attr('y', 30)
@@ -758,7 +773,7 @@ function cov_selection(cov_select_group,reg_panel_width){
   // Run Button
   const button_width = 70
   const button_height = 20
-  let button_color = ["grey","yellow"]
+  let run_button_color = ["grey","red"]
   cov_select_group.append('rect')
     .attr('class','run_button')
     .attr('transform', d=> `translate(${reg_panel_width-90},10)`)
@@ -766,20 +781,20 @@ function cov_selection(cov_select_group,reg_panel_width){
     .attr('height',button_height)
     .attr('stroke',d3.hcl(0,0,70))
     .attr('stroke-width', 3)
-    .attr("fill", "grey")
+    .attr("fill", run_button_color[run_status])
     .attr("opacity",0.2)
     .on('click', function(d) {
-      d3.select(this).attr("fill", "red")
-      let rtype = z.filter(r => r.s ===1, reg_types)
-      let s = z.getCol("vname", z.filter(r => r.s === 1, cov_select))
-      let next_ix = reg_list.length
-      let reg_list_copy = [...reg_list]
-      reg_list_copy.unshift({ cmd:"run_reg", cov:s, rtype:rtype[0].rtype })
-      $0.value = [...reg_list_copy]
-      $1.value = [{ cmd:"run_reg", cov:s, rtype:rtype[0].rtype}]
-      $2.value = 0
-      d3.select(this).transition()
-        .delay(750).attr("fill", "grey")
+      if (run_status === 0){
+        let rtype = z.filter(r => r.s ===1, reg_types)
+        let s = z.getCol("vname", z.filter(r => r.s === 1, cov_select))
+        let next_ix = reg_list.length
+        let reg_list_copy = [...reg_list]
+        reg_list_copy.unshift({ cmd:"run_reg", cov:s, rtype:rtype[0].rtype })
+        $0.value = [...reg_list_copy];
+        $1.value = [{ cmd:"run_reg", cov:s, rtype:rtype[0].rtype}];
+        $2.value = 0;
+        $3.value = 1;
+      }
     })
   cov_select_group.append('text')
     .text("Run")
@@ -799,8 +814,8 @@ function cov_selection(cov_select_group,reg_panel_width){
   for (var i=0; i < selected.length; i++){
     let v = selected[i]
     let v_data = z.filter(d => d.var_name === v, hist_data)
-    let v_data0 = z.filter(d => d.genotype === 0, v_data)
-    let v_data1 = z.filter(d => d.genotype === 1, v_data)
+    let v_data0 = z.filter(d => d.response === 0, v_data)
+    let v_data1 = z.filter(d => d.response === 1, v_data)
     
     hgroups[i] = cov_select_group.append('g')
       .attr("transform", `translate(${hgroup_scale(v)},${reg_builder_size.height/3})`)
@@ -857,7 +872,7 @@ function cov_selection(cov_select_group,reg_panel_width){
     
 }
 )});
-  main.variable(observer("group_legend")).define("group_legend", ["group_panel_size","legend_height","d3","cor_scale","makeArr","reg_beta_scale"], function(group_panel_size,legend_height,d3,cor_scale,makeArr,reg_beta_scale){return(
+  main.variable(observer("group_legend")).define("group_legend", ["group_panel_size","legend_height","d3","response_var","cor_scale","makeArr","reg_beta_scale"], function(group_panel_size,legend_height,d3,response_var,cor_scale,makeArr,reg_beta_scale){return(
 function group_legend(legend_group){
   
   legend_group.append('rect')
@@ -877,8 +892,8 @@ function group_legend(legend_group){
   let bar_width = 1
   
   // genotype colors
-  let geno_data = [{name:'Group 0',color:"purple",opacity:0.6},
-                   {name:'Group 1',color:"green",opacity:0.4}]
+  let geno_data = [{name:response_var[0].msg +' 0',color:"purple",opacity:0.6},
+                   {name:response_var[0].msg +' 1',color:"green",opacity:0.4}]
   let geno_scale = d3.scaleBand()
     .domain(d3.set(geno_data, d=> d.name).values())
     .range([0,legend_scale.bandwidth()])
@@ -994,20 +1009,20 @@ function makeArr(startValue, stopValue, cardinality) {
   main.variable(observer()).define(["md"], function(md){return(
 md `### Regression Panel Functions`
 )});
-  main.variable(observer("reg_panel")).define("reg_panel", ["plot_logOdds","plot_volcano","draw_cat_legend","draw_volcano_legend","thresh_select_panel","drawTable"], function(plot_logOdds,plot_volcano,draw_cat_legend,draw_volcano_legend,thresh_select_panel,drawTable){return(
+  main.variable(observer("reg_panel")).define("reg_panel", ["draw_cat_legend","draw_volcano_legend","thresh_select_panel","plot_logOdds","plot_volcano","drawTable","mutable run_status"], function(draw_cat_legend,draw_volcano_legend,thresh_select_panel,plot_logOdds,plot_volcano,drawTable,$0){return(
 function reg_panel(svg_elem) {
   
   let main_group = svg_elem.append('g')
     .attr('id', 'main')
   
-  plot_logOdds(main_group)
-  plot_volcano(main_group)
   draw_cat_legend(main_group)
   draw_volcano_legend(main_group)
   thresh_select_panel(main_group)
-  
+  plot_logOdds(main_group)
+  plot_volcano(main_group)
   drawTable(main_group)
-    
+  
+  $0.value = 0
 }
 )});
   main.variable(observer("plot_logOdds")).define("plot_logOdds", ["z","thresh_value","reg_data","d3","reg_plot_size","reg_plot_legend_height","buffer","phe_cat_colors","vol_color"], function(z,thresh_value,reg_data,d3,reg_plot_size,reg_plot_legend_height,buffer,phe_cat_colors,vol_color){return(
@@ -1052,116 +1067,129 @@ function plot_logOdds(main_group)  {
         .attr('opacity', 1.0)
         .attr('stroke', d => vol_color(d.pval))
       main_group.selectAll('.phelabel_click').remove()
-    })
-  
-  // axes
-  log_odds_group.append('line')
-    .attr('x1', d=>logodds_x_scale(0))
-    .attr('y1', d=>logodds_y_scale.range()[0])
-    .attr('x2', d=>logodds_x_scale(0))
-    .attr('y2', d=>logodds_y_scale.range()[1])
-    .attr('stroke',d => "black")
-    .attr('stroke-width', 1)
-  
-  let log_xaxis = d3.axisBottom(logodds_x_scale).ticks(6)
-
-  log_odds_group.append('g')
-    .attr('id', 'xaxis')
-    .attr('transform', `translate(0,${logodds_y_scale.range()[1]})`)
-    .call(log_xaxis)
-  
-  log_odds_group.append('text')
-    .text('Log Odds Ratio')
-    .attr('id', 'xaxis_label')
-    .attr('transform', `translate(${reg_plot_size.width/2},${logodds_y_scale.range()[1]+35})`)
-    .attr('text-anchor', 'middle')
-    .attr('font-size', '13px')
-    .attr('font-weight', 'bold')
-  
-  // confidence intervals
-  beta_group.append('line')
-    .attr('class','logodds')
-    .attr('id',d=>d.Pheno_id)
-    .attr('x1', d=>logodds_x_scale(d.beta_ci_low))
-    .attr('y1', d=>logodds_y_scale(d.PheCode))
-    .attr('x2', d=>logodds_x_scale(d.beta_ci_up))
-    .attr('y2', d=>logodds_y_scale(d.PheCode))
-    .attr('stroke',d => phe_cat_colors(d.category))
-    .attr('stroke-width', 2)
-  
-  // point estimate 
-  beta_group.append('circle')
-    .attr('id',d=>d.Pheno_id)
-    .attr('class','logodds')
-    .attr('cx', d=>logodds_x_scale(d.beta))
-    .attr('cy', d=>logodds_y_scale(d.PheCode))
-    .attr('r', 3)
-    .attr('stroke-width', 2)
-    .attr('stroke', d => phe_cat_colors(d.category))
-    .attr('fill', d => phe_cat_colors(d.category))
-    .on('mouseover', function(d) {
-      log_odds_group.append('text')
-        .attr("class","phelabel")
-        .text(d.Phenotype)
-        .attr('text-anchor', 'start')
-        .attr('x', +d3.select(this).attr('cx')+10)
-        .attr('y', +d3.select(this).attr('cy')-10)
-        .attr('font-weight', 'bold')
-        .style('font-size', 13)
-        .raise()
-    })
-    .on('mouseout', (d, i, arr) => {
-      log_odds_group.selectAll('.phelabel').remove()
-    })
-    .on('click', function(d) {
-      // reset attributes
-      main_group.selectAll('.logodds')
-        .attr('opacity', 0.2)
-        .attr('stroke', d => phe_cat_colors(d.category))
-      main_group.selectAll('.volcano')
-        .attr('opacity', 0.2)
-        .attr('stroke', d => vol_color(d.pval))
-      main_group.selectAll('.phelabel_click').remove()
       main_group.selectAll('.phecode_row').attr("fill","grey")
       main_group.selectAll('.phecode_row_text').attr("font-weight","normal")
-    
-      // highlight selected point in both plots
-      log_odds_group.selectAll('#'+d.Pheno_id)
-        .attr('opacity', 1.0)
-        .attr('stroke','black')
-      main_group.selectAll('.volcano')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
-        })
-        .attr('opacity', 1.0)
-        .attr('stroke','black')
-      // draw text 
-      log_odds_group.append('text')
-        .attr("class","phelabel_click")
-        .text(d.Phenotype)
-        .attr('x',+d3.select(this).attr('cx')+10)
-        .attr('y', +d3.select(this).attr('cy')-10)
-        .attr('font-weight', 'bold')
-        .style('font-size', 13)
-        .attr('text-anchor', 'start')
-        .raise()
-      // highlight selected point in table (if it's shown)
-      // color row
-      main_group.selectAll('.phecode_row')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
-        })
-        .attr("fill",d => phe_cat_colors(d.category))
-      // bold row
-      main_group.selectAll('.phecode_row_text')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
-        })
-        .attr("font-weight","bold")
     })
- 
   
-  return beta_group
+  if (reg_data.length == 1 && reg_data[0].msg === "no_data"){
+    log_odds_group.append('text')
+      .attr('class','placeholder')
+      .text('Log Odds Plot')
+      .attr('text-anchor','middle')
+      .attr('transform',`translate(${reg_plot_size.width/2},${reg_plot_size.height/3})`)
+      .attr('font-size','18px')
+      .attr('font-weight','bold')
+  }
+  else {
+    // axes
+    log_odds_group.append('line')
+      .attr('x1', d=>logodds_x_scale(0))
+      .attr('y1', d=>logodds_y_scale.range()[0])
+      .attr('x2', d=>logodds_x_scale(0))
+      .attr('y2', d=>logodds_y_scale.range()[1])
+      .attr('stroke',d => "black")
+      .attr('stroke-width', 1)
+
+    let log_xaxis = d3.axisBottom(logodds_x_scale).ticks(6)
+
+    log_odds_group.append('g')
+      .attr('id', 'xaxis')
+      .attr('transform', `translate(0,${logodds_y_scale.range()[1]})`)
+      .call(log_xaxis)
+
+    log_odds_group.append('text')
+      .text('Log Odds Ratio')
+      .attr('id', 'xaxis_label')
+      .attr('transform', `translate(${reg_plot_size.width/2},${logodds_y_scale.range()[1]+35})`)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '13px')
+      .attr('font-weight', 'bold')
+
+    // confidence intervals
+    beta_group.append('line')
+      .attr('class','logodds')
+      .attr('id',d=>d.Pheno_id)
+      .attr('x1', d=>logodds_x_scale(d.beta_ci_low))
+      .attr('y1', d=>logodds_y_scale(d.PheCode))
+      .attr('x2', d=>logodds_x_scale(d.beta_ci_up))
+      .attr('y2', d=>logodds_y_scale(d.PheCode))
+      .attr('stroke',d => phe_cat_colors(d.category))
+      .attr('stroke-width', 2)
+
+    // point estimate 
+    beta_group.append('circle')
+      .attr('id',d=>d.Pheno_id)
+      .attr('class','logodds')
+      .attr('cx', d=>logodds_x_scale(d.beta))
+      .attr('cy', d=>logodds_y_scale(d.PheCode))
+      .attr('r', 3)
+      .attr('stroke-width', 2)
+      .attr('stroke', d => phe_cat_colors(d.category))
+      .attr('fill', d => phe_cat_colors(d.category))
+      .on('mouseover', function(d) {
+        log_odds_group.append('text')
+          .attr("class","phelabel")
+          .text(d.Phenotype)
+          .attr('text-anchor', 'start')
+          .attr('x', +d3.select(this).attr('cx')+10)
+          .attr('y', +d3.select(this).attr('cy')-10)
+          .attr('font-weight', 'bold')
+          .style('font-size', 13)
+          .raise()
+      })
+      .on('mouseout', (d, i, arr) => {
+        log_odds_group.selectAll('.phelabel').remove()
+      })
+      .on('click', function(d) {
+        // reset attributes
+        main_group.selectAll('.logodds')
+          .attr('opacity', 0.2)
+          .attr('stroke', d => phe_cat_colors(d.category))
+        main_group.selectAll('.volcano')
+          .attr('opacity', 0.2)
+          .attr('stroke', d => vol_color(d.pval))
+        main_group.selectAll('.phelabel_click').remove()
+        main_group.selectAll('.phecode_row').attr("fill","grey")
+        main_group.selectAll('.phecode_row_text').attr("font-weight","normal")
+
+        // highlight selected point in both plots
+        log_odds_group.selectAll('#'+d.Pheno_id)
+          .attr('opacity', 1.0)
+          .attr('stroke','black')
+        main_group.selectAll('.volcano')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr('opacity', 1.0)
+          .attr('stroke','black')
+        // draw text 
+        log_odds_group.append('text')
+          .attr("class","phelabel_click")
+          .text(d.Phenotype)
+          .attr('x',+d3.select(this).attr('cx')+10)
+          .attr('y', +d3.select(this).attr('cy')-10)
+          .attr('font-weight', 'bold')
+          .style('font-size', 13)
+          .attr('text-anchor', 'start')
+          .raise()
+        // highlight selected point in table (if it's shown)
+        // color row
+        main_group.selectAll('.phecode_row')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr("fill",d => phe_cat_colors(d.category))
+        // bold row
+        main_group.selectAll('.phecode_row_text')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr("font-weight","bold")
+      })
+
+
+    return beta_group
+ }
 }
 )});
   main.variable(observer("plot_volcano")).define("plot_volcano", ["d3","reg_data","reg_plot_size","reg_plot_legend_height","buffer","phe_cat_colors","vol_color"], function(d3,reg_data,reg_plot_size,reg_plot_legend_height,buffer,phe_cat_colors,vol_color){return(
@@ -1205,118 +1233,131 @@ function plot_volcano(main_group)  {
         .attr('opacity', 1.0)
         .attr('stroke', d => vol_color(d.pval))
       main_group.selectAll('.phelabel_click').remove()
-    })
-  
-  // axes
-  let vol_xaxis = d3.axisBottom(volcano_x_scale).ticks(6)
-  let vol_yaxis = d3.axisLeft(volcano_y_scale).ticks(6)
-
-  volcano_group.append('g')
-    .attr('id', 'xaxis')
-    .attr('transform', 'translate(0,'+volcano_y_scale.range()[0]+')')
-    .call(vol_xaxis)
-  volcano_group.append('text')
-    .text('-log(p)')
-    .attr('id', 'xaxis_label')
-    .attr('transform', `rotate(270) translate(-${reg_plot_size.height/2},20)`)
-    .attr('text-anchor', 'middle')
-    .attr('font-size', '15px')
-    .attr('font-weight', 'bold')
-  
-  volcano_group.append('g')
-    .attr('id', 'yaxis')
-    .attr('transform', 'translate('+(amargin)+',0)')
-    .call(vol_yaxis)
-  volcano_group.append('text')
-    .text('Log Odds Ratio')
-    .attr('id', 'xaxis_label')
-    .attr('transform', `translate(${reg_plot_size.width/2},${volcano_y_scale.range()[0]+35})`)
-    .attr('text-anchor', 'middle')
-    .attr('font-size', '13px')
-    .attr('font-weight', 'bold')
-  
-  // point estimate 
-  beta_group.append('circle')
-    .attr('id',d=>d.Pheno_id)
-    .attr("class","volcano")
-    .attr('cx', d=>volcano_x_scale(d.beta))
-    .attr('cy', d=>volcano_y_scale(d.neg_log_p))
-    .attr('r', 3)
-    .attr('stroke-width', 2)
-    .attr('stroke', d => vol_color(d.pval))
-    .attr('fill', d => vol_color(d.pval))
-    .on('mouseover', function(d) {
-      const cx = +d3.select(this).attr('cx')
-      const phe_len = d3.select(this).data()[0].Phenotype.length
-      let ta = 'start'
-      if (cx+(phe_len*6) > volcano_x_scale.range()[1]){
-        ta = 'end'
-      }
-      volcano_group.append('text')
-        .attr("class","phelabel")
-        .text(d.Phenotype)
-        .attr('x',cx+5)
-        .attr('y', +d3.select(this).attr('cy')-10)
-        .attr('font-weight', 'bold')
-        .style('font-size', 13)
-        .attr('text-anchor', ta)
-        .raise()
-    })
-    .on('mouseout', () => {
-      volcano_group.selectAll('.phelabel').remove()
-    })
-    .on('click', function(d) {
-      // reset attributes
-      main_group.selectAll('.logodds')
-        .attr('opacity', 0.2)
-        .attr('stroke', d => phe_cat_colors(d.category))
-      main_group.selectAll('.volcano')
-        .attr('opacity', 0.2)
-        .attr('stroke', d => vol_color(d.pval))
-      main_group.selectAll('.phelabel_click').remove()
       main_group.selectAll('.phecode_row').attr("fill","grey")
       main_group.selectAll('.phecode_row_text').attr("font-weight","normal")
-    
-      // highlight selected point in both plots
-      volcano_group.selectAll('#'+d.Pheno_id)
-        .attr('opacity', 1.0)
-        .attr('stroke','black')
-      main_group.selectAll('.logodds')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
-        })
-        .attr('opacity', 1.0)
-        .attr('stroke','black')
-      // draw text 
-      const cx = +d3.select(this).attr('cx')
-      const phe_len = d3.select(this).data()[0].Phenotype.length
-      let ta = 'start'
-      if (cx+(phe_len*6) > volcano_x_scale.range()[1]){
-        ta = 'end'
-      }
-      volcano_group.append('text')
-        .attr("class","phelabel_click")
-        .text(d.Phenotype)
-        .attr('x',cx+5)
-        .attr('y', +d3.select(this).attr('cy')-10)
-        .attr('font-weight', 'bold')
-        .style('font-size', 13)
-        .attr('text-anchor', ta)
-        .raise()
-      // highlight selected point in table (if it's shown)
-      // color row
-      main_group.selectAll('.phecode_row')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
-        })
-        .attr("fill",d => phe_cat_colors(d.category))
-      // bold row
-      main_group.selectAll('.phecode_row_text')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
-        })
-        .attr("font-weight","bold")
     })
+  
+  if (reg_data.length == 1 && reg_data[0].msg === "no_data"){
+    volcano_group.append('text')
+      .attr('class','placeholder')
+      .text('Volcano Plot')
+      .attr('text-anchor','middle')
+      .attr('transform',`translate(${reg_plot_size.width/2},${reg_plot_size.height/3})`)
+      .attr('font-size','18px')
+      .attr('font-weight','bold')
+  }
+  else {
+    // axes
+    let vol_xaxis = d3.axisBottom(volcano_x_scale).ticks(6)
+    let vol_yaxis = d3.axisLeft(volcano_y_scale).ticks(6)
+
+    volcano_group.append('g')
+      .attr('id', 'xaxis')
+      .attr('transform', 'translate(0,'+volcano_y_scale.range()[0]+')')
+      .call(vol_xaxis)
+    volcano_group.append('text')
+      .text('-log(p)')
+      .attr('id', 'xaxis_label')
+      .attr('transform', `rotate(270) translate(-${reg_plot_size.height/2},20)`)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '15px')
+      .attr('font-weight', 'bold')
+
+    volcano_group.append('g')
+      .attr('id', 'yaxis')
+      .attr('transform', 'translate('+(amargin)+',0)')
+      .call(vol_yaxis)
+    volcano_group.append('text')
+      .text('Log Odds Ratio')
+      .attr('id', 'xaxis_label')
+      .attr('transform', `translate(${reg_plot_size.width/2},${volcano_y_scale.range()[0]+35})`)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '13px')
+      .attr('font-weight', 'bold')
+
+    // point estimate 
+    beta_group.append('circle')
+      .attr('id',d=>d.Pheno_id)
+      .attr("class","volcano")
+      .attr('cx', d=>volcano_x_scale(d.beta))
+      .attr('cy', d=>volcano_y_scale(d.neg_log_p))
+      .attr('r', 3)
+      .attr('stroke-width', 2)
+      .attr('stroke', d => vol_color(d.pval))
+      .attr('fill', d => vol_color(d.pval))
+      .on('mouseover', function(d) {
+        const cx = +d3.select(this).attr('cx')
+        const phe_len = d3.select(this).data()[0].Phenotype.length
+        let ta = 'start'
+        if (cx+(phe_len*6) > volcano_x_scale.range()[1]){
+          ta = 'end'
+        }
+        volcano_group.append('text')
+          .attr("class","phelabel")
+          .text(d.Phenotype)
+          .attr('x',cx+5)
+          .attr('y', +d3.select(this).attr('cy')-10)
+          .attr('font-weight', 'bold')
+          .style('font-size', 13)
+          .attr('text-anchor', ta)
+          .raise()
+      })
+      .on('mouseout', () => {
+        volcano_group.selectAll('.phelabel').remove()
+      })
+      .on('click', function(d) {
+        // reset attributes
+        main_group.selectAll('.logodds')
+          .attr('opacity', 0.2)
+          .attr('stroke', d => phe_cat_colors(d.category))
+        main_group.selectAll('.volcano')
+          .attr('opacity', 0.2)
+          .attr('stroke', d => vol_color(d.pval))
+        main_group.selectAll('.phelabel_click').remove()
+        main_group.selectAll('.phecode_row').attr("fill","grey")
+        main_group.selectAll('.phecode_row_text').attr("font-weight","normal")
+
+        // highlight selected point in both plots
+        volcano_group.selectAll('#'+d.Pheno_id)
+          .attr('opacity', 1.0)
+          .attr('stroke','black')
+        main_group.selectAll('.logodds')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr('opacity', 1.0)
+          .attr('stroke','black')
+        // draw text 
+        const cx = +d3.select(this).attr('cx')
+        const phe_len = d3.select(this).data()[0].Phenotype.length
+        let ta = 'start'
+        if (cx+(phe_len*6) > volcano_x_scale.range()[1]){
+          ta = 'end'
+        }
+        volcano_group.append('text')
+          .attr("class","phelabel_click")
+          .text(d.Phenotype)
+          .attr('x',cx+5)
+          .attr('y', +d3.select(this).attr('cy')-10)
+          .attr('font-weight', 'bold')
+          .style('font-size', 13)
+          .attr('text-anchor', ta)
+          .raise()
+        // highlight selected point in table (if it's shown)
+        // color row
+        main_group.selectAll('.phecode_row')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr("fill",d => phe_cat_colors(d.category))
+        // bold row
+        main_group.selectAll('.phecode_row_text')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr("font-weight","bold")
+      })
+  }
 }
 )});
   main.variable(observer("draw_volcano_legend")).define("draw_volcano_legend", ["cat_legend_width","d3"], function(cat_legend_width,d3){return(
@@ -1497,7 +1538,7 @@ function thresh_select_panel(main_group){
   
 }
 )});
-  main.variable(observer("drawTable")).define("drawTable", ["reg_plot_legend_height","reg_plot_size","reg_panel_size","reg_table_height","d3","table_data","table_cols","z","phe_cat_colors","vol_color","buffer","start_ix","num_rows","reg_data","mutable start_ix"], function(reg_plot_legend_height,reg_plot_size,reg_panel_size,reg_table_height,d3,table_data,table_cols,z,phe_cat_colors,vol_color,buffer,start_ix,num_rows,reg_data,$0){return(
+  main.variable(observer("drawTable")).define("drawTable", ["reg_plot_legend_height","reg_plot_size","reg_panel_size","reg_table_height","d3","reg_data","table_data","table_cols","z","phe_cat_colors","vol_color","buffer","start_ix","num_rows","mutable start_ix"], function(reg_plot_legend_height,reg_plot_size,reg_panel_size,reg_table_height,d3,reg_data,table_data,table_cols,z,phe_cat_colors,vol_color,buffer,start_ix,num_rows,$0){return(
 function drawTable(main_group) {
   let table_group = main_group.append('g')
     .attr('transform', 
@@ -1512,220 +1553,230 @@ function drawTable(main_group) {
     .attr('fill','none')
     .lower()
   
-  let mi = 20;
-  let table_width = 0.85*reg_panel_size
-  let f_pval = d3.format(".3e") // format pvalues
-  let f_beta = d3.format(".4") // format beta values
-  
-  let rows = d3.set(table_data,d=>d.PheCode).values()
-  rows.unshift('header')
-  let row_scale = d3.scaleBand()
-    .domain(rows)
-    .range([mi,reg_table_height])
-    .paddingInner(0.1)
-    .paddingOuter(0.05)
-  
-  // header row
-  let header_group = table_group.append('g')
-    .attr('transform',`translate(${mi},${row_scale('header')})`)
-    .selectAll("empty").data(table_cols).enter()
-  
-  header_group.append('text')
-    .text(d => d.name)
-    .attr('font-size','12px')
-    .attr('font-weight','bold')
-    .attr('x',d=> d.offset)
-  
-  // data rows
-  let data_group = table_group.append('g')
-    .selectAll("empty").data(table_data).enter()
-    .append('g').attr('transform', d => `translate(${mi},${row_scale(d.PheCode)})`)
-  
-  // PheCode
-  let col = z.filter(r => r.name === 'PheCode',table_cols)[0]
-  data_group.append('text')
-    .attr('class','phecode_row_text')
-    .attr('id',d => d.Pheno_id)
-    .text(d => d.PheCode)
-    .attr('font-size','12px')
-    .attr('x', col.offset+(col.width)*0.8)
-    .attr('text-anchor','end')
-  
-  // Phenotype
-  col = z.filter(r => r.name === 'Phenotype',table_cols)[0]
-  data_group.append('text')
-    .attr('class','phecode_row_text')
-    .attr('id',d => d.Pheno_id)
-    .text(d => d.Phenotype)
-    .attr('font-size','12px')
-    .attr('x', col.offset)
-  
-  // Count
-  col = z.filter(r => r.name === 'Count',table_cols)[0]
-  data_group.append('text')
-    .attr('class','phecode_row_text')
-    .attr('id',d => d.Pheno_id)
-    .text(d => d.count)
-    .attr('font-size','12px')
-    .attr('x', col.offset)
-  
-  // Beta
-  col = z.filter(r => r.name === 'Beta',table_cols)[0]
-  data_group.append('text')
-    .attr('class','phecode_row_text')
-    .attr('id',d => d.Pheno_id)
-    .text(d => f_beta(d.beta))
-    .attr('font-size','12px')
-    .attr('x', col.offset)
-  
-  // p-value
-  col = z.filter(r => r.name === 'P-value',table_cols)[0]
-  data_group.append('text')
-    .attr('class','phecode_row_text')
-    .attr('id',d => d.Pheno_id)
-    .text(d => f_pval(d.pval))
-    .attr('font-size','12px')
-    .attr('x', col.offset)
-  
-  // category
-  col = z.filter(r => r.name === 'Category',table_cols)[0]
-  data_group.append('text')
-    .attr('class','phecode_row_text')
-    .attr('id',d => d.Pheno_id)
-    .text(d => d.category)
-    .attr('font-size','12px')
-    .attr('x', col.offset)
-  
-  // row background
-  data_group.append('rect')
-    .attr('class','phecode_row')
-    .attr('id',d => d.Pheno_id)
-    .attr('y',-row_scale.bandwidth()+3)
-    .attr('height',row_scale.bandwidth())
-    .attr('width',col.offset)
-    .attr('fill',"grey")
-    .attr("opacity",0.2)
-    .on("click", function(d){
-      // reset
-      main_group.selectAll('.logodds')
-        .attr('opacity', 0.2)
-        .attr('stroke', d => phe_cat_colors(d.category))
-      main_group.selectAll('.volcano')
-        .attr('opacity', 0.2)
-        .attr('stroke', d => vol_color(d.pval))
-      main_group.selectAll('.phelabel_click').remove()
-      data_group.selectAll('.phecode_row').attr("fill","grey")
-      data_group.selectAll('.phecode_row_text').attr("font-weight","normal")
-      // highlight selected point in both plots
-      main_group.selectAll('.volcano')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
+  if (reg_data.length == 1 && reg_data[0].msg === "no_data"){
+    table_group.append('text')
+      .attr('class','placeholder')
+      .text('Regression Data Table')
+      .attr('text-anchor','middle')
+      .attr('transform',`translate(${reg_panel_size/2},${reg_table_height/3})`)
+      .attr('font-size','18px')
+      .attr('font-weight','bold')
+  }
+  else {
+
+    let mi = 20;
+    let table_width = 0.85*reg_panel_size
+    let f_pval = d3.format(".3e") // format pvalues
+    let f_beta = d3.format(".4") // format beta values
+
+    let rows = d3.set(table_data,d=>d.PheCode).values()
+    rows.unshift('header')
+    let row_scale = d3.scaleBand()
+      .domain(rows)
+      .range([mi,reg_table_height])
+      .paddingInner(0.1)
+      .paddingOuter(0.05)
+
+    // header row
+    let header_group = table_group.append('g')
+      .attr('transform',`translate(${mi},${row_scale('header')})`)
+      .selectAll("empty").data(table_cols).enter()
+
+    header_group.append('text')
+      .text(d => d.name)
+      .attr('font-size','12px')
+      .attr('font-weight','bold')
+      .attr('x',d=> d.offset)
+
+    // data rows
+    let data_group = table_group.append('g')
+      .selectAll("empty").data(table_data).enter()
+      .append('g').attr('transform', d => `translate(${mi},${row_scale(d.PheCode)})`)
+
+    // PheCode
+    let col = z.filter(r => r.name === 'PheCode',table_cols)[0]
+    data_group.append('text')
+      .attr('class','phecode_row_text')
+      .attr('id',d => d.Pheno_id)
+      .text(d => d.PheCode)
+      .attr('font-size','12px')
+      .attr('x', col.offset+(col.width)*0.8)
+      .attr('text-anchor','end')
+
+    // Phenotype
+    col = z.filter(r => r.name === 'Phenotype',table_cols)[0]
+    data_group.append('text')
+      .attr('class','phecode_row_text')
+      .attr('id',d => d.Pheno_id)
+      .text(d => d.Phenotype)
+      .attr('font-size','12px')
+      .attr('x', col.offset)
+
+    // Count
+    col = z.filter(r => r.name === 'Count',table_cols)[0]
+    data_group.append('text')
+      .attr('class','phecode_row_text')
+      .attr('id',d => d.Pheno_id)
+      .text(d => d.count)
+      .attr('font-size','12px')
+      .attr('x', col.offset)
+
+    // Beta
+    col = z.filter(r => r.name === 'Beta',table_cols)[0]
+    data_group.append('text')
+      .attr('class','phecode_row_text')
+      .attr('id',d => d.Pheno_id)
+      .text(d => f_beta(d.beta))
+      .attr('font-size','12px')
+      .attr('x', col.offset)
+
+    // p-value
+    col = z.filter(r => r.name === 'P-value',table_cols)[0]
+    data_group.append('text')
+      .attr('class','phecode_row_text')
+      .attr('id',d => d.Pheno_id)
+      .text(d => f_pval(d.pval))
+      .attr('font-size','12px')
+      .attr('x', col.offset)
+
+    // category
+    col = z.filter(r => r.name === 'Category',table_cols)[0]
+    data_group.append('text')
+      .attr('class','phecode_row_text')
+      .attr('id',d => d.Pheno_id)
+      .text(d => d.category)
+      .attr('font-size','12px')
+      .attr('x', col.offset)
+
+    // row background
+    data_group.append('rect')
+      .attr('class','phecode_row')
+      .attr('id',d => d.Pheno_id)
+      .attr('y',-row_scale.bandwidth()+3)
+      .attr('height',row_scale.bandwidth())
+      .attr('width',col.offset)
+      .attr('fill',"grey")
+      .attr("opacity",0.2)
+      .on("click", function(d){
+        // reset
+        main_group.selectAll('.logodds')
+          .attr('opacity', 0.2)
+          .attr('stroke', d => phe_cat_colors(d.category))
+        main_group.selectAll('.volcano')
+          .attr('opacity', 0.2)
+          .attr('stroke', d => vol_color(d.pval))
+        main_group.selectAll('.phelabel_click').remove()
+        data_group.selectAll('.phecode_row').attr("fill","grey")
+        data_group.selectAll('.phecode_row_text').attr("font-weight","normal")
+        // highlight selected point in both plots
+        main_group.selectAll('.volcano')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr('opacity', 1.0)
+          .attr('stroke','black')
+        main_group.selectAll('.logodds')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr('opacity', 1.0)
+          .attr('stroke','black')
+        // color row
+        data_group.selectAll('.phecode_row')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr("fill",d => phe_cat_colors(d.category))
+        // bold row
+        data_group.selectAll('.phecode_row_text')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr("font-weight","bold")
+      })
+    data_group.append('rect')
+      .attr('x',col.offset)
+      .attr('y',-row_scale.bandwidth()+3)
+      .attr('height',row_scale.bandwidth())
+      .attr('width',col.width)
+      .attr('fill', d=> phe_cat_colors(d.category))
+      .attr("opacity",0.2)
+      .on("click", function(d){
+        // reset
+        data_group.selectAll('.phecode_row').attr("fill","grey")
+        data_group.selectAll('.phecode_row_text').attr("font-weight","normal")
+        // color row
+        data_group.selectAll('.phecode_row')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr("fill",d => phe_cat_colors(d.category))
+        // bold row
+        data_group.selectAll('.phecode_row_text')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr("font-weight","bold")
+      })
+
+    // scrolling arrows
+    let arrow_panel_width = (reg_panel_size - (table_width + (mi*2) + buffer))
+    let arrow_width = arrow_panel_width*0.4
+    let arrow_height = arrow_width*0.6
+    let arrow_offset = arrow_panel_width*0.3
+    let arrow_group = table_group.append('g')
+      .attr('transform',`translate(${mi+table_width+buffer+arrow_offset},${reg_table_height/2})`)
+
+    var down_arrow = [{"x":0, "y":0},
+                      {"x":arrow_width, "y":0},
+                      {"x":arrow_width/2, "y":arrow_height}];
+    arrow_group.selectAll("empty")
+      .data([down_arrow])
+      .enter().append("polygon")
+        .attr('transform',`translate(0,${buffer})`)
+        .attr('stroke',d3.hcl(0,0,70))
+        .attr('stroke-width', 3)
+        .attr("fill", "grey")
+        .attr("opacity",0.2)
+        .attr("points", function(d)  {
+          return d.map(function(d)  {
+            return [d.x, d.y].join(",");
+          }).join(" ");
         })
-        .attr('opacity', 1.0)
-        .attr('stroke','black')
-      main_group.selectAll('.logodds')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
+        .on("click",function(d){
+          if (!((start_ix+num_rows) >= (reg_data.length-1))) {
+            $0.value = start_ix+num_rows
+          }
+          else{
+            d3.select(this).attr("fill","black")
+          }
         })
-        .attr('opacity', 1.0)
-        .attr('stroke','black')
-      // color row
-      data_group.selectAll('.phecode_row')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
-        })
-        .attr("fill",d => phe_cat_colors(d.category))
-      // bold row
-      data_group.selectAll('.phecode_row_text')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
-        })
-        .attr("font-weight","bold")
-    })
-  data_group.append('rect')
-    .attr('x',col.offset)
-    .attr('y',-row_scale.bandwidth()+3)
-    .attr('height',row_scale.bandwidth())
-    .attr('width',col.width)
-    .attr('fill', d=> phe_cat_colors(d.category))
-    .attr("opacity",0.2)
-    .on("click", function(d){
-      // reset
-      data_group.selectAll('.phecode_row').attr("fill","grey")
-      data_group.selectAll('.phecode_row_text').attr("font-weight","normal")
-      // color row
-      data_group.selectAll('.phecode_row')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
-        })
-        .attr("fill",d => phe_cat_colors(d.category))
-      // bold row
-      data_group.selectAll('.phecode_row_text')
-        .filter(function(r) { 
-          return (r.Pheno_id === d.Pheno_id)
-        })
-        .attr("font-weight","bold")
-    })
-  
-  // scrolling arrows
-  let arrow_panel_width = (reg_panel_size - (table_width + (mi*2) + buffer))
-  let arrow_width = arrow_panel_width*0.4
-  let arrow_height = arrow_width*0.6
-  let arrow_offset = arrow_panel_width*0.3
-  let arrow_group = table_group.append('g')
-    .attr('transform',`translate(${mi+table_width+buffer+arrow_offset},${reg_table_height/2})`)
-  
-  var down_arrow = [{"x":0, "y":0},
+
+    var up_arrow = [{"x":0, "y":0},
                     {"x":arrow_width, "y":0},
-                    {"x":arrow_width/2, "y":arrow_height}];
-  arrow_group.selectAll("empty")
-    .data([down_arrow])
-    .enter().append("polygon")
-      .attr('transform',`translate(0,${buffer})`)
-      .attr('stroke',d3.hcl(0,0,70))
-      .attr('stroke-width', 3)
-      .attr("fill", "grey")
-      .attr("opacity",0.2)
-      .attr("points", function(d)  {
-        return d.map(function(d)  {
-          return [d.x, d.y].join(",");
-        }).join(" ");
-      })
-      .on("click",function(d){
-        if (!((start_ix+num_rows) >= (reg_data.length-1))) {
-          $0.value = start_ix+num_rows
-        }
-        else{
-          d3.select(this).attr("fill","black")
-        }
-      })
-  
-  var up_arrow = [{"x":0, "y":0},
-                  {"x":arrow_width, "y":0},
-                  {"x":arrow_width/2, "y":-arrow_height}];
-  arrow_group.selectAll("empty")
-    .data([up_arrow])
-    .enter().append("polygon")
-      .attr('transform',`translate(0,${-buffer})`)
-      .attr('stroke',d3.hcl(0,0,70))
-      .attr('stroke-width', 3)
-      .attr("fill", "grey")
-      .attr("opacity",0.2)
-      .attr("points", function(d)  {
-        return d.map(function(d)  {
-          return [d.x, d.y].join(",");
-        }).join(" ");
-      }) 
-      .on("click",function(d){
-        if (start_ix >= num_rows) {
-          $0.value = start_ix-num_rows
-        }
-        else{
-          d3.select(this).attr("fill","black")
-        }
-      })
-  
-  
+                    {"x":arrow_width/2, "y":-arrow_height}];
+    arrow_group.selectAll("empty")
+      .data([up_arrow])
+      .enter().append("polygon")
+        .attr('transform',`translate(0,${-buffer})`)
+        .attr('stroke',d3.hcl(0,0,70))
+        .attr('stroke-width', 3)
+        .attr("fill", "grey")
+        .attr("opacity",0.2)
+        .attr("points", function(d)  {
+          return d.map(function(d)  {
+            return [d.x, d.y].join(",");
+          }).join(" ");
+        }) 
+        .on("click",function(d){
+          if (start_ix >= num_rows) {
+            $0.value = start_ix-num_rows
+          }
+          else{
+            d3.select(this).attr("fill","black")
+          }
+        })
+  }
 }
 )});
   main.variable(observer()).define(["md"], function(md){return(
@@ -1772,7 +1823,7 @@ md `### Threshold Calculations`
 	// :rtype: float
 	//
   let p_values = z.getCol("pval",z.sortByCol("pval", "asc", reg_data));
-	return alpha / z.sum(p_values)
+	return alpha / p_values.length
 }
 );
   main.variable(observer("thresh_value")).define("thresh_value", ["z","thresh_types","fdr_thresh","bon_thresh"], function(z,thresh_types,fdr_thresh,bon_thresh)
@@ -1938,7 +1989,7 @@ md `## Data`
 md `### Mutables`
 )});
   main.define("initial reg_args", function(){return(
-[{ cmd:"run_reg", cov:[], rtype:0}]
+[{ cmd:"run_reg", cov:[], rtype:-1}]
 )});
   main.variable(observer("mutable reg_args")).define("mutable reg_args", ["Mutable", "initial reg_args"], (M, _) => new M(_));
   main.variable(observer("reg_args")).define("reg_args", ["mutable reg_args"], _ => _.generator);
@@ -1993,9 +2044,29 @@ md `### Mutables`
 )});
   main.variable(observer("mutable start_ix")).define("mutable start_ix", ["Mutable", "initial start_ix"], (M, _) => new M(_));
   main.variable(observer("start_ix")).define("start_ix", ["mutable start_ix"], _ => _.generator);
+  main.define("initial run_status", function(){return(
+0
+)});
+  main.variable(observer("mutable run_status")).define("mutable run_status", ["Mutable", "initial run_status"], (M, _) => new M(_));
+  main.variable(observer("run_status")).define("run_status", ["mutable run_status"], _ => _.generator);
   main.variable(observer()).define(["md"], function(md){return(
 md `### Import Data`
 )});
+  main.variable(observer("response_var")).define("response_var", ["$","Promises"], async function*($,Promises)
+{
+  let data_for_server = { cmd:"init", ftype: "response"};
+
+    let next_data = await $.ajax({
+      url: 'http://localhost:5000/grab_data',
+      dataType: 'json',
+      data: JSON.stringify(data_for_server),
+      contentType: 'application/json;charset=UTF-8',
+      type: 'POST'
+    });
+
+    yield Promises.delay(1000, JSON.parse(next_data));
+}
+);
   main.variable(observer("group_data")).define("group_data", ["$","Promises"], async function*($,Promises)
 {
   let data_for_server = { cmd:"init", ftype: "group"};
@@ -2123,85 +2194,5 @@ require('https://unpkg.com/mathjs@5.9.0/dist/math.min.js')
 )});
   const child1 = runtime.module(define1);
   main.import("jQuery", "$", child1);
-  main.variable(observer("fullscreen")).define("fullscreen", ["html","require"], function(html,require){return(
-function fullscreen({className = 'custom-fullscreen', style = null} = {}) {
-   // adapted from https://observablehq.com/@mootari/fullscreen-layout-demo
-  
-  // Superfluous bling.
-  const buttonStyle = style != null ? style : 'font-size:1rem;font-weight:bold;padding:8px;background:hsl(50,100%,90%);border:5px solid hsl(40,100%,50%); border-radius:4px;box-shadow:0 .5px 2px 1px rgba(0,0,0,.2);cursor: pointer';
-  
-  const button = html`<button style="${buttonStyle}">Launch fullscreen`;
-  
-  // Vanilla version for standards compliant browsers.
-  if(document.documentElement.requestFullscreen) {
-    button.onclick = () => {
-      const parent = document.documentElement;
-      parent.requestFullscreen().then(() => {
-        const cleanup = () => {
-          if(document.fullscreenElement) return;
-          parent.classList.remove(className);
-          document.removeEventListener('fullscreenchange', cleanup);
-        };
-        parent.classList.add(className);
-        // Can't use {once: true}, because event fires too late.
-        document.addEventListener('fullscreenchange', cleanup);
-      });    
-    }    
-  }
-  
-  // Because Safari is the new IE.
-  else {
-    const screenfull = require('screenfull@4.2.0/dist/screenfull.js').catch(() => window['screenfull']);
-    // We would need some debouncing, in case screenfull isn't loaded
-    // yet and user clicks frantically. Then again, it's Safari.
-    button.onclick = () => {
-      screenfull.then(sf => {
-        const parent = document.documentElement;
-        sf.request(parent).then(() => {
-          const cleanup = () => {
-            if(sf.isFullscreen) return;
-            parent.classList.remove(className);
-            sf.off('change', cleanup);
-          };
-          parent.classList.add(className);
-          sf.on('change', cleanup);
-        });
-      });
-    };
-  }
-  
-  // Styles don't rely on the :fullscreen selector to avoid interfering with
-  // Observable's fullscreen mode. Instead a class is applied to html during
-  // fullscreen.
-  return html`
-    ${button}
-    <style>
-html.${className} {
-  overflow: auto;
-  height: 100%;
-  width: 100%;
-}
-html.${className} body {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  background: white;
-  height: 100%;
-  width: auto;
-  overflow: auto;
-  position: relative;
-}
-html.${className} body > div {
-  margin-bottom: 0 !important;
-  min-height: 0 !important;
-  width: 100%;
-  max-height: 100%;
-  overflow: auto;
-  padding: .5rem;
-  box-sizing: border-box;
-}
-  `;
-}
-)});
   return main;
 }

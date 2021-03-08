@@ -47,10 +47,8 @@ Launch the servers
 """
 
 # Launch the flask server (Back End) as a subprocess
-# TODO: need to figure out how to kill this
 exec_path = Path(__file__).parent.absolute()/'pyPhewasExplorerBackEnd'
 process = Popen('python %s %s --target %s' %(exec_path, data_path.resolve(), response), shell=True)
-# stdout, stderr = process.communicate()
 
 # Launch the simple HTTP server (Front End) as the main process
 run_Explorer_GUI()

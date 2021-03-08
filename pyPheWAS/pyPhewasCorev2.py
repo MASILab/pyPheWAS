@@ -320,19 +320,19 @@ def get_phenotype_info(p_index, code_type):
 		p_cat = phewas_codes.loc[p_index, 'category_string']
 		icd9_ix = icd9_codes['PheCode'] == p_code
 		icd10_ix = icd10_codes['PheCode'] == p_code
-	
+
 		p_icd9_rollup = '/'.join(icd9_codes.loc[icd9_ix, 'ICD_CODE'].tolist())
 		p_icd10_rollup = '/'.join(icd10_codes.loc[icd10_ix, 'ICD_CODE'].tolist())
-		
+
 		return [p_code, p_name, p_cat, p_icd9_rollup, p_icd10_rollup]
-	
+
 	else:
 		p_code = prowas_codes.loc[p_index, 'prowas_code']
 		p_name = prowas_codes.loc[p_index, 'prowas_desc']
 		p_cat = prowas_codes.loc[p_index, 'CCS Label']
 		cpt_ix = cpt_codes['prowas_code'] == p_code
 		p_cpt_rollup = '/'.join(cpt_codes.loc[cpt_ix, 'CPT_CODE'].tolist())
-		
+
 		return [p_code, p_name, p_cat, p_cpt_rollup]
 
 
@@ -524,7 +524,7 @@ def run_phewas_legacy(fm, genotypes, code_type, covariates='', response='genotyp
 
 		# save regression data
 		info = phen_info[0:2] + stat_info + phen_info[2:]
-			
+
 		regressions.loc[index] = info
 
 	return regressions.dropna(subset=['p-val']).sort_values(by='p-val') # sort by significance
@@ -995,7 +995,7 @@ def plot_volcano(regressions, code_type='ICD', save='', save_format=''):
 	artists = []
 	plt.ylabel('-log10(p)')
 	plt.xlabel('Log Odds Ratio')
-	
+
 	if code_type == 'ICD':
 		pheno_name = 'PheWAS Name'
 	else:

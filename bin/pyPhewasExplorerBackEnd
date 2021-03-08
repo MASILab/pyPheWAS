@@ -49,9 +49,9 @@ assert 'id' in gvars, "Group file (%s) does not contain a subject identifier col
 assert response in gvars, "Group file (%s) does not contain the target variable (%s)" % (group_f, response)
 
 gvars = gvars.drop(['id', response])
-if len(gvars) > 6:
-	print('WARNING: more than 6 group variables found. Limiting display to first 6 group variables')
-	gvars = gvars[0:7]
+if len(gvars) > 10:
+	print('WARNING: more than 10 group variables found. Limiting display to first 10 group variables')
+	gvars = gvars[0:10]
 	print(', '.join(gvars))
 
 if FMs_exist:

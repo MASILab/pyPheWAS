@@ -452,8 +452,6 @@ def run_Explorer_GUI():
 	PORT = 8000
 
 	web_dir = os.path.join(os.path.dirname(__file__), 'Explorer_GUI')
-	print(os.path.dirname(__file__))
-	print(web_dir)
 
 	os.chdir(web_dir)
 
