@@ -108,7 +108,7 @@ def get_icd_codes(filename):
 	phenotypes['duration'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max') - \
 							 phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('min') + 1
 
-	icds.sort_values(by='id', inplace=True)
+	phenotypes.sort_values(by='id', inplace=True)
 
 	return phenotypes
 
@@ -247,15 +247,10 @@ def get_2D_histogram(group, var1, var2, response):
 
 	return H_df
 
-def variable_comparison(group, var1, var2):
+def variable_comparison(group, var1, var2, response):
 	res_df = pd.DataFrame(columns=['test_name','result','pval','var'])
-	if var1 == var2:
-		g_df = group[['genotype', var1]].copy()  # copy to avoid modifying original df
-		g_df['var1'] = g_df[var1]
-		g_df.rename(columns={var2: "var2"}, inplace=True)
-	else:
-		g_df = group[['genotype', var1, var2]].copy()  # copy to avoid modifying original df
-		g_df.rename(columns={var1: "var1", var2: "var2"}, inplace=True)
+	g_df = group[[response, var1, var2]].copy()  # copy to avoid modifying original df
+	g_df.rename(columns={var1: "var1", var2: "var2"}, inplace=True)
 	ix = 0
 	# correlation
 	res_df.loc[ix, 'test_name'] = 'correlation'
@@ -269,42 +264,31 @@ def variable_comparison(group, var1, var2):
 	# univariate regressions
 	res_df.loc[ix, 'test_name'] = 'univariate regression'
 	res_df.loc[ix, 'var'] = var1
-	f_v1 = 'genotype ~ var1'
+	f_v1 = response + ' ~ var1'
 	logreg = smf.logit(f_v1, g_df).fit(disp=False)
 	res_df.loc[ix, 'pval'] = logreg.pvalues.var1
 	res_df.loc[ix, 'result'] = logreg.params.var1
 	ix+=1
 	res_df.loc[ix, 'test_name'] = 'univariate regression'
 	res_df.loc[ix, 'var'] = var2
-	f_v2 = 'genotype ~ var2'
+	f_v2 = response + ' ~ var2'
 	logreg = smf.logit(f_v2, g_df).fit(disp=False)
 	res_df.loc[ix, 'pval'] = logreg.pvalues.var2
 	res_df.loc[ix, 'result'] = logreg.params.var2
 	ix += 1
 
 	# multivariate regression
-	if var1 == var2:
-		res_df.loc[ix, 'test_name'] = 'multivariate regression'
-		res_df.loc[ix, 'var'] = var1
-		res_df.loc[ix, 'pval'] = 1
-		res_df.loc[ix, 'result'] = 0
-		ix += 1
-		res_df.loc[ix, 'test_name'] = 'multivariate regression'
-		res_df.loc[ix, 'var'] = var2
-		res_df.loc[ix, 'pval'] = 1
-		res_df.loc[ix, 'result'] = 0
-	else:
-		res_df.loc[ix, 'test_name'] = 'multivariate regression'
-		res_df.loc[ix, 'var'] = var1
-		f_mul = 'genotype ~ var1 + var2'
-		logreg = smf.logit(f_mul, g_df).fit(disp=False)
-		res_df.loc[ix, 'pval'] = logreg.pvalues.var1
-		res_df.loc[ix, 'result'] = logreg.params.var1
-		ix += 1
-		res_df.loc[ix, 'test_name'] = 'multivariate regression'
-		res_df.loc[ix, 'var'] = var2
-		res_df.loc[ix, 'pval'] = logreg.pvalues.var2
-		res_df.loc[ix, 'result'] = logreg.params.var2
+	f_mul = response + ' ~ var1 + var2'
+	logreg = smf.logit(f_mul, g_df).fit(disp=False)
+	res_df.loc[ix, 'test_name'] = 'multivariate regression'
+	res_df.loc[ix, 'var'] = var1
+	res_df.loc[ix, 'pval'] = logreg.pvalues.var1
+	res_df.loc[ix, 'result'] = logreg.params.var1
+	ix += 1
+	res_df.loc[ix, 'test_name'] = 'multivariate regression'
+	res_df.loc[ix, 'var'] = var2
+	res_df.loc[ix, 'pval'] = logreg.pvalues.var2
+	res_df.loc[ix, 'result'] = logreg.params.var2
 
 	return res_df
 

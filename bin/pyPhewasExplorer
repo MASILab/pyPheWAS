@@ -18,11 +18,11 @@ Retrieve and validate all arguments.
 """
 parser = argparse.ArgumentParser(description='pyPheWAS Explorer Launch Script')
 parser.add_argument('indir', type=str, help='Input directory for pyPheWAS analysis')
-parser.add_argument('--target', type=str, required=False, default='target', help='Name of column to use as the target variable')
+parser.add_argument('--response', type=str, required=False, default='target', help='Name of column to use as the response (dependent) variable')
 args = parser.parse_args()
 
 data_path = Path(args.indir)
-response = args.target
+response = args.response
 
 # Assert that valid directory was given
 assert data_path.exists(), "%s does not exist" % data_path
@@ -48,7 +48,7 @@ Launch the servers
 
 # Launch the flask server (Back End) as a subprocess
 exec_path = Path(__file__).parent.absolute()/'pyPhewasExplorerBackEnd'
-process = Popen('python %s %s --target %s' %(exec_path, data_path.resolve(), response), shell=True)
+process = Popen('python %s %s --response %s' %(exec_path, data_path.resolve(), response), shell=True)
 
 # Launch the simple HTTP server (Front End) as the main process
 run_Explorer_GUI()

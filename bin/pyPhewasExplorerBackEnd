@@ -26,11 +26,11 @@ Get arguments
 
 parser = argparse.ArgumentParser(description='pyPheWAS Explorer server')
 parser.add_argument('indir', type=str, help='Input directory for pyPheWAS analysis')
-parser.add_argument('--target', type=str, required=False, default='target', help='Name of column to use as the target variable')
+parser.add_argument('--response', type=str, required=False, default='target', help='Name of column to use as the response (dependent) variable')
 args = parser.parse_args()
 
 data_path = Path(args.indir)
-response = args.target
+response = args.response
 
 group_f = data_path / "group.csv"
 icd_f = data_path / "icds.csv"
@@ -144,8 +144,12 @@ def get_signals():
 			msg = pd.DataFrame(columns=['msg'])
 			msg.loc[0,'msg'] = "no_data"
 			data_obj = msg.to_json(orient='records')
+		elif var1 == var2:
+			msg = pd.DataFrame(columns=['msg'])
+			msg.loc[0, 'msg'] = "select_2nd_var"
+			data_obj = msg.to_json(orient='records')
 		else:
-			stats = variable_comparison(group_data, var1, var2)
+			stats = variable_comparison(group_data, var1, var2, response)
 			data_obj = stats.to_json(orient='records')
 
 	elif command == "run_reg":
@@ -158,20 +162,22 @@ def get_signals():
 		else:
 			# build & send regressions to notebook
 			cov = '+'.join(client_data['cov'])
-			rfile_base = 'regressions' + cov
+			rfile_base = 'regressions_' + cov
 			if reg_type == bin_reg:
 				regressions = run_phewas(fm_bin, group_data, cov, response)
-				header = ','.join(['reg_type', 'binary (log)', 'group', 'group.csv', 'covariates', cov]) + '\n'
-				rpath = data_path/(rfile_base + '_binary.csv')
+				reg_str = 'binary'
+				reg_str_long = 'reg_type,binary(log)'
 			elif reg_type == count_reg:
 				regressions = run_phewas(fm_cnt, group_data, cov, response)
-				header = ','.join(['reg_type', 'count (lin)', 'group', 'group.csv','covariates', cov]) + '\n'
-				rpath = data_path/(rfile_base + '_count.csv')
+				reg_str = 'count'
+				reg_str_long = 'reg_type,count(lin)'
 			elif reg_type == dur_reg:
 				regressions = run_phewas(fm_dur, group_data, cov, response)
-				header = ','.join(['reg_type', 'duration (dur)', 'group', 'group.csv', 'covariates', cov]) + '\n'
-				rpath = data_path/(rfile_base + '_duration.csv')
+				reg_str = 'duration'
+				reg_str_long = 'reg_type,duration(dur)'
 			# write regressions to file
+			header = ','.join([reg_str_long, 'group', 'group.csv', 'response', response, 'covariates', cov]) + '\n'
+			rpath = data_path/('regression_%s_%s_%s.csv' %(reg_str, response, cov))
 			f = open(rpath, 'w')
 			f.write(header)
 			regressions.to_csv(f, index=False)
