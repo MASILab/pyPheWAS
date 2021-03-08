@@ -3,13 +3,13 @@ from distutils.core import setup
 setup(
   name = 'pyPheWAS',
   packages = ['pyPheWAS'], # this must be the same as the name above
-  version = '4.0.0',
+  version = '4.0.1',
   description = 'MASI Lab Port of PheWAS into Python',
   author = 'MASI Lab',
   author_email = 'bennett.landman@vanderbilt.edu',
   url = 'https://github.com/MASILab/pyPheWAS', # use the URL to the github repo
   download_url = 'https://github.com/MASILab/pyPheWAS/tarball/0.1', # I'll explain this in a second
-  keywords = ['PheWAS', 'ICD-9', 'ICD-10', 'EMR', 'CPT'], # arbitrary keywords
+  keywords = ['PheWAS', 'PheDAS', 'ICD-9', 'ICD-10', 'EMR', 'CPT'], # arbitrary keywords
   classifiers = [],
   install_requires=[ 'numpy>=1.16.4',
                      'matplotlib',

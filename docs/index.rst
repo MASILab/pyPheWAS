@@ -15,7 +15,7 @@ Features
 * Examine relative novelty of disease-PheCode associations
 * **New!** pyPheWAS Explorer: Interactive visualization of PheDAS experiments
 
-Latest Release: pyPheWAS 4.0.0
+Latest Release: pyPheWAS 4.0.1
 ------------------------------
 
 This release includes:
