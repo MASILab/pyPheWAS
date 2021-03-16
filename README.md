@@ -10,7 +10,7 @@ Shikha Chaganti, PhD
 
 Bennett Landman, PhD
 
-## Latest Release: pyPheWAS 4.0.2
+## Latest Release: pyPheWAS 4.0.3
 This release includes:
 - **Novelty Analysis** tools: examine the relative literary novelty of disease-phecode pairings
 - **pyPheWAS Explorer**: an interactive visualization of PheDAS experiments
