@@ -24,7 +24,6 @@ import http.server
 import socketserver
 
 
-
 output_columns = ['PheCode',
 				  'Phenotype',
 				  'Pheno_id',
@@ -61,6 +60,7 @@ def get_group_file(filename):  # same
 	genotypes_df = pd.read_csv(filename)
 	genotypes_df = genotypes_df.dropna(subset=['id'])
 	genotypes_df.sort_values(by='id', inplace=True)
+	genotypes_df.reset_index(inplace=True, drop=True)
 	return genotypes_df
 
 
@@ -113,7 +113,7 @@ def get_icd_codes(filename):
 	return phenotypes
 
 
-def generate_feature_matrix(genotypes_df, icds):
+def generate_feature_matrix(genotypes, icds):
 	"""
 	Generates the feature matrix that will be used to run the regressions.
 
@@ -127,14 +127,14 @@ def generate_feature_matrix(genotypes_df, icds):
 
 	"""
 	# init
-	fm_bin = np.zeros((genotypes_df.shape[0], phewas_codes.shape[0]), dtype=float)
-	fm_cnt = np.zeros((genotypes_df.shape[0], phewas_codes.shape[0]), dtype=float)
-	fm_dur = np.zeros((genotypes_df.shape[0], phewas_codes.shape[0]), dtype=float)
+	fm_bin = np.zeros((genotypes.shape[0], phewas_codes.shape[0]), dtype=float)
+	fm_cnt = np.zeros((genotypes.shape[0], phewas_codes.shape[0]), dtype=float)
+	fm_dur = np.zeros((genotypes.shape[0], phewas_codes.shape[0]), dtype=float)
 
 	# make genotype a dictionary for faster access time
-	genotypes = genotypes_df.set_index('id').to_dict('index')
+	genotypes_dict = genotypes.set_index('id').to_dict('index')
 
-	# use phewascodes to make a dictionary of indices in the np array
+	# use phewas codes to make a dictionary of indices in the np array
 	empty_phewas_df = phewas_codes.set_index('PheCode')
 	empty_phewas_df.sort_index(inplace=True)
 	empty_phewas_df['np_index'] = range(0,empty_phewas_df.shape[0])
@@ -146,7 +146,7 @@ def generate_feature_matrix(genotypes_df, icds):
 
 	for _,event in tqdm(icds.iterrows(), desc="Processing ICDs", total=icds.shape[0]):
 		curr_id = event['id']
-		if not curr_id in genotypes:
+		if not curr_id in genotypes_dict:
 			if not curr_id in exclude:
 				print('%s has records in icd file but is not in group file - excluding from study' % curr_id)
 				exclude.append(curr_id)
@@ -154,6 +154,8 @@ def generate_feature_matrix(genotypes_df, icds):
 		# check id to see if a new subject has been found
 		if last_id != curr_id:
 			count += 1
+			while(curr_id != genotypes.loc[count,'id']): # subject at genotypes.loc[count] does not have ICD codes
+				count += 1 # continue processing next subject
 			last_id = curr_id  # reset last_id
 
 		# get column index of event phecode
@@ -406,17 +408,17 @@ def run_phewas(fm, genotypes, covariates, response):
 	"""
 
 	num_phecodes = fm.shape[1]
-	thresh = math.ceil(genotypes.shape[0] * 0.05)
+	thresh = 5 # math.ceil(genotypes.shape[0] * 0.05)
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
-	control = fm[genotypes.genotype == 0, :]
-	disease = fm[genotypes.genotype == 1, :]
+	control = fm[genotypes[response] == 0, :]
+	disease = fm[genotypes[response] == 1, :]
 
 	for index in tqdm(range(num_phecodes), desc='Running Regressions'):
 		phen_info = get_phenotype_info(index)
 		phen_vector = fm[:, index]
 		# to prevent false positives, only run regressions if more than thresh records have positive values
-		if np.where(fm > 0)[0].shape[0] > thresh:
+		if np.where(phen_vector > 0)[0].shape[0] > thresh:
 			stat_info = fit_pheno_model(genotypes, phen_vector, response, covariates=covariates, phenotype=phen_info[0:2])
 		else:
 			# not enough samples to run regression

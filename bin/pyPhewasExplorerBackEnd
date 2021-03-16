@@ -19,6 +19,9 @@ from pathlib import Path
 bin_reg = 0
 count_reg = 1
 dur_reg = 2
+reg_key = {bin_reg : 'binary',
+		   count_reg : 'count',
+		   dur_reg : 'duration'}
 
 """
 Get arguments
@@ -53,6 +56,12 @@ if len(gvars) > 10:
 	print('WARNING: more than 10 group variables found. Limiting display to first 10 group variables')
 	gvars = gvars[0:10]
 	print(', '.join(gvars))
+for g in gvars:
+	if len(g) > 17: # shorten so they fit in the Explorer
+		group_data.rename(columns={g : g[:17]}, inplace=True)
+# reset in case names were changed
+gvars = group_data.columns
+gvars = gvars.drop(['id', response])
 
 if FMs_exist:
 	print('Loading binary feature matrix')
@@ -72,6 +81,7 @@ else:
 	np.savetxt(data_path/'binary_feature_matrix.csv', fm_bin, delimiter=',', header=h)
 	np.savetxt(data_path/'count_feature_matrix.csv', fm_cnt, delimiter=',', header=h)
 	np.savetxt(data_path/'duration_feature_matrix.csv', fm_dur, delimiter=',', header=h)
+
 
 print("pyPheWAS Explorer Ready")
 print("Please open http://localhost:8000/ in a web brower (preferably Google Chrome)")
@@ -162,26 +172,26 @@ def get_signals():
 		else:
 			# build & send regressions to notebook
 			cov = '+'.join(client_data['cov'])
-			rfile_base = 'regressions_' + cov
-			if reg_type == bin_reg:
-				regressions = run_phewas(fm_bin, group_data, cov, response)
-				reg_str = 'binary'
-				reg_str_long = 'reg_type,binary(log)'
-			elif reg_type == count_reg:
-				regressions = run_phewas(fm_cnt, group_data, cov, response)
-				reg_str = 'count'
-				reg_str_long = 'reg_type,count(lin)'
-			elif reg_type == dur_reg:
-				regressions = run_phewas(fm_dur, group_data, cov, response)
-				reg_str = 'duration'
-				reg_str_long = 'reg_type,duration(dur)'
-			# write regressions to file
-			header = ','.join([reg_str_long, 'group', 'group.csv', 'response', response, 'covariates', cov]) + '\n'
-			rpath = data_path/('regression_%s_%s_%s.csv' %(reg_str, response, cov))
-			f = open(rpath, 'w')
-			f.write(header)
-			regressions.to_csv(f, index=False)
-			f.close()
+			# check if reg exists - can just reload it instead of re-calculating
+			rpath = data_path/('regressions_%s_%s_%s.csv' %(reg_key[reg_type], response, cov))
+			if rpath.exists():
+				regressions = pd.read_csv(rpath, skiprows=1)
+			else:
+				if reg_type == bin_reg:
+					regressions = run_phewas(fm_bin, group_data, cov, response)
+					reg_str_long = 'reg_type,binary(log)'
+				elif reg_type == count_reg:
+					regressions = run_phewas(fm_cnt, group_data, cov, response)
+					reg_str_long = 'reg_type,count(lin)'
+				elif reg_type == dur_reg:
+					regressions = run_phewas(fm_dur, group_data, cov, response)
+					reg_str_long = 'reg_type,duration(dur)'
+				# write regressions to file
+				header = ','.join([reg_str_long, 'group', 'group.csv', 'response', response, 'covariates', cov]) + '\n'
+				f = open(rpath, 'w')
+				f.write(header)
+				regressions.to_csv(f, index=False)
+				f.close()
 			regressions['pval_str'] = regressions.apply(lambda x: str(x['pval']),axis=1)
 			data_obj = regressions.to_json(orient='records')
 	else:
