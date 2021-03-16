@@ -103,9 +103,9 @@ function plot_groupvar_hists(hist_group) {
   const cell_width = var_dist_size.width;
   const hist_height = cell_height / 2.3;
   const hist_width = 100;
-  const hist_margin = 27;
+  const hist_margin = 37;
   const cor_height = cell_height / 3.0;
-  const cor_width = 40;
+  const cor_width = 30;
   var y_offset1 = (cell_height/2) - (hist_height / 2) - (gvar_buffer*2); // approximately 1/4 of the way down the cell
   var y_offset2 = (cell_height/2) - (gvar_buffer*2); // approximately 1/2 of the way down the cell
   
@@ -134,7 +134,7 @@ function plot_groupvar_hists(hist_group) {
     hgroups[i].append('text')
       .text(v)
       .attr('class', v)
-      .attr('x', (cell_width*(1/2)))
+      .attr('x', 10+(cell_width*(1/2)))
       .attr('y', y_offset1 + gvar_buffer)
       .attr('font-size', '12px')
       .attr('font-weight', 'bold')
@@ -144,7 +144,7 @@ function plot_groupvar_hists(hist_group) {
     // genotype correlation
     hgroups[i].append('rect')
       .attr('class', v)
-      .attr('x', (cell_width*(1/2)))
+      .attr('x', 10+(cell_width*(1/2)))
       .attr('y', y_offset2)
       .attr('width',cor_width)
       .attr('height',cor_height)
