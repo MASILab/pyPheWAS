@@ -124,11 +124,11 @@ B21   740.2    0.2
 Group File
 ^^^^^^^^^^
 The group file format is shown below; this file contains the dependent variable
-for the mass logistic regression, in addition to demographic information
+(in this example, *response*) for the mass logistic regression, in addition to demographic information
 (e.g. sex, race, age at diagnosis, etc.) for each subject.
 
 ===== ======== ============= ==================
-id    genotype MaxAgeAtVisit *other covariates*
+id    response MaxAgeAtVisit *other covariates*
 ===== ======== ============= ==================
 1     0        10.365         ...
 32    0        15.444         ...

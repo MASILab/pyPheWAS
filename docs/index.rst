@@ -15,12 +15,12 @@ Features
 * Examine relative novelty of disease-PheCode associations
 * **New!** pyPheWAS Explorer: Interactive visualization of PheDAS experiments
 
-Latest Release: pyPheWAS 4.0.1
+Latest Release: pyPheWAS 4.0.3
 ------------------------------
 
 This release includes:
 
-* **Novelty Analysis** tools: examine the relative literary novelty of disease-phecode pairings
+* **Novelty Analysis**: examine the relative literary novelty of disease-phecode pairings
 * **pyPheWAS Explorer**: an interactive visualization of PheDAS experiments
 * createGenotypeFile updated - now called createPhenotypeFile
 * Minor bug fixes
@@ -47,11 +47,11 @@ Contents
    :maxdepth: 1
 
    basic
-   tutorial
    dataprep
    phewas_tools
    prowas_tools
    novelty_tools
+   explorer_overview
    references
    api
 

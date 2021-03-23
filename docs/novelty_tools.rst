@@ -1,9 +1,7 @@
 Novelty Analysis Tools
 ======================
 This page describes the command line tools available for running a Novelty
-Analysis.
-
-These tools require a **regression** file, which is described in the
+Analysis. These tools require a **regression** file, which is described in the
 :ref:`pyPhewasModel` section.
 
 Overview of Novelty Analysis Tools
@@ -16,7 +14,7 @@ If a disease-phenotype pairing is present in a large number of PubMed abstracts,
 association is assigned a low NFI and considered well known.
 In contrast, if a disease-phenotype pairing is present in only a few PubMed abstracts,
 the association is assigned a high NFI and considered relatively unknown.
-For more information on the NFI, please see our publication [Chaganti2019b].
+For more information on the NFI, please see our publication [Chaganti2019b]_.
 
 Novelty Analysis Functions:
 
@@ -25,6 +23,7 @@ Novelty Analysis Functions:
 * :ref:`NoveltyAnalysis`: calculate and visualize the Novelty Finding Index for
   the results from a PheDAS
 
+----------
 
 PubMedQuery
 -----------
@@ -38,18 +37,18 @@ found for each search. Both search types must be performed in order to proceed t
 
 *Option A: Mass PheCode Search*
 
-This option iterates over all 1,866 PheCodes in the PheWAS mapping and searched PubMed
+This option iterates over all 1,866 PheCodes in the PheWAS mapping and searches PubMed
 for related articles. (It takes approximately 24 hours to conduct searches for all 1,866 PheCodes.)
 The mass search is done by mapping a PheCode's corresponing ICD-9
 and ICD-10 codes to CUIs (Concept Unique Identifiers) in the
-`UMLS Metathesaurus <https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/index.html>`.
+`UMLS Metathesaurus <https://www.nlm.nih.gov/research/umls/knowledge_sources/metathesaurus/index.html>`_.
 Then, all strings that correspond to those CUIs are used to query PubMed.
 **Warning**: due to the size of the UMLS Metathesaurus, this option requires a
 machine with at least 16 GB of RAM.
 
 .. note::
    A free license is required to download the UMLS Metathesaurus. For more information, please
-   see the `UMLS website <https://www.nlm.nih.gov/research/umls/index.html>`.
+   see the `UMLS website <https://www.nlm.nih.gov/research/umls/index.html>`_.
 
 *Option B: Custom Search*
 
@@ -77,29 +76,30 @@ Output:
 
 **ADHD_terms.txt**::
 
-  | ADHD |
-  | ADDH |
-  | attention deficit hyperactivity disorder |
-  | attention deficit disorder with hyperactivity |
-  | attention deficit |
+  ADHD
+  ADDH
+  attention deficit hyperactivity disorder
+  attention deficit disorder with hyperactivity
+  attention deficit
 
 **Command**::
 
 		PubMedQuery --outdir="/Users/me/Documents/EMRdata" --custom_terms="/Users/me/Documents/ADHD_terms.txt"
 
+----------
 
 NoveltyAnalysis
 ---------------
 Calculate the Novelty Finding Index for a set of PheDAS results.
 
-Calculates the NFI for all PheCodes in a regression file output from :reg:`pyPhewasModel`.
+Calculates the NFI for all PheCodes in a regression file output from :ref:`pyPhewasModel`.
 All calculated values are saved to the regression, and novelty plots are created
 for all PheCodes with a second generation p-value of 0. For more information on how
-the NFI is calculated, please see our publication [Chaganti2019b].
+the NFI is calculated, please see our publication [Chaganti2019b]_.
 
 Required Arguments:
  * ``--pm_dir``:     Path to directory where mass PheCode PubMed search results are stored
- * ``--statfile``:   Name of the regression file output from :reg:`pyPhewasModel`
+ * ``--statfile``:   Name of the regression file output from :ref:`pyPhewasModel`
  * ``--dx_pm``:		   Name of the disease's PubMed search results file (obtained via :ref:`PubMedQuery` custom search)
  * ``--null_int``:   Null interval to use in calculating the NFI
 

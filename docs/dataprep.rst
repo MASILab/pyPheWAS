@@ -4,6 +4,7 @@ This page describes the command line tools available for preparing your data bef
 a PheWAS or ProWAS analysis. These tools all require **phenotype** and/or **group**
 files. The formats of these files are explained in the :ref:`File Formats` section.
 
+----------
 
 censorData
 ----------
@@ -49,6 +50,7 @@ censored based on the *interval between* ``delta_field`` and ``efield``:
 
 		censorData --efield="AgeAtCPT" --delta_field="AgeAtSurgery" -—start=1 --phenotype="cpt_data.csv" --group="group.csv" —-phenotypeout="cpt_censored.csv" —groupout="group_censored.csv"
 
+----------
 
 convertEventToAge
 -----------------
@@ -76,10 +78,10 @@ to the official pyPheWAS phenotype file format ('AgeAtICD' or 'AgeAtCPT').
 
         convertEventToAge --eventcolumn="CPT_DATE" --etype="CPT" --precision=7 --phenotype="cpt_dates.csv" -—group="group.csv" --phenotypeout="cpt_ages.csv"
 
-
+----------
 
 createPhenotypeFile
-------------------
+-------------------
 Split subjects into case (response=1) / control (response=0) groups based on ICD codes.
 
 Required Arguments:
@@ -146,6 +148,7 @@ command:
     variable assignment method, but
     the older version is still available in the pyPheWAS toolkit.
 
+----------
 
 maximizeControls
 ----------------
@@ -192,6 +195,8 @@ diagnosis (match within 2 years)::
     If there are no suitable matches for some case subjects, **these case subjects may
     be removed**, and will not appear in the output group file. A warning will be issued
     when this occurs with details on how many subjects were lost.
+
+----------
 
 mergeGroups
 -----------

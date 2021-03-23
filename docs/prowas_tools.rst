@@ -28,6 +28,7 @@ The streamlined tool :ref:`pyProwasPipeline` encompasses all three phases/tools 
 
 .. note:: For information on the data preparation phase, please see the :ref:`Data Preparation` section.
 
+----------
 
 pyProwasLookup
 --------------
@@ -74,6 +75,7 @@ Output:
           agg_measures\_\ ``outfile``\ , cpt_age\_\ ``outfile``\ ,
           and prowas_cov\_\ ``outfile``\ .
 
+----------
 
 pyProwasModel
 -------------
@@ -139,6 +141,7 @@ Output:
           present in one of those groups, regularized maximum likelihood
           optimization is used.
 
+----------
 
 pyProwasPlot
 ------------
@@ -201,6 +204,8 @@ Threshold Types:
     active on the user's machine. However, most backends support png, pdf, ps, eps, and svg.
     Vector-based formats (such as svg or svgz) may be opened with image editing software such as Inkscape or
     Photoshop if the user would like to adjust ProCode text locations.
+
+----------
 
 pyProwasPipeline
 ----------------
