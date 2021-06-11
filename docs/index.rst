@@ -14,6 +14,7 @@ Features
 * Visualize results
 * Examine relative novelty of disease-PheCode associations
 * **New!** pyPheWAS Explorer: Interactive visualization of PheDAS experiments
+* **New!** Sample synthetic `EMR dataset <https://github.com/MASILab/pyPheWAS/tree/master/synthetic_data>`_
 
 Latest Release: pyPheWAS 4.0.3
 ------------------------------
@@ -51,6 +52,7 @@ Contents
    phewas_tools
    prowas_tools
    novelty_tools
+   customizations
    explorer_overview
    references
    api
