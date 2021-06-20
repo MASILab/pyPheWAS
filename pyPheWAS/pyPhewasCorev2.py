@@ -57,6 +57,7 @@ def get_codes(filename):
 		phecode_map = pd.read_csv(filename, dtype={data_col:str, phecode_col:str})
 		phecode_map.rename(columns={data_col:new_data_col},inplace=True)
 		phecode_map.dropna(subset=[phecode_col], inplace=True)
+		phecode_map.drop_duplicates(subset=[new_data_col,phecode_col], inplace=True)
 	except Exception as e:
 		print(e.args[0])
 		print('Error loading phecode map : exiting pyPheWAS')
@@ -116,25 +117,37 @@ def get_icd_codes(path, filename, reg_type):
 		# TODO: add actual exception
 		print('Found an ICD_TYPE that was not 9 or 10 - Please check phenotype file.\nExiting pyPheWAS')
 		sys.exit()
-
+	
 	# merge with Phecode table, depends on which type(s) of ICD codes are in the icd file
 	if icd_types.shape[0] == 2:
 		print('Found both ICD-9 and ICD-10 codes.')
 		icd9s = icdfile[icdfile['ICD_TYPE'] == 9]
 		icd10s = icdfile[icdfile['ICD_TYPE'] == 10]
-		phenotypes_9 = pd.merge(icd9s, icd9_codes,on='ICD_CODE')
-		phenotypes_10 = pd.merge(icd10s, icd10_codes, on='ICD_CODE')
+		phenotypes_9 = pd.merge(icd9s, icd9_codes,on='ICD_CODE',how='left')
+		phenotypes_10 = pd.merge(icd10s, icd10_codes, on='ICD_CODE',how='left')
 		phenotypes = phenotypes_9.append(phenotypes_10,sort=False)
 	elif icd_types[0] == 9:
 		print('Found only ICD-9 codes.')
-		phenotypes = pd.merge(icdfile,icd9_codes,on='ICD_CODE')
+		phenotypes = pd.merge(icdfile,icd9_codes,on='ICD_CODE',how='left')
 	elif icd_types[0] == 10:
 		print('Found only ICD-10 codes.')
-		phenotypes = pd.merge(icdfile, icd10_codes, on='ICD_CODE')
+		phenotypes = pd.merge(icdfile, icd10_codes, on='ICD_CODE',how='left')
 	else:
 		# TODO: add actual exception
 		print('An issue occurred while parsing the ICD_TYPE column - Please check phenotype file.\nExiting pyPheWAS')
 		sys.exit()
+
+	# check to see if anything was dropped because of incomplete mapping
+	na_mask = phenotypes['PheCode'].isna()
+	if np.any(na_mask):
+		print('WARNING: Some ICD events were dropped during the PheCode mapping process.')
+		num_events = icdfile.shape[0]
+		dropped = phenotypes[na_mask].copy()
+		percent_drop = 100.0 * (float(dropped.shape[0]) / float(num_events))
+		print('\t-- Dropped %d out of %d ICD events (%0.3f%%)' % (dropped.shape[0], num_events, percent_drop))
+		print('\t-- Saving dropped events to %s' % (path/'dropped_events.csv'))
+		dropped.to_csv(path/'dropped_events.csv',index=False)
+		phenotypes.dropna(subset=['PheCode'], inplace=True) # actually remove the events
 
 	if reg_type == 2:
 		# pre-calculate durations for feature matrix step
@@ -173,7 +186,19 @@ def get_cpt_codes(path, filename, reg_type):
 	wholefname = path / filename
 	cptfile = pd.read_csv(wholefname,dtype={'CPT_CODE':str})
 	cptfile['CPT_CODE'] = cptfile['CPT_CODE'].str.strip()
-	phenotypes = pd.merge(cptfile, cpt_codes, on='CPT_CODE')
+	phenotypes = pd.merge(cptfile, cpt_codes, on='CPT_CODE', how='left')
+
+	# check to see if anything was dropped because of incomplete mapping
+	na_mask = phenotypes['prowas_code'].isna()
+	if np.any(na_mask):
+		print('WARNING: Some CPT events were dropped during the ProCode mapping process.')
+		num_events = cptfile.shape[0]
+		dropped = phenotypes[na_mask].copy()
+		percent_drop = 100.0 * (float(dropped.shape[0]) / float(num_events))
+		print('\t-- Dropped %d out of %d CPT events (%0.3f%%)' % (dropped.shape[0], num_events, percent_drop))
+		print('\t-- Saving dropped events to %s' % (path/'dropped_events.csv'))
+		dropped.to_csv(path/'dropped_events.csv',index=False)
+		phenotypes.dropna(subset=['prowas_code'], inplace=True) # actually remove the events
 
 	if reg_type == 2:
 		# pre-calculate durations for feature matrix step
