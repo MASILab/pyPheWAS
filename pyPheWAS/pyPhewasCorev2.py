@@ -223,24 +223,20 @@ def generate_feature_matrix(genotypes, phenotype, reg_type, code_type, pheno_cov
 
 	# sort genotype and phenotype dataframes by 'id'
 	print('Sorting phenotype data...')
-	phenotype.sort_values(by='id', inplace=True)
+	phenotype.sort_values(by=['id','AgeAt'+code_type], inplace=True)
 	print('Sorting group data...')
 	genotypes.sort_values(by='id', inplace=True)
 	genotypes.reset_index(inplace=True,drop=True)
 
 	# use phewas/prowas codes to make a dictionary of indices in the np array
-	if code_type == 'CPT':
-		phecode_col = 'prowas_code'
-		empty_phewas_df = prowas_codes.set_index('prowas_code')
-	else: # code_type == 'ICD'
-		phecode_col = 'PheCode'
-		empty_phewas_df = phewas_codes.set_index('PheCode')
+	phecode_col = pheno_map[code_type]['map_key']
+	empty_pheno_df = pheno_map[code_type]['codes'].set_index(phecode_col)
 
-	empty_phewas_df.sort_index(inplace=True)
-	empty_phewas_df['np_index'] = range(0,empty_phewas_df.shape[0])
-	np_index = empty_phewas_df['np_index'].to_dict()
+	empty_pheno_df.sort_index(inplace=True)
+	empty_pheno_df['np_index'] = range(0,empty_pheno_df.shape[0])
+	np_index = empty_pheno_df['np_index'].to_dict()
 
-	feature_matrix = np.zeros((3, genotypes.shape[0], empty_phewas_df.shape[0]), dtype=float)
+	feature_matrix = np.zeros((3, genotypes.shape[0], empty_pheno_df.shape[0]), dtype=float)
 
 	# make genotype a dictionary for faster access time
 	genotypes_dict = genotypes.set_index('id').to_dict('index')
@@ -248,6 +244,7 @@ def generate_feature_matrix(genotypes, phenotype, reg_type, code_type, pheno_cov
 	exclude = []  # list of ids to exclude (in icd list but not in genotype list)
 	last_id = ''  # track last id seen in icd list
 	count = -1
+	age_col = 'MaxAgeAt'+code_type
 
 	for _,event in tqdm(phenotype.iterrows(), desc="Processing "+code_type+"s", total=phenotype.shape[0]):
 		curr_id = event['id']
@@ -268,8 +265,8 @@ def generate_feature_matrix(genotypes, phenotype, reg_type, code_type, pheno_cov
 
 		# get column index of event phecode
 		phecode_ix = np_index[event[phecode_col]]
-		# add the max at of that ICD code to the age feature matrix
-		feature_matrix[1][count][phecode_ix] = event['MaxAgeAt'+code_type]
+		# add the max age of that ICD code to the age feature matrix (events are pre-sorted by age)
+		feature_matrix[1][count][phecode_ix] = event[age_col]
 		# if using a phecode covariate and the event phecode is equal to the covariate phecode, set the fm2 to 1 for this subject
 		if (pheno_cov is not None) & (event[phecode_col] == pheno_cov):
 			feature_matrix[2][count][:] = 1
@@ -284,7 +281,7 @@ def generate_feature_matrix(genotypes, phenotype, reg_type, code_type, pheno_cov
 			# dur aggregate: store the number of years between the first and last events with this phecode
 			feature_matrix[0][count][phecode_ix] = event['duration'] # duration calculated in get_icd_codes()
 
-	return feature_matrix,list(empty_phewas_df.index)
+	return feature_matrix,list(empty_pheno_df.index)
 
 
 
@@ -314,30 +311,25 @@ def get_phenotype_info(p_index, code_type):
 	:returns: list of phenotype info
 	:rtype: list of str
 	"""
+	code_map = pheno_map[code_type]['codes']
+
+	p_code = code_map.loc[p_index, pheno_map[code_type]['map_key']]
+	p_name = code_map.loc[p_index, pheno_map[code_type]['map_name']]
+	p_cat = code_map.loc[p_index, pheno_map[code_type]['cat_name']]
+
 	if code_type == 'ICD':
-		p_code = phewas_codes.loc[p_index, 'PheCode']
-		p_name = phewas_codes.loc[p_index, 'Phenotype']
-		p_cat = phewas_codes.loc[p_index, 'category_string']
 		icd9_ix = icd9_codes['PheCode'] == p_code
 		icd10_ix = icd10_codes['PheCode'] == p_code
-
 		p_icd9_rollup = '/'.join(icd9_codes.loc[icd9_ix, 'ICD_CODE'].tolist())
 		p_icd10_rollup = '/'.join(icd10_codes.loc[icd10_ix, 'ICD_CODE'].tolist())
-
 		return [p_code, p_name, p_cat, p_icd9_rollup, p_icd10_rollup]
-
 	else:
-		p_code = prowas_codes.loc[p_index, 'prowas_code']
-		p_name = prowas_codes.loc[p_index, 'prowas_desc']
-		p_cat = prowas_codes.loc[p_index, 'CCS Label']
 		cpt_ix = cpt_codes['prowas_code'] == p_code
 		p_cpt_rollup = '/'.join(cpt_codes.loc[cpt_ix, 'CPT_CODE'].tolist())
-
 		return [p_code, p_name, p_cat, p_cpt_rollup]
 
 
-def fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3='', covariates='',
-                         response='genotype',  lr=0, phenotype='', code_type='ICD'):
+def fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3='', covariates='', response='genotype',  lr=0, phenotype='', code_type='ICD'):
 	"""
 	Runs a logistic regression for a specific phenotype vector
 
@@ -485,27 +477,21 @@ def run_phewas_legacy(fm, genotypes, code_type, covariates='', response='genotyp
 	# sort group data by id
 	print('Sorting group data...')
 	genotypes.sort_values(by='id', inplace=True)
-	genotypes.reset_index(inplace=True,drop=True)
+	genotypes.reset_index(inplace=True, drop=True)
 
-	num_pheno = len(fm[0, 0])
+	fm_shape = len(fm[0, 0])
 	# check number of phenotypes in the feature matrix
-	if code_type == 'ICD':
-		assert num_pheno == phewas_codes.shape[0], "Expected %d columns in PheWAS feature matrix, but found %d. Please check the feature matrix" %(phewas_codes.shape[0], num_pheno)
-	else:
-		assert num_pheno == prowas_codes.shape[0], "Expected %d columns in ProWAS feature matrix, but found %d. Please check the feature matrix" %(prowas_codes.shape[0], num_pheno)
+	num_pheno = pheno_map[code_type]['codes'].shape[0]
+	assert fm_shape == num_pheno, "Expected %d columns in feature matrix, but found %d. Please check the feature matrix" % (num_pheno, fm_shape)
 
 	# store all of the pertinent data from the regressions
-	if code_type == 'ICD':
-		out_cols = phewas_reg_cols
-	else:
-		out_cols = prowas_reg_cols
-	regressions = pd.DataFrame(columns=out_cols)
+	regressions = pd.DataFrame(columns=pheno_map[code_type]['reg_cols'])
 
 	control = fm[0][genotypes[response] == 0, :]
 	disease = fm[0][genotypes[response] == 1, :]
 	# find all phecodes that only present for a single group (ie only controls or only case show the phecode) -> have to use regularization
 	inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
-	for index in tqdm(range(num_pheno), desc='Running Regressions'):
+	for index in tqdm(range(fm_shape), desc='Running Regressions'):
 		phen_info = get_phenotype_info(index, code_type)
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
@@ -577,21 +563,15 @@ def run_phewas(fm, genotypes, code_type, covariates='', response='genotype', phe
 	genotypes.sort_values(by='id', inplace=True)
 	genotypes.reset_index(inplace=True, drop=True)
 
-	num_pheno = len(fm[0, 0])
+	fm_shape = len(fm[0, 0])
 	# check number of phenotypes in the feature matrix
-	if code_type == 'ICD':
-		assert num_pheno == phewas_codes.shape[0], "Expected %d columns in PheWAS feature matrix, but found %d. Please check the feature matrix" % (phewas_codes.shape[0], num_pheno)
-	else:
-		assert num_pheno == prowas_codes.shape[0], "Expected %d columns in ProWAS feature matrix, but found %d. Please check the feature matrix" % (prowas_codes.shape[0], num_pheno)
+	num_pheno = pheno_map[code_type]['codes'].shape[0]
+	assert fm_shape == num_pheno, "Expected %d columns in feature matrix, but found %d. Please check the feature matrix" % (num_pheno, fm_shape)
 
 	# store all of the pertinent data from the regressions
-	if code_type == 'ICD':
-		out_cols = phewas_reg_cols
-	else:
-		out_cols = prowas_reg_cols
-	regressions = pd.DataFrame(columns=out_cols)
+	regressions = pd.DataFrame(columns=pheno_map[code_type]['reg_cols'])
 
-	for index in tqdm(range(num_pheno), desc='Running Regressions'):
+	for index in tqdm(range(fm_shape), desc='Running Regressions'):
 		phen_info = get_phenotype_info(index, code_type)
 		phen_vector1 = fm[0][:, index]
 		phen_vector2 = fm[1][:, index]
@@ -774,26 +754,16 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, pl
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
-	if code_type == 'ICD':
-		pheno_codes = phewas_codes
-		reg_key = 'PheWAS Code'
-		map_key = 'PheCode'
-		cat_key = 'category'
-		cat_label = 'category_string'
-		pheno_name = 'PheWAS Name'
-	else:
-		pheno_codes = prowas_codes
-		reg_key = 'ProWAS Code'
-		map_key = 'prowas_code'
-		cat_key = 'ccs'
-		cat_label = 'CCS Label'
-		pheno_name = 'ProWAS Name'
+	# Merge regressions with phenotype data to get categories (if they're not already present)
+	if (pheno_map[code_type]['cat_key'] is not None) and not (pheno_map[code_type]['cat_key'] in regressions.columns):
+		regressions = pd.merge(regressions, pheno_map[code_type]['codes'],
+							   left_on=pheno_map[code_type]['pheno_key'],
+							   right_on=pheno_map[code_type]['map_key'],
+							   suffixes=[None, '_y'])
 
-	if not cat_key in regressions.columns:
-		# Merge regressions with phenotype data to get categories
-		regressions = pd.merge(regressions, pheno_codes, left_on=reg_key, right_on=map_key, suffixes=[None, '_y'])
-
-	regressions.sort_values(by=cat_key, inplace=True)
+	# Sort by category if we can
+	if (pheno_map[code_type]['cat_key'] is not None):
+		regressions.sort_values(by=pheno_map[code_type]['cat_key'], inplace=True)
 
 	# Plot all points w/ labels
 	e = 1 # x-axis counter
@@ -812,21 +782,24 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, pl
 		else:
 			mew = 0.0
 			m = 'o'
+		# get point color
+		if (code_type == 'ICD') and (pheno_map[code_type]['cat_key'] is not None):
+			c = cat_colors[data[pheno_map[code_type]['cat_name']]]
+		else:
+			c = 'xkcd:aqua' # constant color
 		# Plot PheCode data point & format PheCode label
-		if code_type == 'ICD': c = cat_colors[data[cat_label]]
-		else: c = 'xkcd:aqua' # constant color
 		if data['p-val'] < thresh:
 			# plot significant PheCode/ProCode with label
 			ax.plot(e, logp_ix, m, color=c, fillstyle='full', markeredgewidth=mew)
-			artists.append(ax.text(e, logp_ix, data[pheno_name], rotation=45, va='bottom', fontsize=6))
+			artists.append(ax.text(e, logp_ix, data[pheno_map[code_type]['pheno_name']],
+								   rotation=45, va='bottom', fontsize=6))
 			e += 15
 		elif plot_all_pts:
 			# plot insignificant PheCode/ProCode without label
 			ax.plot(e, logp_ix, m, color=c, fillstyle='full', markeredgewidth=mew)
 			e += 15
-
 	# Category Legend
-	if code_type == 'ICD':
+	if (code_type == 'ICD') and (pheno_map[code_type]['cat_key'] is not None):
 		line1 = []
 		box = ax.get_position()
 		ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
@@ -840,14 +813,9 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, pl
 
 	# Save the plot
 	if save:
-		plt.savefig(save,
-					format = save_format,
-					bbox_extra_artists = artists,
-					bbox_inches ='tight',
-					dpi = 300
-					)
+		plt.savefig(save, format = save_format, bbox_extra_artists = artists, bbox_inches ='tight', dpi = 300)
 		plt.close()
-
+	
 	return
 
 
@@ -880,32 +848,22 @@ def plot_log_odds_ratio(regressions, thresh, code_type='ICD', save='', save_form
 	ax = plt.subplot(111)
 	frame1 = plt.gca()
 
-	if code_type == 'ICD':
-		pheno_codes = phewas_codes
-		reg_key = 'PheWAS Code'
-		map_key = 'PheCode'
-		cat_key = 'category'
-		cat_label = 'category_string'
-		pheno_name = 'PheWAS Name'
-	else:
-		pheno_codes = prowas_codes
-		reg_key = 'ProWAS Code'
-		map_key = 'prowas_code'
-		cat_key = 'ccs'
-		cat_label = 'CCS Label'
-		pheno_name = 'ProWAS Name'
+	# Merge regressions with phenotype data to get categories (if they're not already present)
+	if (pheno_map[code_type]['cat_key'] is not None) and not (pheno_map[code_type]['cat_key'] in regressions.columns):
+		regressions = pd.merge(regressions, pheno_map[code_type]['codes'],
+							   left_on=pheno_map[code_type]['pheno_key'],
+							   right_on=pheno_map[code_type]['map_key'],
+							   suffixes=[None, '_y'])
 
-	if not cat_key in regressions.columns:
-		# Merge regressions with phenotype data to get categories
-		regressions = pd.merge(regressions, pheno_codes, left_on=reg_key, right_on=map_key, suffixes=[None, '_y'])
-
-	regressions.sort_values(by=cat_key, inplace=True)
-
+	# Sort by category if we can
+	if (pheno_map[code_type]['cat_key'] is not None):
+		regressions.sort_values(by=pheno_map[code_type]['cat_key'], inplace=True)
 
 	# Plot all points w/ labels
 	e = 1 # vertical index
 	text_size = 6
 	artists = []
+	pheno_name = pheno_map[code_type]['pheno_name']
 	if label_loc == "axis":
 		phecode_labels = []
 		phecode_locs = []
@@ -922,10 +880,13 @@ def plot_log_odds_ratio(regressions, thresh, code_type='ICD', save='', save_form
 			else: # location = "axis"
 				phecode_labels.append(data[pheno_name])
 				phecode_locs.append(e)
+			# get point color
+			if (code_type == 'ICD') and (pheno_map[code_type]['cat_key'] is not None):
+				c = cat_colors[data[pheno_map[code_type]['cat_name']]]
+			else:
+				c = 'xkcd:aqua' # constant color
 
 			# Plot Phecode Data
-			if code_type == 'ICD': c = cat_colors[data[cat_label]]
-			else: c = 'xkcd:aqua' # constant color
 			ax.plot(beta_ix, e, 'o', color=c, fillstyle='full', markeredgewidth=0.0)
 			ax.plot([data['lowlim'], data['uplim']], [e, e], color=c)
 			e += 15
@@ -939,7 +900,7 @@ def plot_log_odds_ratio(regressions, thresh, code_type='ICD', save='', save_form
 		frame1.axes.get_yaxis().set_visible(False)
 
 	# Legend
-	if code_type == 'ICD':
+	if (code_type == 'ICD') and (pheno_map[code_type]['cat_key'] is not None):
 		line1 = []
 		box = ax.get_position()
 		ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
@@ -996,10 +957,7 @@ def plot_volcano(regressions, code_type='ICD', save='', save_format=''):
 	plt.ylabel('-log10(p)')
 	plt.xlabel('Log Odds Ratio')
 
-	if code_type == 'ICD':
-		pheno_name = 'PheWAS Name'
-	else:
-		pheno_name = 'ProWAS Name'
+	regressions.sort_values(by='p-val', ascending=False, inplace=True)
 
 	for ix,data in regressions.iterrows():
 		logp_ix = data['"-log(p)"']
@@ -1007,10 +965,10 @@ def plot_volcano(regressions, code_type='ICD', save='', save_format=''):
 		# determine marker color & label based on thresholds
 		if  data['p-val'] < bon:
 			c = 'gold'
-			phe = data[pheno_name]
+			phe = data[pheno_map[code_type]['pheno_name']]
 		elif data['p-val'] < fdr:
 			c = 'midnightblue'
-			phe = data[pheno_name]
+			phe = data[pheno_map[code_type]['pheno_name']]
 		else:
 			c = 'slategray'
 			phe = ''
@@ -1069,27 +1027,6 @@ def display_kwargs(kwargs):
 		num_dots = 80 - len(str(k)) - len(str(v))
 		print(str(k) + '.'*num_dots + str(v))
 
-
-phewas_reg_cols = ['PheWAS Code',
-				  'PheWAS Name',
-				  '\"-log(p)\"',
-				  'p-val',
-				  'beta',
-				  'Conf-interval beta',
-				  'std_error',
-				  'category_string',
-				  'ICD-9',
-				  'ICD-10']
-
-prowas_reg_cols = ['ProWAS Code',
-				  'ProWAS Name',
-				  '\"-log(p)\"',
-				  'p-val',
-				  'beta',
-				  'Conf-interval beta',
-				  'std_error',
-				  'CCS Label',
-				  'CPT']
 
 cat_colors = {'other': 'gold',
                'circulatory system': 'xkcd:bright red',
@@ -1150,19 +1087,61 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
 
+#----------------------------------------------------------
 # load ICD maps (pyPheWAS)
 icd9_codes = get_codes('phecode_map_v1_2_icd9.csv')
-# icd9_codes = get_codes('phecode_map_v1_1_icd9.csv') # original ICD-PheCode mapping
 icd10_codes = get_codes('phecode_map_v1_2_icd10_beta.csv')
+# load CPT maps (pyProWAS)
+cpt_codes = get_codes('prowas_codes.csv')
+#----------------------------------------------------------
 
-phewas_codes = icd9_codes.append(icd10_codes[['PheCode','Phenotype','category','category_string']])
-phewas_codes = phewas_codes[['PheCode','Phenotype','category','category_string']].dropna()
+# Get PheCode list (merge ICD9 & ICD10 maps)
+if sum(icd9_codes.columns.isin(['category','category_string'])) == 2:
+    mcols = ['PheCode','Phenotype','category','category_string']
+    phe_cats = True
+else:
+    mcols = ['PheCode','Phenotype']
+    phe_cats = False
+phewas_codes = icd9_codes.append(icd10_codes[mcols])
+phewas_codes = phewas_codes[mcols].dropna()
 phewas_codes.drop_duplicates(subset='PheCode',inplace=True)
 phewas_codes.sort_values(by=['PheCode'], inplace=True)
 phewas_codes.reset_index(inplace=True, drop=True)
 
-# load CPT maps (pyProWAS)
-cpt_codes = get_codes('prowas_codes.csv')
-prowas_codes = cpt_codes[['prowas_code','prowas_desc','ccs','CCS Label']].drop_duplicates(subset='prowas_code')
+# Get ProCode list
+if sum(cpt_codes.columns.isin(['ccs','CCS Label'])) == 2:
+    mcols = ['prowas_code','prowas_desc','ccs','CCS Label']
+    pro_cats = True
+else:
+    mcols = ['prowas_code','prowas_desc']
+    pro_cats = False
+prowas_codes = cpt_codes[mcols].drop_duplicates(subset='prowas_code')
 prowas_codes.sort_values(by=['prowas_code'], inplace=True)
 prowas_codes.reset_index(inplace=True,drop=True)
+
+
+# Build Phenotype Information Map
+pheno_map = {}
+pheno_map['ICD'] = {'codes' : phewas_codes,
+					'pheno_name' : 'PheWAS Name',
+					'pheno_key' : 'PheWAS Code',
+					'map_key' : 'PheCode',
+					'map_name' : 'Phenotype',
+					'cat_key' : 'category' if phe_cats else None,
+					'cat_name' : 'category_string' if phe_cats else None,
+					'reg_cols' : ['PheWAS Code', 'PheWAS Name', '\"-log(p)\"',
+								  'p-val', 'beta', 'Conf-interval beta',
+								  'std_error', 'category_string', 'ICD-9', 'ICD-10']
+}
+
+pheno_map['CPT'] = {'codes' : prowas_codes,
+					'pheno_name' : 'ProWAS Name',
+					'pheno_key' : 'ProWAS Code',
+					'map_key' : 'prowas_code',
+					'map_name' : 'prowas_desc',
+					'cat_key' : 'ccs' if pro_cats else None,
+					'cat_name' : 'CCS Label' if pro_cats else None,
+					'reg_cols' : ['ProWAS Code', 'ProWAS Name', '\"-log(p)\"',
+								  'p-val', 'beta', 'Conf-interval beta',
+								  'std_error', 'CCS Label', 'CPT']
+}

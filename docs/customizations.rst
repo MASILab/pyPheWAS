@@ -78,19 +78,15 @@ This is done at the end of the `pyPhewasCorev2.py:L1154`_ script, as shown below
 
 .. code-block:: python
 
+    #-----------------------------------------------------------------------------
     # load ICD maps (pyPheWAS)
-    # icd9_codes = get_codes('phecode_map_v1_1_icd9.csv') # original ICD-PheCode mapping
-    #--------------------------------------------------------------------------
-    # Change the filename argument to match the name of your custom PheCode map
+    # Change the filename argument to match the name of your custom PheCode map(s)
     icd9_codes = get_codes('phecode_map_v1_2_icd9.csv')
     icd10_codes = get_codes('phecode_map_v1_2_icd10_beta.csv')
-    #--------------------------------------------------------------------------
-
     # load CPT maps (pyProWAS)
-    #--------------------------------------------------------------------------
     # Change the filename argument to match the name of your custom ProCode map
     cpt_codes = get_codes('prowas_codes.csv')
-    #--------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------
 
 Notes
     * The ICD9 and ICD10 PheCode maps are merged to obtain one master PheCode list.
