@@ -1054,23 +1054,23 @@ def display_kwargs(kwargs):
 
 
 cat_colors = {'other': 'gold',
-               'circulatory system': 'xkcd:bright red',
-               'congenital anomalies': 'mediumspringgreen',
-               'dermatologic': 'xkcd:dark peach',
-               'digestive': 'yellowgreen',
-               'endocrine/metabolic': 'darkred',
-               'genitourinary': 'seagreen',
-               'hematopoietic': 'orange',
-               'infectious diseases': 'blue',
-               'injuries & poisonings': 'slategray',
-               'mental disorders': 'xkcd:hot pink',
-               'musculoskeletal': 'darkkhaki',
-               'neoplasms': 'xkcd:bluish',
-               'neurological': 'xkcd:purplish pink',
-               'pregnancy complications': 'peachpuff',
-               'respiratory': 'xkcd:carolina blue',
-               'sense organs': 'darkviolet',
-               'symptoms': 'aqua'}
+			  'circulatory system': 'xkcd:bright red',
+			  'congenital anomalies': 'mediumspringgreen',
+			  'dermatologic': 'xkcd:dark peach',
+			  'digestive': 'yellowgreen',
+			  'endocrine/metabolic': 'darkred',
+			  'genitourinary': 'seagreen',
+			  'hematopoietic': 'orange',
+			  'infectious diseases': 'blue',
+			  'injuries & poisonings': 'slategray',
+			  'mental disorders': 'xkcd:hot pink',
+			  'musculoskeletal': 'darkkhaki',
+			  'neoplasms': 'xkcd:bluish',
+			  'neurological': 'xkcd:purplish pink',
+			  'pregnancy complications': 'peachpuff',
+			  'respiratory': 'xkcd:carolina blue',
+			  'sense organs': 'darkviolet',
+			  'symptoms': 'aqua'}
 
 old_plot_colors = {'-': 'gold',
 			   'circulatory system': 'red',
@@ -1122,11 +1122,11 @@ cpt_codes = get_codes('prowas_codes.csv')
 
 # Get PheCode list (merge ICD9 & ICD10 maps)
 if sum(icd9_codes.columns.isin(['category','category_string'])) == 2:
-    mcols = ['PheCode','Phenotype','category','category_string']
-    phe_cats = True
+	mcols = ['PheCode','Phenotype','category','category_string']
+	phe_cats = True
 else:
-    mcols = ['PheCode','Phenotype']
-    phe_cats = False
+	mcols = ['PheCode','Phenotype']
+	phe_cats = False
 phewas_codes = icd9_codes.append(icd10_codes[mcols])
 phewas_codes = phewas_codes[mcols].dropna()
 phewas_codes.drop_duplicates(subset='PheCode',inplace=True)
@@ -1135,11 +1135,11 @@ phewas_codes.reset_index(inplace=True, drop=True)
 
 # Get ProCode list
 if sum(cpt_codes.columns.isin(['ccs','CCS Label'])) == 2:
-    mcols = ['prowas_code','prowas_desc','ccs','CCS Label']
-    pro_cats = True
+	mcols = ['prowas_code','prowas_desc','ccs','CCS Label']
+	pro_cats = True
 else:
-    mcols = ['prowas_code','prowas_desc']
-    pro_cats = False
+	mcols = ['prowas_code','prowas_desc']
+	pro_cats = False
 prowas_codes = cpt_codes[mcols].drop_duplicates(subset='prowas_code')
 prowas_codes.sort_values(by=['prowas_code'], inplace=True)
 prowas_codes.reset_index(inplace=True,drop=True)

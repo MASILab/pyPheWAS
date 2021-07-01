@@ -7,6 +7,8 @@ from pathlib import Path
 import os.path as osp
 import time
 
+## CHANGE createGenotypeFile to call createPhenotypeFile!!! 
+# Exclusions are in terms of phecodes -- this makes life easier
 
 def parse_args():
     parser = argparse.ArgumentParser(description="pyPheWAS Phenotype Assignment Tool")
@@ -109,10 +111,12 @@ if len(ctrl_codes) > 0:
 
 
 """
-Find codes & make groups
+Find cases
 """
 phen = pd.read_csv(phenotype)
 phen[response_var] = -1
+
+# TODO: implement "daily" threshold
 
 # Cases
 print('Finding cases with codes: %s' % '|'.join(case_codes))
@@ -125,6 +129,22 @@ phen['genc'] = phen.groupby('id')['gen'].transform('sum') # count all instances
 case_mask = phen['genc']>=code_freq[0]
 rm_mask = (phen['genc'] < code_freq[0]) & (phen['genc'] > 0) # need to remove these later
 phen.loc[case_mask,response_var] = 1
+
+# TODO: throw error if no cases are found (specify that none had provided codes or if threshold wasn't met)
+
+"""
+Process Exclusions
+"""
+# TODO: inadequate threshold exclusions
+
+# TODO: related codes exclusions
+
+# this should end with a pool of possible control subjects
+
+"""
+Find controls
+"""
+# TODO: walk through this section, make it more clear-cut
 
 # Controls
 if len(ctrl_codes) > 0:
@@ -154,6 +174,7 @@ phen = phen[['id',response_var]].drop_duplicates()
 """
 Save Output
 """
+# TODO: make sure these outputs work correctly
 if len(str(group)) > 0:
 	print('Merging response variable assignment with provided group file')
 	phen = pd.merge(phen, group_data, how='inner',on='id', suffixes=('','_old'))
@@ -164,6 +185,9 @@ print('Cases: %d\nControls: %d' %(num_case, num_ctrl))
 
 print('Saving response variable mapping to %s' % groupout)
 phen.to_csv(groupout,index=False)
+
+# TODO: optionally, save new phenotype file with just the selected subjects
+
 
 """
 Calculate runtime
