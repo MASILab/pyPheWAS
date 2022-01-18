@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from urllib import response
 from pyPheWAS.pyPhewasCorev2 import *
 import sys, os, math
 import pandas as pd
@@ -16,8 +17,10 @@ def parse_args():
     parser.add_argument('--phenotype', required=True, type=str, help='Name of the input phenotype file')
     parser.add_argument('--group', required=False, default='', type=str, help='Name of the group file to add target variable map to')
     parser.add_argument('--groupout', required=True, type=str, help ='Name of the output group file')
+    parser.add_argument('--phenotypeout', required=False, default='', type=str, help ='Name of the output phenotype file containing only selected case and control subjects') 
     parser.add_argument('--case_codes', required=True, type=str, help='Case ICD codes (filename or comma-separated list)')
     parser.add_argument('--ctrl_codes', required=False, default='', type=str,  help='Control ICD codes (filename or comma-separated list)')
+    parser.add_argument('--exclude_codes', required=False, default='', type=str,  help='Exclusion ICD codes (filename, comma-separated list, or \"phewas_map\")')
     parser.add_argument('--code_freq', required=True, type=str, help='Minimum frequency of codes (If 2 comma-separated values are given and ctrl_codes is given, 2nd argument is applied to controls)')
     parser.add_argument('--thresh_type', required=False, type=str,default='absolute', help='Code frequency threshold type (absolute [default] or daily)')
     parser.add_argument('--response_var', required=False, type=str,default='target', help='Name of response variable (e.g. target, genotype, response [default=target])')
@@ -25,6 +28,41 @@ def parse_args():
 
     args = parser.parse_args()
     return args
+
+
+
+def parse_codes(codes, codes_path, code_type):
+    # reads codes from file (if needed) and converts into a normal list
+    if codes.endswith('.csv') | codes.endswith('.txt'):
+        print('Reading %s group codes from file' % code_type)
+        with open(codes_path/codes,'r') as code_f:
+            data = code_f.readlines()
+        # remove white space and reformat into an array
+        codes = set()
+        [codes.update( x.replace(" ","").replace("\n","").split(',') ) for x in data]
+        codes.discard('')
+    else:
+        codes = set(codes.replace(" ","").replace("\n","").split(','))
+    return list(codes)
+
+
+
+def get_exclusion_from_phewas(case_codes):
+    # TODO: implement this!
+    assert False, "feature not yet implemented"
+    return []
+
+
+
+def find_and_count(df, codes):
+    # finds records of the ICD codes provided in codes ('gen') & 
+    # counts the total record count for each subject (specified by id)
+    codes = [x+'\Z' for x in codes] # append \Z to force regex to find exact match
+    df['gen'] = df['ICD_CODE'].str.match('|'.join(codes)) # find all ICD code matches
+    df['gen'] = df['gen']*1 # convert to integer
+    df['genc'] = df.groupby('id')['gen'].transform('sum') # count all instances
+    return
+
 
 
 """
@@ -44,22 +82,23 @@ kwargs = {
     'phenotype':args.phenotype,
     'group':args.group,
     'groupout':args.groupout,
+    'phenotypeout':args.phenotypeout,
     'case_codes':args.case_codes,
     'ctrl_codes': args.ctrl_codes,
+    'exclude_codes': args.exclude_codes,
     'code_freq':args.code_freq,
     'thresh_type':args.thresh_type,
     'response_var':args.response_var,
     'path':Path(args.path),
 }
 
-# Change path to absolute path
-# kwargs['path'] = os.path.join(os.path.abspath(kwargs['path']),'')
-
 # Assert that files are valid
 assert kwargs['phenotype'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotype'])
 assert kwargs['groupout'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['groupout'])
-if len(kwargs['group']) > 0:
+if kwargs['group']:
     assert kwargs['group'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['group'])
+if kwargs['phenotypeout']:
+    assert kwargs['phenotypeout'].endswith('.csv'), "%s is not a valid output file, must be a .csv file" % (kwargs['phenotypeout'])
 
 # Assert that options are valid
 assert kwargs['thresh_type'] in ['absolute','daily'], "%s is not a valid threshold type" % kwargs['thresh_type']
@@ -72,145 +111,148 @@ locals().update(kwargs)
 # Fill paths
 phenotype = path / phenotype 
 groupout = path / groupout
-if len(str(group)) > 0:
+if group:
     group = path / group
+if phenotypeout:
+    phenotypeout = path / phenotypeout
 
 # Assert that all files exist
-assert osp.exists(phenotype), "%s does not exist" % phenotype
-if len(str(group)) > 0:
-    assert osp.exists(group), "%s does not exist" % group
+assert phenotype.exists(), "%s does not exist" % phenotype
+if group:
+    assert group.exists(), "%s does not exist" % group
 if case_codes.endswith('.csv') | case_codes.endswith('.txt'):
-    assert osp.exists(path/case_codes), "%s does not exist" % (path / case_codes)
+    assert (path/case_codes).exists(), "%s does not exist" % (path / case_codes)
 if ctrl_codes.endswith('.csv') | ctrl_codes.endswith('.txt'):
-    assert osp.exists(path/ctrl_codes), "%s does not exist" % (path / ctrl_codes)
+    assert (path/ctrl_codes).exists(), "%s does not exist" % (path / ctrl_codes)
+if exclude_codes.endswith('.csv') | exclude_codes.endswith('.txt'):
+    assert (path/exclude_codes).exists(), "%s does not exist" % (path / exclude_codes)
 
 # Read group file
-if len(str(group)) > 0:
+if group:
+    print('Reading group data from file')
     group_data = pd.read_csv(group)
 
 # Make code frequency an integer
 code_freq = code_freq.replace(" ","").split(',')
-for i in range(len(code_freq)):
-	code_freq[i] = int(code_freq[i])
+code_freq = [int(x) for x in code_freq]
 
 """
 Parse codes
 """
-# Case
-if case_codes.endswith('.csv') | case_codes.endswith('.txt'):
-    print('Reading case group codes from file')
-    with open(path/case_codes,'r') as code_f:
-        case_codes = code_f.readlines()[0]
-# remove white space and split into an array
-case_codes = case_codes.replace(" ","").replace("\n","").split(',')
 
+case_codes = parse_codes(case_codes, path, "case")
 
-# Controls
-if len(ctrl_codes) > 0:
-    if ctrl_codes.endswith('.csv') | ctrl_codes.endswith('.txt'):
-        print('Reading control group codes from file')
-        with open(path/ctrl_codes,'r') as code_f:
-            ctrl_codes = code_f.readlines()[0]
-    # remove white space and split into an array
-    ctrl_codes = ctrl_codes.replace(" ", "").replace("\n", "").split(',')
+if ctrl_codes:
+    ctrl_codes = parse_codes(ctrl_codes, path, "control")
+
+if exclude_codes:
+    if exclude_codes == "phewas_map":
+        exclude_codes = get_exclusion_from_phewas(case_codes)
+        # export list 
+    else:
+        exclude_codes = parse_codes(exclude_codes, path, "exclusion")
+    # check for overlap between control list and exclusion list
+    if ctrl_codes: 
+        overlap = set(ctrl_codes).intersection( set(exclude_codes) )
+        assert len(overlap) == 0, "Provided control code list overlap with exclusion code list (%s)" % ','.join(overlap)
+
 
 
 """
 Find cases
 """
-phen = pd.read_csv(phenotype)
-phen[response_var] = -1
+print('Reading ICD data from file')
+phen = pd.read_csv(phenotype,dtype={'ICD_CODE':str})
 
 # for daily threshold, filter phenotype data so that there is only one instance of an ICD code 
 # recorded within a single day for each subject
 if thresh_type == 'daily':
     phen.drop_duplicates(subset=['id','ICD_CODE','AgeAtICD'], inplace=True)
 
-# Cases
-print('Finding cases with codes: %s' % '|'.join(case_codes))
-# append \Z to force regex to find exact match
-for ix in range(len(case_codes)):
-    case_codes[ix] = case_codes[ix] + '\Z'
-phen['gen'] = phen['ICD_CODE'].str.match('|'.join(case_codes)) # find all ICD code matches
-phen['gen'] = phen['gen']*1 # convert to integer
-phen['genc'] = phen.groupby('id')['gen'].transform('sum') # count all instances
-case_mask = phen['genc']>=code_freq[0]
+print('\nFinding cases with ICD code(s): %s' % '|'.join(case_codes))
+find_and_count(phen, case_codes)
+case_ids = set( phen[phen['genc'] >= code_freq[0]]["id"] )
 
-# throw error if no cases are found
-if sum(case_mask) == 0:
-    # no subjects had specified codes
+if len(case_ids) == 0:
     assert sum(phen['gen']) > 0, "No case subjects found (supplied case ICD codes not found)"
-    # no subjects met frequency threshold 
     assert False, "No case subjects found (supplied frequency threshold was not met)"
 
-# TODO: probs want to rework this later 
-rm_mask = (phen['genc'] < code_freq[0]) & (phen['genc'] > 0) # need to remove these later
-phen.loc[case_mask,response_var] = 1
+print('Found %d case subjects' % len(case_ids)) # drop case subjects from phen df
+phen = phen[phen['genc'] < code_freq[0]]
 
 """
 Process Exclusions
 """
-# TODO: inadequate threshold exclusions
+# Inadequate threshold exclusion
+ambiguous = len( set( phen[phen['genc'] > 0]["id"] ) )
+phen = phen[phen['genc'] == 0]
+print("\nDropping %d ambiguous subjects (have case codes but don't meet frequency threshold)" % ambiguous)
+print("%d subjects left in potential control pool" % phen.drop_duplicates(subset='id').shape[0])
 
-# TODO: related codes exclusions
+# Related or user-specified code exclusions
+if exclude_codes:
+    print('\nExcluding subjects with ICD code(s): %s' % '|'.join(exclude_codes))
+    find_and_count(phen, exclude_codes)
+    # drop excluded subjects from phen df
+    excluded = len( set( phen[phen['genc'] > 0]["id"] ) )
+    phen = phen[phen['genc'] == 0]
+    print("%d subjects excluded" % excluded)
+    print("%d subjects left in potential control pool\n" % phen.drop_duplicates(subset='id').shape[0])
 
-# this should end with a pool of possible control subjects
+assert phen.shape[0] > 0, "No subjects remaining for control group"
 
 """
 Find controls
 """
-# TODO: walk through this section, make it more clear-cut
-
-# Controls
-if len(ctrl_codes) > 0:
-    print('Finding controls with codes: %s' % '|'.join(ctrl_codes))
-    # append \Z to force regex to find exact match
-    for ix in range(len(ctrl_codes)):
-        ctrl_codes[ix] = ctrl_codes[ix] + '\Z'
-    phen['gen_ctrl'] = phen['ICD_CODE'].str.match('|'.join(ctrl_codes))
-    phen['gen_ctrl'] = phen['gen_ctrl']*1
-    phen['genc_ctrl'] = phen.groupby('id')['gen_ctrl'].transform('sum')
-    if len(code_freq) > 1:
-        cf = code_freq[1]
-    else:
-        cf = code_freq[0]
-    ctrl_mask = (phen['genc_ctrl']>=cf) & ~ case_mask
-    phen.loc[ctrl_mask, response_var] = 0
-    # drop other subjects
-    sub_mask = (case_mask | ctrl_mask) & ~rm_mask
-    phen = phen[sub_mask]
+if ctrl_codes:
+    print('\nFinding controls with ICD code(s): %s' % '|'.join(ctrl_codes))
+    find_and_count(phen, ctrl_codes)
+    cf = code_freq[0] if len(code_freq) == 1 else code_freq[1]
+    ctrl_ids = set( phen[phen['genc'] >= cf]["id"] )
 else:
-    ctrl_mask = (~case_mask) & (~rm_mask)
-    phen.loc[~case_mask,response_var] = 0   
-    # drop subjects
-    phen = phen[~rm_mask]
+    ctrl_ids = set(phen["id"])
 
-# throw error if no controls are found
-if sum(ctrl_mask) == 0:
-    # no subjects had specified codes
-    assert sum(phen['gen_ctrl']) > 0, "No control subjects found (supplied control ICD codes not found)"
-    # no subjects met frequency threshold 
+if len(ctrl_ids) == 0:
+    assert sum(phen['gen']) > 0, "No control subjects found (supplied control ICD codes not found)"
     assert False, "No control subjects found (supplied frequency threshold was not met)"
 
-
-phen = phen[['id',response_var]].drop_duplicates()
+print('Found %d control subjects' % len(ctrl_ids))
 
 """
 Save Output
 """
-# TODO: make sure these outputs work correctly
-if len(str(group)) > 0:
+print("\nFormatting outputs...")
+
+# build output DF from sets of case & control IDs
+tmp_df = pd.DataFrame(case_ids)
+tmp_df.rename(columns={0:'id'}, inplace=True)
+tmp_df[response_var] = 1
+
+out_df = pd.DataFrame(ctrl_ids)
+out_df.rename(columns={0:'id'}, inplace=True)
+out_df[response_var] = 0
+
+out_df = pd.concat([tmp_df, out_df], ignore_index=True)
+
+if group:
     print('Merging response variable assignment with provided group file')
-    phen = pd.merge(phen, group_data, how='inner',on='id', suffixes=('','_old'))
+    out_df = pd.merge(out_df, group_data, how='inner',on='id', suffixes=('','_old'))
 
-num_case = phen[phen[response_var]==1].shape[0]
-num_ctrl = phen[phen[response_var]==0].shape[0]
-print('Cases: %d\nControls: %d' %(num_case, num_ctrl))
+num_case = out_df[out_df[response_var]==1].shape[0]
+num_ctrl = out_df[out_df[response_var]==0].shape[0]
+print('Cases: %d\tControls: %d' %(num_case, num_ctrl))
 
-print('Saving response variable mapping to %s' % groupout)
-phen.to_csv(groupout,index=False)
+print('Saving group file to %s' % groupout)
+out_df.to_csv(groupout, index=False)
 
-# TODO: optionally, save new phenotype file with just the selected subjects
+# optionally, save new phenotype file with just the selected subjects
+if phenotypeout:
+    print('\nMerging response variable assignment with phenotype file')
+    phen = pd.read_csv(phenotype, dtype={'ICD_CODE':str}) # fresh read of phen file
+    phen = pd.merge(out_df["id"], phen, how='inner', on='id')
+    print('Saving new phenotype file to %s' % phenotypeout)
+    phen.to_csv(phenotypeout, index=False)
+
 
 
 """
