@@ -1,15 +1,10 @@
 #!/usr/bin/env python
-from urllib import response
-from pyPheWAS.pyPhewasCorev2 import *
-import sys, os, math
+from pyPheWAS.pyPhewasCorev2 import print_start_msg, display_kwargs
+import math
 import pandas as pd
 import argparse
 from pathlib import Path
-import os.path as osp
 import time
-
-## CHANGE createGenotypeFile to call createPhenotypeFile!!! 
-# Exclusions are in terms of phecodes -- this makes life easier
 
 def parse_args():
     parser = argparse.ArgumentParser(description="pyPheWAS Phenotype Assignment Tool")
@@ -47,10 +42,55 @@ def parse_codes(codes, codes_path, code_type):
 
 
 
-def get_exclusion_from_phewas(case_codes):
-    # TODO: implement this!
-    assert False, "feature not yet implemented"
-    return []
+def export_phewas_exclusions(case_codes, phecode_lists, icd_list, path, groupname):
+    # reformat phecode list for export
+    phecode_lists[0]['ICD_TYPE'] = 9
+    phecode_lists[1]['ICD_TYPE'] = 10
+    phecode_lists[0].rename(columns={'ICD9 String':'ICD_String'}, inplace=True)
+    phecode_lists[1].rename(columns={'ICD10 String':'ICD_String'}, inplace=True)
+    case_phecodes = pd.concat(phecode_lists)
+    icd_list[0]['ICD_TYPE'] = 9
+    icd_list[1]['ICD_TYPE'] = 10
+    icd_list[0].rename(columns={'ICD9 String':'ICD_String'}, inplace=True)
+    icd_list[1].rename(columns={'ICD10 String':'ICD_String'}, inplace=True)
+    ex_codes = pd.concat(icd_list)
+    with open(path / (groupname +'_exclusion_list.csv'), 'w+') as out:
+        out.write('Case ICD codes\n')
+        out.write('\n'.join(case_codes) + '\n')
+        out.write('\n--------------------------------------------------\n')
+        out.write('Corresponding Case PheCodes\n')
+        case_phecodes.to_csv(out, index=False, columns=['ICD_TYPE','PheCode','Phenotype','Excl. Phecodes', 'Excl. Phenotypes'])
+        out.write('\n--------------------------------------------------\n')
+        out.write('Related ICD Codes (Exclusions)\n')
+        ex_codes.to_csv(out, index=False, columns=['ICD_TYPE','ICD_CODE','ICD_String','PheCode','Phenotype'])
+    return
+
+
+
+def get_exclusion_from_phewas(case_codes, path, groupname):
+    # get related ICD codes from phewas map and save to a file
+    print("\nGetting case-related ICD codes from PheWAS map...")
+    from pyPheWAS.pyPhewasCorev2 import icd9_codes, icd10_codes
+    # merge case code list with phewas maps to get phecode lists
+    icd9_phecodes = icd9_codes[ icd9_codes.ICD_CODE.isin(case_codes) ].drop_duplicates(subset="PheCode")
+    icd10_phecodes = icd10_codes[ icd10_codes.ICD_CODE.isin(case_codes) ].drop_duplicates(subset="PheCode")
+    # from phecode list, get all phecode exclusion lists
+    m9 = pd.isna(icd9_codes["PheCode"])
+    for _, data in icd9_phecodes.iterrows():
+        bounds = data['Excl. Phecodes'].replace(" ","").split('-')
+        m9 |= (icd9_codes['PheCode'] >= bounds[0]) & (icd9_codes['PheCode'] <= bounds[1])
+    m10 = pd.isna(icd10_codes["PheCode"])
+    for _, data in icd10_phecodes.iterrows():
+        bounds = data['Excl. Phecodes'].replace(" ","").split('-')
+        m10 |= (icd10_codes['PheCode'] >= bounds[0]) & (icd10_codes['PheCode'] <= bounds[1])
+    ex9 = icd9_codes[m9].drop_duplicates(subset=['ICD_CODE','PheCode'])
+    ex10 = icd10_codes[m10].drop_duplicates(subset=['ICD_CODE','PheCode'])
+    print("Saving related ICD codes to %s/exclusion_list.csv" %path)
+    export_phewas_exclusions(case_codes, [icd9_phecodes, icd10_phecodes], [ex9, ex10], path, groupname)
+    # turn that into an ICD code list
+    ex9 = set( ex9['ICD_CODE'] )
+    ex10 = set( ex10['ICD_CODE'] )
+    return list( ex9.union(ex10) )
 
 
 
@@ -147,8 +187,7 @@ if ctrl_codes:
 
 if exclude_codes:
     if exclude_codes == "phewas_map":
-        exclude_codes = get_exclusion_from_phewas(case_codes)
-        # export list 
+        exclude_codes = get_exclusion_from_phewas(case_codes, path, groupout.stem)
     else:
         exclude_codes = parse_codes(exclude_codes, path, "exclusion")
     # check for overlap between control list and exclusion list
@@ -161,7 +200,7 @@ if exclude_codes:
 """
 Find cases
 """
-print('Reading ICD data from file')
+print('\nReading ICD data from file')
 phen = pd.read_csv(phenotype,dtype={'ICD_CODE':str})
 
 # for daily threshold, filter phenotype data so that there is only one instance of an ICD code 
@@ -169,7 +208,7 @@ phen = pd.read_csv(phenotype,dtype={'ICD_CODE':str})
 if thresh_type == 'daily':
     phen.drop_duplicates(subset=['id','ICD_CODE','AgeAtICD'], inplace=True)
 
-print('\nFinding cases with ICD code(s): %s' % '|'.join(case_codes))
+print('Finding cases with ICD code(s): %s' % '|'.join(case_codes))
 find_and_count(phen, case_codes)
 case_ids = set( phen[phen['genc'] >= code_freq[0]]["id"] )
 
