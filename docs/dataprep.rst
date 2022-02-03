@@ -93,20 +93,28 @@ Required Arguments:
 
 Optional Arguments [default value]:
  * ``--path``: Path to all input files and destination of output files [current directory]
- * ``--group``: Name of existing group file to add genotype map to
  * ``--response_var``: Name of response variable for regression (e.g. target, genotype, response) [target]
  * ``--ctrl_codes``: Control ICD codes (filename or comma-separated list)
+ * ``--exclude_codes``: Exclusion ICD codes (filename, comma-separated list, or 'phewas_map')
+ * ``--group``: Name of existing group file to add genotype map to
+ * ``--phenotypeout``: Name of output phenotype file containing only subjects in the newly created group file
 
 Output:
  * File (``groupout``) containing subject IDs and response variable assignments
  * *Optional:* if an existing file is specified with ``group``, the response variable
    assignments will be added as a new column to the data in the existing group file.
+ * *Optional:* if a file name is provided with ``phenotypeout``, a new phenotype file will be
+   saved containing ICD records from only the subjects in the newly created group file.
 
 Specify a list of ICD-9/10 codes that define the case group (response=1) and the minimum
 frequency of those codes required to be included in the group (e.g. if the
 frequency is set to 2, a subject would need to have at least 2 instances of the
 case codes in their record to be in the case group). All subjects without records of the
 case codes are put in the control group.
+
+.. note::
+        Subjects that have at least one record of any case code(s) but do not meet the frequency threshold
+        are considered ambiguous and removed from the cohort. 
 
 **Example** Define case group as subjects with at least 3 instances of the codes
 008 or 134.1; make subjects without those codes controls; set the response variable name to *test_groups*::
@@ -142,11 +150,27 @@ command:
     createPhenotypeFile --case_codes="case_icd.txt" --code_freq="3" --phenotype="icd_data.csv" --groupout="group.csv" --response_var="test_groups"
 
 
-.. note::
-    An older verison of this tool was called ``createGenotypeFile``. The tool's
-    official name was updated to reflect the non-genetic nature of this response
-    variable assignment method, but
-    the older version is still available in the pyPheWAS toolkit.
+Exclusion Codes
+***************
+Exclusion codes allow researchers to remove specific subsets of non-case subjects from the control group.
+*After case subject selection,* subjects with at least one instance of any exclusion code(s) are removed 
+from the cohort. This option is often used to prevent subjects with conditions related to the case 
+condition(s) from contaminating the control group. 
+
+In the same way as case codes, exclusion ICD codes may 
+be provided as a comma-separated list or from a file via the ``exclusion_codes`` option. Alternatively, 
+users may specify **'phewas_map'**, in which case the list of exclusion ICD codes will be automatically generated
+based on exclusion ranges defined in the `PheWAS ICD-phenotype map <https://phewascatalog.org>`_.
+(Case ICD codes are mapped to their corresponding PheCodes; the exclusion ranges of those PheCodes are then 
+mapped back to a list of exclusion ICD codes.)
+
+
+----------
+
+createGenotypeFile
+-------------------
+Calls :ref:`createPhenotypeFile`; tool name retained for legacy purposes.
+
 
 ----------
 

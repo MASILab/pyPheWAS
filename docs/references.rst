@@ -1,6 +1,12 @@
 References
 ==========
 
+pyPheWAS Main Package
+---------------------
+Kerley, C.I., Chaganti, S., Nguyen, T.Q. et al. pyPheWAS: A Phenome-Disease Association Tool for Electronic Medical Record Analysis. *Neuroinformatics* (2022). https://doi.org/10.1007/s12021-021-09553-4
+
+----------
+
 The following articles have all contributed to the development of the pyPheWAS package.
 
 ICD-PheCode mapping

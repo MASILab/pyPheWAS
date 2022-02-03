@@ -2,9 +2,10 @@ Welcome to pyPheWAS's documentation!
 ====================================
 
 The pyPheWAS module executes PheWAS analyses on large EMR datasets via command
-line tools. If this tools contributes to a scientific publication, please cite us.
+line tools. If this tools contributes to a scientific publication, please cite us:
 
-.. todo:: Add citation.
+Kerley, C.I., Chaganti, S., Nguyen, T.Q. et al. pyPheWAS: A Phenome-Disease Association Tool for Electronic Medical Record Analysis. *Neuroinformatics* (2022). https://doi.org/10.1007/s12021-021-09553-4
+
 
 Features
 --------
