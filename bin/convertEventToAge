@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 from pyPheWAS.pyPhewasCorev2 import *
-import os
-import datetime
 import pandas as pd
+import numpy as np
 import argparse
 import time
 import os.path as osp
@@ -89,14 +88,41 @@ group_df['nDOB'] = pd.to_datetime(group_df[dob_column], infer_datetime_format=Tr
 phen['nEvent_date'] = pd.to_datetime(phen[eventcolumn], infer_datetime_format=True)
 df = pd.merge(group_df, phen, on='id')
 
-century = datetime.timedelta(365.2425) * 100
-df.loc[df['nEvent_date'] < df['nDOB'], 'nDOB'] = df[df['nEvent_date'] < df['nDOB']]['nDOB'] - century
-
 df['AgeAt'+etype] = (df['nEvent_date'] - df['nDOB']).astype('timedelta64[D]')/365.2425
 df['AgeAt'+etype] = df['AgeAt'+etype].round(precision)
 
+neg_mask = df['AgeAt'+etype] < 0.0
+if np.any(neg_mask):
+    error_subs = df[neg_mask].drop_duplicates(subset='id')[['id']]
+    nsub = error_subs.shape[0]
+    psub = float(nsub) / float(df.drop_duplicates(subset='id').shape[0]) * 100.0
+    print('\nWARNING -- %d events from %d subjects have negative ages' %(sum(neg_mask), nsub))
+    print('Removing %d (%.2f%%) subjects and saving to %s' % (nsub, psub, path / 'age_calc_error_*.csv'))
+    error_subs['REMOVE'] = 1
+    # remove subjects from group
+    group_df = group_df.merge(error_subs, on='id', how='left')
+    tmp = group_df[group_df['REMOVE'] == 1].copy()
+    tmp.drop(columns=['REMOVE','nDOB'], inplace=True)
+    f = path / 'age_calc_error_group.csv'
+    tmp.to_csv(f, index=False)
+    # remove subjects from ICD 
+    df = df.merge(error_subs, on='id', how='left')
+    tmp = df[df['REMOVE'] == 1].copy()
+    tmp.drop(columns=['REMOVE','nDOB','nEvent_date'], inplace=True)
+    f = path / 'age_calc_error_phen.csv'
+    tmp.to_csv(f, index=False)
+    df = df[df['REMOVE'] != 1]
+    # Save new group
+    f_basename = group.stem + '__fixed.csv'
+    f = path / f_basename
+    print('Saving new group file (%d subjects removed) to %s\n' %(nsub, f))
+    group_df = group_df[group_df['REMOVE'] !=1]
+    group_df.drop(columns=['REMOVE','nDOB'], inplace=True)
+    group_df.to_csv(f, index=False)
+    
+    
+
 out_cols.append('AgeAt'+etype)
-out_cols.remove(eventcolumn)
 
 print('Saving %s data to %s' % (etype,phenotypeout))
 df.to_csv(phenotypeout, index=False, columns=out_cols)
