@@ -193,7 +193,7 @@ def control_match(path, input, output, keys, deltas, condition='genotype', goal=
 			targets[match_col] = np.nan
 
 	cols.insert(0, 'id')
-	cols.insert(1, 'genotype')
+	cols.insert(1, condition)
 	# export matching pairs
 	print('Saving case/control mapping to %s' %match_file)
 	targets.to_csv(match_file,index=False, columns=cols)
