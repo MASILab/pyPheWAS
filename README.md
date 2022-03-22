@@ -16,6 +16,11 @@ Kerley, C.I., Chaganti, S., Nguyen, T.Q. et al. pyPheWAS: A Phenome-Disease Asso
 
 ## Latest Release: pyPheWAS 4.0
 
+#### 4.0.5
+- convertEventToAge includes new warning for calculated ages are negative
+- small bugs fixed in maximizeControls, NoveltyAnalysis, and PubMedQuery tools
+
+
 #### 4.0.4
 - createPhenotypeFile now supports more options for controlling case/control group curation
 - Documentation updates
