@@ -195,6 +195,7 @@ def run_PheWAS_PubMed_Query(umls, outdir):
             pubmed_counts = []
             time.sleep(60) # pause before resuming so we don't kill PubMed
     # save the last dataframe
-    uid_df = pd.DataFrame(pubmed_list.items(), columns=['PheCode', 'IdsList'])
+    uid_df = pd.DataFrame(pubmed_list.items(), columns=['PheWAS Code', 'IdsList'])
+    uid_df['Publication_Count'] = pubmed_counts
     uid_df.to_csv(outdir /('phecode_pubmed_articles_' + str(ix) + '.csv'), index=False)
     return

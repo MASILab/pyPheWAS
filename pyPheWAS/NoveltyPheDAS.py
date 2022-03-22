@@ -149,10 +149,10 @@ def get_joint_PubMed_articles(reg_df, dx_pubmed, pubmed_dir):
     # iterate over all files output from the PubMed search
     file_list = [f for f in pubmed_dir.glob('phecode_pubmed_articles_*.csv')] # this list comprehension is unnecessary, but lets us easily count the number of files
     assert len(file_list) > 0, 'No PubMed search files found at %s' % pubmed_dir
-    for pm_f in tqdm(file_list):
-        phecode_pm = pd.read_csv(pubmed_dir / pm_f, dtype={"phewas_code": str})
+    for pm_f in tqdm(file_list, total=len(file_list)):
+        phecode_pm = pd.read_csv(pubmed_dir / pm_f, dtype={"PheWAS Code": str})
         for ix, data in phecode_pm.iterrows():
-            phe = data["phewas_code"] # change to PheWAS Code after testing
+            phe = data["PheWAS Code"]
             if phe in reg_df["PheWAS Code"].values:
                 phe_ix = reg_df["PheWAS Code"] == phe
                 phe_set = set(literal_eval(data["IdsList"])) # get the set of article IDs found for this phecode
