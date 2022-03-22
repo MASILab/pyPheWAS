@@ -4,14 +4,23 @@ Repository for the pyPheWAS project.
 Full documentation at https://pyphewas.readthedocs.io/en/latest/
 
 ### Developers
-Cailey Kerley, B.S.
+Cailey Kerley, PhD Candidate
 
 Shikha Chaganti, PhD
 
 Bennett Landman, PhD
 
-## Latest Release: pyPheWAS 4.0.3
-This release includes:
+## Cite pyPheWAS
+Kerley, C.I., Chaganti, S., Nguyen, T.Q. et al. pyPheWAS: A Phenome-Disease Association Tool for Electronic Medical Record Analysis. *Neuroinform* (2022). https://doi.org/10.1007/s12021-021-09553-4
+
+
+## Latest Release: pyPheWAS 4.0
+
+#### 4.0.4
+- createPhenotypeFile now supports more options for controlling case/control group curation
+- Documentation updates
+
+#### 4.0.3
 - **Novelty Analysis** tools: examine the relative literary novelty of disease-phecode pairings
 - **pyPheWAS Explorer**: an interactive visualization of PheDAS experiments
 - createGenotypeFile updated - now called createPhenotypeFile
@@ -20,7 +29,7 @@ This release includes:
 
 ### Older Releases
 
-### pyPheWAS 3.2.0
+#### pyPheWAS 3.2.0
 - Configurable threshold for number of subjects required to run the regression on an individual PheCode
 - All regressions are now fit with regularization (old scheme available with 'legacy' option)
 - Minor changes to Manhattan plot
