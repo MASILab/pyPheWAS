@@ -24,19 +24,6 @@ import http.server
 import socketserver
 
 
-output_columns = ['PheCode',
-				  'Phenotype',
-				  'Pheno_id',
-				  'count',
-				  'neg_log_p',
-				  'pval',
-				  'beta',
-				  'beta_ci_low',
-				  'beta_ci_up',
-				  'category_id',
-				  'category',
-				  'ICD9',
-				  'ICD10']
 
 
 """
@@ -252,12 +239,11 @@ def get_2D_histogram(group, var1, var2, response):
 def variable_comparison(group, var1, var2, response):
 	res_df = pd.DataFrame(columns=['test_name','result','pval','var'])
 	g_df = group[[response, var1, var2]].copy()  # copy to avoid modifying original df
-	g_df.rename(columns={var1: "var1", var2: "var2"}, inplace=True)
 	ix = 0
 	# correlation
 	res_df.loc[ix, 'test_name'] = 'correlation'
 	res_df.loc[ix, 'var'] = 'joint'
-	var_data = g_df[["var1", "var2"]].to_numpy()
+	var_data = g_df[[var1, var2]].to_numpy()
 	[corr, pval] = scipy.stats.spearmanr(var_data)
 	res_df.loc[ix, 'result'] = corr
 	res_df.loc[ix, 'pval'] = pval
@@ -266,31 +252,31 @@ def variable_comparison(group, var1, var2, response):
 	# univariate regressions
 	res_df.loc[ix, 'test_name'] = 'univariate regression'
 	res_df.loc[ix, 'var'] = var1
-	f_v1 = response + ' ~ var1'
-	logreg = smf.logit(f_v1, g_df).fit(disp=False)
-	res_df.loc[ix, 'pval'] = logreg.pvalues.var1
-	res_df.loc[ix, 'result'] = logreg.params.var1
+	f_v1 = response + ' ~ ' + var1
+	logreg1 = smf.logit(f_v1, g_df).fit(disp=False)
+	res_df.loc[ix, 'pval'] = logreg1.pvalues[var1]
+	res_df.loc[ix, 'result'] = logreg1.params[var1]
 	ix+=1
 	res_df.loc[ix, 'test_name'] = 'univariate regression'
 	res_df.loc[ix, 'var'] = var2
-	f_v2 = response + ' ~ var2'
-	logreg = smf.logit(f_v2, g_df).fit(disp=False)
-	res_df.loc[ix, 'pval'] = logreg.pvalues.var2
-	res_df.loc[ix, 'result'] = logreg.params.var2
+	f_v2 = response + ' ~ ' + var2
+	logreg2 = smf.logit(f_v2, g_df).fit(disp=False)
+	res_df.loc[ix, 'pval'] = logreg2.pvalues[var2]
+	res_df.loc[ix, 'result'] = logreg2.params[var2]
 	ix += 1
 
 	# multivariate regression
-	f_mul = response + ' ~ var1 + var2'
-	logreg = smf.logit(f_mul, g_df).fit(disp=False)
+	f_mul = response + ' ~ ' + var1 + ' + ' + var2
+	logreg3 = smf.logit(f_mul, g_df).fit(disp=False)
 	res_df.loc[ix, 'test_name'] = 'multivariate regression'
 	res_df.loc[ix, 'var'] = var1
-	res_df.loc[ix, 'pval'] = logreg.pvalues.var1
-	res_df.loc[ix, 'result'] = logreg.params.var1
+	res_df.loc[ix, 'pval'] = logreg3.pvalues.var1
+	res_df.loc[ix, 'result'] = logreg3.params.var1
 	ix += 1
 	res_df.loc[ix, 'test_name'] = 'multivariate regression'
 	res_df.loc[ix, 'var'] = var2
-	res_df.loc[ix, 'pval'] = logreg.pvalues.var2
-	res_df.loc[ix, 'result'] = logreg.params.var2
+	res_df.loc[ix, 'pval'] = logreg3.pvalues[var2]
+	res_df.loc[ix, 'result'] = logreg3.params[var2]
 
 	return res_df
 
@@ -303,14 +289,14 @@ Statistical Modeling
 """
 
 
-def get_phenotype_info(p_index):  # same
+def get_phenotype_info(p_index): 
 	"""
 	Returns all of the info of the phewas code at the given index.
 
 	:param p_index: The index of the desired phewas code
 	:type p_index: int
 
-	:returns: A list including the code, the name, and the rollup of the phewas code. The rollup is a list of all of the ICD-9 and ICD-10 codes that are grouped into this phewas code.
+	:returns: A list including the code, the name, and the category.
 	:rtype: list of strings
 	"""
 	p_code = phewas_codes.loc[p_index, 'PheCode']
@@ -326,13 +312,8 @@ def get_phenotype_info(p_index):  # same
 
 	cat_id = phewas_codes.loc[p_index, 'category']
 	cat = phewas_codes.loc[p_index, 'category_string']
-	icd9_ix = icd9_codes['PheCode'] == p_code
-	icd10_ix = icd10_codes['PheCode'] == p_code
 
-	p_icd9_rollup = '/'.join(icd9_codes.loc[icd9_ix, 'ICD_CODE'].tolist())
-	p_icd10_rollup = '/'.join(icd10_codes.loc[icd10_ix, 'ICD_CODE'].tolist())
-
-	return [p_code, p_name, p_id, cat_id, cat, p_icd9_rollup, p_icd10_rollup]
+	return [p_code, p_name, p_id, cat_id, cat]
 
 
 def fit_pheno_model(genotypes, phen_vector, response, covariates='', phenotype=''):
@@ -373,23 +354,23 @@ def fit_pheno_model(genotypes, phen_vector, response, covariates='', phenotype='
 	# define model ('f') for the logisitc regression
 	predictors = covariates.replace(" ", "").split('+')
 	predictors[0] = 'y'
-	f = [response.strip(), predictors]
 
 	try:
 		# fit logit with regularization
-		logit = sm.Logit(data[f[0]], data[f[1]])
+		logit = sm.Logit(data[response.strip()], data[predictors])
 		model = logit.fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
 		# get results
 		p = model.pvalues.y
 		beta = model.params.y
 		conf = model.conf_int()
-		reg_result = [-math.log10(p), p, beta, conf[0]['y'], conf[1]['y']]  # collect results
+		conf_int = '[%s,%s]' % (conf[0]['y'], conf[1]['y'])
+		reg_result = [-math.log10(p), p, beta, conf_int, conf[0]['y'], conf[1]['y']]  # collect results
 	except Exception as e:
 		print('\n')
 		if phenotype != '':
 			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
 		print(e)
-		reg_result = [np.nan, np.nan, np.nan, np.nan, np.nan]
+		reg_result = [np.nan, np.nan, np.nan, '', np.nan, np.nan]
 	return reg_result
 
 
@@ -400,35 +381,75 @@ def run_phewas(fm, genotypes, covariates, response):
 	:param fm: The phewas feature matrix.
 	:param genotypes: A pandas DataFrame of the genotype file.
 	:param covariates: The covariates that the function is to be run on.
-	:param reg_type: The covariates that the function is to be run on.
-	:param response: The covariates that the function is to be run on.
-	:param phewas_cov: The covariates that the function is to be run on.
+	:param response: Name of response column
 
-	:returns: A tuple containing indices, p-values, and all the regression data.
+	:returns: A dataframe containing regression data.
 	"""
 
 	num_phecodes = fm.shape[1]
 	thresh = 5 # math.ceil(genotypes.shape[0] * 0.05)
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
-	control = fm[genotypes[response] == 0, :]
-	disease = fm[genotypes[response] == 1, :]
 
 	for index in tqdm(range(num_phecodes), desc='Running Regressions'):
 		phen_info = get_phenotype_info(index)
 		phen_vector = fm[:, index]
+		num_nonzero = np.where(phen_vector > 0)[0].shape[0]
 		# to prevent false positives, only run regressions if more than thresh records have positive values
-		if np.where(phen_vector > 0)[0].shape[0] > thresh:
+		if num_nonzero > thresh:
 			stat_info = fit_pheno_model(genotypes, phen_vector, response, covariates=covariates, phenotype=phen_info[0:2])
 		else:
 			# not enough samples to run regression
-			stat_info = [np.nan, np.nan, np.nan, np.nan, np.nan]
+			stat_info = [np.nan, np.nan, np.nan, '', np.nan, np.nan]
 		# save all of the regression data
-		info = phen_info[0:3] + [np.where(phen_vector > 0)[0].shape[0]] + stat_info + phen_info[3:5] + [phen_info[5]] + [phen_info[6]]
+		info = phen_info[0:3] + [num_nonzero] + stat_info + phen_info[3:]
 		regressions.loc[index] = info
+	
+	# Compute Odds Ratio
+	regressions['OR'] = np.exp(regressions['beta'])
+	regressions['OR_ci_low'] = np.exp(regressions['beta_ci_low'])
+	regressions['OR_ci_up'] = np.exp(regressions['beta_ci_up'])
 
-	return regressions.dropna(subset=['pval']).sort_values(by='PheCode')
+	return regressions.dropna(subset=['pval']).sort_values(by=['PheCode'])
 
+output_columns = ['PheCode',
+				  'Phenotype',
+				  'Pheno_id',
+				  'count',
+				  'neg_log_p',
+				  'pval',
+				  'beta',
+				  'Conf-interval beta',
+				  'beta_ci_low',
+				  'beta_ci_up',
+				  'category_id',
+				  'category',
+				  ]
+
+cat_order =  {
+			  'circulatory system': 0,
+			  'congenital anomalies': 1,
+			  'dermatologic': 2,
+			  'digestive': 3,
+			  'endocrine/metabolic': 4,
+			  'genitourinary': 5,
+			  'hematopoietic': 6,
+			  'infectious diseases': 7,
+			  'injuries & poisonings': 8,
+			  'mental disorders': 9,
+			  'musculoskeletal': 10,
+			  'neoplasms': 11,
+			  'neurological': 12,
+			  'other': 13,
+			  'pregnancy complications': 14,
+			  'respiratory': 15,
+			  'sense organs': 16,
+			  'symptoms': 17}
+
+cat_order_df = pd.DataFrame.from_dict(cat_order, orient='index', columns=['category']).reset_index()
+cat_order_df.rename(columns={'index':'category_string'}, inplace=True)
+phewas_codes.drop(columns='category',inplace=True) # drop old category ID
+phewas_codes = phewas_codes.merge(cat_order_df, how='left', on='category_string')
 
 """
 Start the JavaScript GUI

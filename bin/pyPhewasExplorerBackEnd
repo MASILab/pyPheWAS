@@ -57,8 +57,8 @@ if len(gvars) > 10:
 	gvars = gvars[0:10]
 	print(', '.join(gvars))
 for g in gvars:
-	if len(g) > 17: # shorten so they fit in the Explorer
-		group_data.rename(columns={g : g[:17]}, inplace=True)
+	if len(g) > 15: # shorten so they fit in the Explorer
+		group_data.rename(columns={g : g[:15]}, inplace=True)
 # reset in case names were changed
 gvars = group_data.columns
 gvars = gvars.drop(['id', response])
@@ -108,7 +108,7 @@ def get_signals():
 			msg.loc[0, 'msg'] = response
 			data_obj = msg.to_json(orient='records')
 		elif datatype == "group":
-			var_df = pd.DataFrame(columns=['var','corr','extent','g0','g1'], index=range(0,len(gvars)))
+			var_df = pd.DataFrame(columns=['var','corr','pval','extent','g0','g1'], index=range(0,len(gvars)))
 			var_df['var'] = gvars
 			mask0 = group_data[response] == 0
 			mask1 = group_data[response] == 1
@@ -116,7 +116,9 @@ def get_signals():
 			for ix,data in var_df.iterrows():
 				gv = data['var']
 				y = group_data[gv].values
-				var_df.loc[ix,'corr'] = scipy.stats.spearmanr(x, y).correlation
+				[corr, pval] = scipy.stats.spearmanr(x, y)
+				var_df.loc[ix,'corr'] = corr
+				var_df.loc[ix,'pval'] = pval
 				var_df.loc[ix, 'extent'] = np.array([group_data[gv].min(), group_data[gv].max()])
 				var_df.loc[ix, 'g0'] = group_data.loc[mask0, gv].values
 				var_df.loc[ix, 'g1'] = group_data.loc[mask1, gv].values
@@ -193,6 +195,7 @@ def get_signals():
 				regressions.to_csv(f, index=False)
 				f.close()
 			regressions['pval_str'] = regressions.apply(lambda x: str(x['pval']),axis=1)
+			regressions.drop(columns=['pval','Conf-interval beta'], inplace=True)
 			data_obj = regressions.to_json(orient='records')
 	else:
 		data_obj = "ERROR Unknown command %s" % command
