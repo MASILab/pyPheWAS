@@ -270,8 +270,8 @@ def variable_comparison(group, var1, var2, response):
 	logreg3 = smf.logit(f_mul, g_df).fit(disp=False)
 	res_df.loc[ix, 'test_name'] = 'multivariate regression'
 	res_df.loc[ix, 'var'] = var1
-	res_df.loc[ix, 'pval'] = logreg3.pvalues.var1
-	res_df.loc[ix, 'result'] = logreg3.params.var1
+	res_df.loc[ix, 'pval'] = logreg3.pvalues[var1]
+	res_df.loc[ix, 'result'] = logreg3.params[var1]
 	ix += 1
 	res_df.loc[ix, 'test_name'] = 'multivariate regression'
 	res_df.loc[ix, 'var'] = var2
