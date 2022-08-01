@@ -22,7 +22,7 @@ import sys
 import scipy.stats
 import http.server
 import socketserver
-
+from pathlib import Path
 
 
 
@@ -359,22 +359,75 @@ def fit_pheno_model(genotypes, phen_vector, response, covariates='', phenotype='
 		# fit logit with regularization
 		logit = sm.Logit(data[response.strip()], data[predictors])
 		model = logit.fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
-		# get results
-		p = model.pvalues.y
-		beta = model.params.y
-		conf = model.conf_int()
-		conf_int = '[%s,%s]' % (conf[0]['y'], conf[1]['y'])
-		reg_result = [-math.log10(p), p, beta, conf_int, conf[0]['y'], conf[1]['y']]  # collect results
 	except Exception as e:
 		print('\n')
 		if phenotype != '':
 			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
 		print(e)
-		reg_result = [np.nan, np.nan, np.nan, '', np.nan, np.nan]
+		reg_result = None
 	return reg_result
 
 
-def run_phewas(fm, genotypes, covariates, response):
+
+def parse_pheno_model(reg, phe_model, phe_info, n_subs, var_list):
+	"""
+	Parse results from fit_pheno_model()
+
+	:param reg: regression dataframe
+	:param pheno_model: logistic regression model for phecode 'phe'
+	:param phe_info: metadata for phecode 'phe'
+	:param n_subs: number of subjects with data present for phecode 'phe'
+	:param var_list: list of model variables to save
+
+	:returns: None
+	"""
+	ix = reg.shape[0] # next available index in reg
+
+	for var in var_list:
+		if phe_model is not None:
+			p = phe_model.pvalues[var]
+			beta = phe_model.params[var]
+			conf = phe_model.conf_int()
+			conf_int = '[%s,%s]' % (conf[0][var], conf[1][var])
+			stat_info = [-math.log10(p), p, beta, conf_int, conf[0][var], conf[1][var]]  # collect results
+		else:
+			stat_info = [np.nan, np.nan, np.nan, '', np.nan, np.nan]
+
+		reg.loc[ix] = [var] + phe_info[0:3] + [n_subs] + stat_info + phe_info[3:]
+		ix+=1
+
+	return
+
+
+
+def save_pheno_model(reg, var_list, base_path, base_header):
+	"""
+	Save regression results
+
+	:param reg: regression dataframe
+	:param var_list: list of model variables to save
+	:param data_path: path to save data
+
+	:returns: None
+	"""
+
+	for var in var_list:
+		var_data = reg[reg['result_type'] == var].drop(columns=['result_type'])
+
+		disp_name = 'phecode' if var=='y' else var
+		var_file = base_path + disp_name + '.csv'
+		var_header = 'result_variable,' + disp_name + ',' + base_header + '\n'
+
+		# write regressions to file
+		f = open(var_file, 'w+')
+		f.write(var_header)
+		var_data.to_csv(f, index=False)
+		f.close()
+	
+	return
+
+
+def run_phewas(fm, genotypes, covariates, response, reg_type, save_cov=False, data_path=Path('.')):
 	"""
 	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
 
@@ -391,28 +444,48 @@ def run_phewas(fm, genotypes, covariates, response):
 	# store all of the pertinent data from the regressions
 	regressions = pd.DataFrame(columns=output_columns)
 
+	var_list = ['y'] # y = the aggregated phecode vector
+	if save_cov:
+		var_list.append(covariates.split('+'))
+
 	for index in tqdm(range(num_phecodes), desc='Running Regressions'):
-		phen_info = get_phenotype_info(index)
+		phe_info = get_phenotype_info(index)
 		phen_vector = fm[:, index]
 		num_nonzero = np.where(phen_vector > 0)[0].shape[0]
 		# to prevent false positives, only run regressions if more than thresh records have positive values
 		if num_nonzero > thresh:
-			stat_info = fit_pheno_model(genotypes, phen_vector, response, covariates=covariates, phenotype=phen_info[0:2])
+			phe_model = fit_pheno_model(genotypes, phen_vector, response, covariates=covariates, phenotype=phe_info[0:2])
 		else:
 			# not enough samples to run regression
-			stat_info = [np.nan, np.nan, np.nan, '', np.nan, np.nan]
-		# save all of the regression data
-		info = phen_info[0:3] + [num_nonzero] + stat_info + phen_info[3:]
-		regressions.loc[index] = info
+			phe_model = None
+		parse_pheno_model(regressions, phe_model, phe_info, num_nonzero, var_list)
 	
 	# Compute Odds Ratio
 	regressions['OR'] = np.exp(regressions['beta'])
 	regressions['OR_ci_low'] = np.exp(regressions['beta_ci_low'])
 	regressions['OR_ci_up'] = np.exp(regressions['beta_ci_up'])
 
-	return regressions.dropna(subset=['pval']).sort_values(by=['PheCode'])
+	# Drop phecodes with failed / no results
+	regressions = regressions.dropna(subset=['pval']).sort_values(by=['PheCode'])
 
-output_columns = ['PheCode',
+	# Export
+	base_path = str(data_path/('regressions_%s_%s_%s___' %(reg_type, response, covariates)))
+	header = ','.join(['reg_type', reg_type, 'group', 'group.csv', 'response', response, 'covariates', covariates])
+	save_pheno_model(regressions, var_list, base_path, header)
+
+	# Prep for Explorer
+	regressions = regressions[regressions['result_type'] == 'y'].drop(columns=['result_type'])
+	regressions['pval_str'] = regressions.apply(lambda x: str(x['pval']),axis=1)
+	regressions.drop(columns=['pval','Conf-interval beta'], inplace=True)
+
+	return regressions.sort_values(by=['PheCode'])
+
+
+
+
+
+output_columns = ['result_type',
+				  'PheCode',
 				  'Phenotype',
 				  'Pheno_id',
 				  'count',
@@ -450,6 +523,11 @@ cat_order_df = pd.DataFrame.from_dict(cat_order, orient='index', columns=['categ
 cat_order_df.rename(columns={'index':'category_string'}, inplace=True)
 phewas_codes.drop(columns='category',inplace=True) # drop old category ID
 phewas_codes = phewas_codes.merge(cat_order_df, how='left', on='category_string')
+
+
+
+
+
 
 """
 Start the JavaScript GUI
