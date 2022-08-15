@@ -24,6 +24,9 @@ import http.server
 import socketserver
 from pathlib import Path
 
+import warnings
+from statsmodels.tools.sm_exceptions import ConvergenceWarning
+warnings.simplefilter('ignore', ConvergenceWarning)
 
 
 """
@@ -331,7 +334,7 @@ def fit_pheno_model(genotypes, phen_vector, response, covariates='', phenotype='
 	:type covariates: string
 	:type phenotype: list of strings
 
-	:returns: regression statistics
+	:returns: regression model
 	:rtype: list
 
 	.. note::
@@ -364,8 +367,8 @@ def fit_pheno_model(genotypes, phen_vector, response, covariates='', phenotype='
 		if phenotype != '':
 			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
 		print(e)
-		reg_result = None
-	return reg_result
+		model = None
+	return model
 
 
 
@@ -381,20 +384,17 @@ def parse_pheno_model(reg, phe_model, phe_info, n_subs, var_list):
 
 	:returns: None
 	"""
-	ix = reg.shape[0] # next available index in reg
-
-	for var in var_list:
-		if phe_model is not None:
+	
+	if phe_model is not None:
+		ix = reg.shape[0] # next available index in reg
+		for var in var_list:
 			p = phe_model.pvalues[var]
 			beta = phe_model.params[var]
 			conf = phe_model.conf_int()
 			conf_int = '[%s,%s]' % (conf[0][var], conf[1][var])
 			stat_info = [-math.log10(p), p, beta, conf_int, conf[0][var], conf[1][var]]  # collect results
-		else:
-			stat_info = [np.nan, np.nan, np.nan, '', np.nan, np.nan]
-
-		reg.loc[ix] = [var] + phe_info[0:3] + [n_subs] + stat_info + phe_info[3:]
-		ix+=1
+			reg.loc[ix] = [var] + phe_info[0:3] + [n_subs] + stat_info + phe_info[3:]
+			ix+=1
 
 	return
 
@@ -427,7 +427,7 @@ def save_pheno_model(reg, var_list, base_path, base_header):
 	return
 
 
-def run_phewas(fm, genotypes, covariates, response, reg_type, save_cov=False, data_path=Path('.')):
+def run_phewas(fm, genotypes, covariates, response, reg_type, save_cov=False, outpath=Path('.')):
 	"""
 	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
 
@@ -446,7 +446,7 @@ def run_phewas(fm, genotypes, covariates, response, reg_type, save_cov=False, da
 
 	var_list = ['y'] # y = the aggregated phecode vector
 	if save_cov:
-		var_list.append(covariates.split('+'))
+		var_list = var_list + covariates.split('+')
 
 	for index in tqdm(range(num_phecodes), desc='Running Regressions'):
 		phe_info = get_phenotype_info(index)
@@ -455,10 +455,11 @@ def run_phewas(fm, genotypes, covariates, response, reg_type, save_cov=False, da
 		# to prevent false positives, only run regressions if more than thresh records have positive values
 		if num_nonzero > thresh:
 			phe_model = fit_pheno_model(genotypes, phen_vector, response, covariates=covariates, phenotype=phe_info[0:2])
+			parse_pheno_model(regressions, phe_model, phe_info, num_nonzero, var_list)
 		else:
 			# not enough samples to run regression
 			phe_model = None
-		parse_pheno_model(regressions, phe_model, phe_info, num_nonzero, var_list)
+		
 	
 	# Compute Odds Ratio
 	regressions['OR'] = np.exp(regressions['beta'])
@@ -469,7 +470,7 @@ def run_phewas(fm, genotypes, covariates, response, reg_type, save_cov=False, da
 	regressions = regressions.dropna(subset=['pval']).sort_values(by=['PheCode'])
 
 	# Export
-	base_path = str(data_path/('regressions_%s_%s_%s___' %(reg_type, response, covariates)))
+	base_path = str(outpath/('regressions-%s-%s-%s___' %(reg_type, response, covariates)))
 	header = ','.join(['reg_type', reg_type, 'group', 'group.csv', 'response', response, 'covariates', covariates])
 	save_pheno_model(regressions, var_list, base_path, header)
 

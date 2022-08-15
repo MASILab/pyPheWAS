@@ -176,7 +176,7 @@ def get_signals():
 			# build & send regressions to notebook
 			cov = '+'.join(client_data['cov'])
 			# check if reg exists - can just reload it instead of re-calculating
-			rpath = data_path/('regressions_%s_%s_%s.csv' %(reg_key[reg_type], response, cov))
+			rpath = data_path/('regressions-%s-%s-%s.csv' %(reg_key[reg_type], response, cov))
 			if rpath.exists():
 				regressions = pd.read_csv(rpath, skiprows=1)
 			else:
