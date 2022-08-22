@@ -71,9 +71,7 @@ def get_icd_codes(filename):
 
 	# check ICD types present in file
 	if not all((icd_types == 9) | (icd_types == 10)):
-		# TODO: add actual exception
-		print('Found an ICD_TYPE that was not 9 or 10 - Please check phenotype file.\nExiting pyPheWAS')
-		sys.exit()
+		raise Exception('Found an ICD_TYPE that was not 9 or 10 - Please check phenotype file.')
 
 	# merge with Phecode table, depends on which type(s) of ICD codes are in the icd file
 	if icd_types.shape[0] == 2:
@@ -82,7 +80,7 @@ def get_icd_codes(filename):
 		icd10s = icdfile[icdfile['ICD_TYPE'] == 10]
 		phenotypes_9 = pd.merge(icd9s, icd9_codes,on='ICD_CODE')
 		phenotypes_10 = pd.merge(icd10s, icd10_codes, on='ICD_CODE')
-		phenotypes = phenotypes_9.append(phenotypes_10,sort=False)
+		phenotypes = pd.concat([phenotypes_9, phenotypes_10], sort=False, ignore_index=True)
 	elif icd_types[0] == 9:
 		print('Found only ICD-9 codes.')
 		phenotypes = pd.merge(icdfile,icd9_codes,on='ICD_CODE')
@@ -90,9 +88,7 @@ def get_icd_codes(filename):
 		print('Found only ICD-10 codes.')
 		phenotypes = pd.merge(icdfile, icd10_codes, on='ICD_CODE')
 	else:
-		# TODO: add actual exception
-		print('An issue occurred while parsing the ICD_TYPE column - Please check phenotype file.\nExiting pyPheWAS')
-		sys.exit()
+		raise Exception('An issue occurred while parsing the ICD_TYPE column - Please check phenotype file.')
 
 	# pre-calculate durations for feature matrix step
 	phenotypes['duration'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max') - \
@@ -188,7 +184,7 @@ def get_1D_histogram(group, var_name, response):
 	H_df1['xmax'] = edges1[1:]
 	H_df1['response'] = 1
 
-	H_df = H_df0.append(H_df1)
+	H_df = pd.concat([H_df0, H_df1], sort=False, ignore_index=True)
 
 	H_df['var_name'] = var_name
 	return H_df.reset_index(drop=True)

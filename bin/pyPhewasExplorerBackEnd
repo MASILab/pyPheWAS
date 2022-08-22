@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os
+import sys
 import flask
 from flask import Flask
 from flask_cors import CORS
@@ -45,43 +45,55 @@ FMs_exist = bin_fm_f.exists() & cnt_fm_f.exists() & dur_fm_f.exists()
 """
 Set everything up
 """
-# load group data
-group_data = get_group_file(group_f)
-gvars = group_data.columns
-assert 'id' in gvars, "Group file (%s) does not contain a subject identifier column ('id')" % group_f
-assert response in gvars, "Group file (%s) does not contain the target variable (%s)" % (group_f, response)
+try:
+	# load group data
+	group_data = get_group_file(group_f)
+	gvars = group_data.columns
+	if not 'id' in gvars:
+		raise Exception("Group file (%s) does not contain a subject identifier column ('id')" % group_f)
+	if not response in gvars:
+		raise Exception("Group file (%s) does not contain the target variable (%s)" % (group_f, response))
 
-gvars = gvars.drop(['id', response])
-if len(gvars) > 10:
-	print('WARNING: more than 10 group variables found. Limiting display to first 10 group variables')
-	gvars = gvars[0:10]
-	print(', '.join(gvars))
-for g in gvars:
-	if len(g) > 15: # shorten so they fit in the Explorer
-		group_data.rename(columns={g : g[:15]}, inplace=True)
-# reset in case names were changed
-gvars = group_data.columns
-gvars = gvars.drop(['id', response])
+	gvars = gvars.drop(['id', response])
+	if len(gvars) > 10:
+		print('WARNING: more than 10 group variables found. Limiting display to first 10 group variables')
+		gvars = gvars[0:10]
+		print(', '.join(gvars))
+	for g in gvars:
+		if len(g) > 15: # shorten so they fit in the Explorer
+			group_data.rename(columns={g : g[:15]}, inplace=True)
+	# reset in case names were changed
+	gvars = group_data.columns
+	gvars = gvars.drop(['id', response])
 
-if FMs_exist:
-	print('Loading binary feature matrix')
-	fm_bin = np.loadtxt(data_path/'binary_feature_matrix.csv', delimiter=',')
-	print('Loading count feature matrix')
-	fm_cnt = np.loadtxt(data_path/'count_feature_matrix.csv', delimiter=',')
-	print('Loading duration feature matrix')
-	fm_dur = np.loadtxt(data_path/'duration_feature_matrix.csv', delimiter=',')
-	sub_count = [group_data.shape[0], group_data.shape[0], group_data.shape[0]]
-	assert [fm_bin.shape[0],fm_cnt.shape[0],fm_dur.shape[0]] == sub_count, "Feature matrices and group data do not contain the same number of subjects. Please delete the feature matrices and restart the Explorer"
-else:
-	print('Building Feature Matrices')
-	pheno = get_icd_codes(icd_f)
-	fm_bin, fm_cnt, fm_dur, columns = generate_feature_matrix(group_data, pheno)
-	# save feature matrices
-	h = ','.join(columns)
-	np.savetxt(data_path/'binary_feature_matrix.csv', fm_bin, delimiter=',', header=h)
-	np.savetxt(data_path/'count_feature_matrix.csv', fm_cnt, delimiter=',', header=h)
-	np.savetxt(data_path/'duration_feature_matrix.csv', fm_dur, delimiter=',', header=h)
+	if FMs_exist:
+		print('Loading binary feature matrix')
+		fm_bin = np.loadtxt(data_path/'binary_feature_matrix.csv', delimiter=',')
+		print('Loading count feature matrix')
+		fm_cnt = np.loadtxt(data_path/'count_feature_matrix.csv', delimiter=',')
+		print('Loading duration feature matrix')
+		fm_dur = np.loadtxt(data_path/'duration_feature_matrix.csv', delimiter=',')
+		sub_count = [group_data.shape[0], group_data.shape[0], group_data.shape[0]]
+		assert [fm_bin.shape[0],fm_cnt.shape[0],fm_dur.shape[0]] == sub_count, "Feature matrices and group data do not contain the same number of subjects. Please delete the feature matrices and restart the Explorer"
+	else:
+		print('Building Feature Matrices')
+		pheno = get_icd_codes(icd_f)
+		fm_bin, fm_cnt, fm_dur, columns = generate_feature_matrix(group_data, pheno)
+		print('Saving feature matrices')
+		h = ','.join(columns)
+		np.savetxt(data_path/'binary_feature_matrix.csv', fm_bin, delimiter=',', header=h)
+		print('...')
+		np.savetxt(data_path/'count_feature_matrix.csv', fm_cnt, delimiter=',', header=h)
+		print('...')
+		np.savetxt(data_path/'duration_feature_matrix.csv', fm_dur, delimiter=',', header=h)
+		print('...')
 
+except Exception as e:
+	print('\nERROR encountered while setting up pyPheWAS Explorer')
+	print(e.args)
+	print('----')
+	print('Please press Ctrl+C to quit')
+	sys.exit()
 
 print("pyPheWAS Explorer Ready")
 print("Please open http://localhost:8000/ in a web brower (preferably Google Chrome)")
@@ -128,7 +140,7 @@ def get_signals():
 			for g in gvars:
 				print(g)
 				h_g = get_1D_histogram(group_data, g, response)
-				h = h.append(h_g)
+				h = pd.concat([h, h_g], sort=False, ignore_index=True)
 			h.reset_index(drop=True)
 			data_obj = h.to_json(orient='records')
 		else:
