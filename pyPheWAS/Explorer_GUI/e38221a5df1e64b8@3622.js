@@ -1,13 +1,12 @@
-import define1 from "./ef93120144671667@352.js";
+import define1 from "./ef93120144671667@373.js";
 
-export default function define(runtime, observer) {
-  const main = runtime.module();
-  main.variable(observer()).define(["md"], function(md){return(
+function _1(md){return(
 md `# pyPheWAS Explorer
 #### A visualization tool for exploratory analysis of phenome-disease association 
 `
-)});
-  main.variable(observer()).define(["group_panel_size","margin","d3","group_panel"], function(group_panel_size,margin,d3,group_panel)
+)}
+
+function _2(group_panel_size,margin,d3,group_panel)
 {
   // Master SVG Element for the Regression Builder Panel
   let full_width = group_panel_size+(2*margin.y)
@@ -25,8 +24,9 @@ md `# pyPheWAS Explorer
   
   return svg_elem.node()
   }
-);
-  main.variable(observer()).define(["reg_panel_size","margin","d3","reg_panel"], function(reg_panel_size,margin,d3,reg_panel)
+
+
+function _3(reg_panel_size,margin,d3,reg_panel)
 {
   // Master SVG Element for the Regression Evaluation Panel
   let full_width = reg_panel_size+(2*margin.y)
@@ -42,30 +42,31 @@ md `# pyPheWAS Explorer
   
   return svg_elem.node()
   }
-);
-  main.variable(observer()).define(["md"], function(md){return(
+
+
+function _4(md){return(
 md `### Group Panel Functions`
-)});
-  main.variable(observer("group_panel")).define("group_panel", ["group_panel_size","margin","legend_height","var_dist_size","plot_groupvar_hists","indep_comp","reg_builder","group_legend","d3","var_dist2_size"], function(group_panel_size,margin,legend_height,var_dist_size,plot_groupvar_hists,indep_comp,reg_builder,group_legend,d3,var_dist2_size){return(
+)}
+
+function _group_panel(group_panel_size,margin,var_dist_size,legend_height,plot_groupvar_hists,indep_comp,reg_builder,group_legend,d3,var_dist2_size){return(
 function group_panel (svg_elem) {
   // Setup Plot
   let full_width = group_panel_size+(2*margin.x)
   let full_height = group_panel_size+(2*margin.y)
   
-  let legend_group = svg_elem.append('g')
-    .attr('transform', 'translate('+margin.x+','+(margin.y)+')')
-    .attr('id', 'legend')
-
   let main_group = svg_elem.append('g')
-    .attr('transform', 'translate('+margin.x+','+(margin.y+legend_height)+')')
+    .attr('transform', 'translate('+margin.x+','+(margin.y)+')')
     .attr('id', 'main')
 
   let var_dist_group = main_group.append('g')
     .attr('id', 'var_dist_panel') 
 
+  let legend_group = main_group.append('g')
+    .attr('transform', 'translate('+(var_dist_size.width)+',0)')
+    .attr('id', 'legend') 
+
   let var_comp_group = main_group.append('g')
-    .attr('transform', 
-          'translate('+(var_dist_size.width)+',0)')
+    .attr('transform', 'translate('+(var_dist_size.width)+','+(legend_height)+')')
     .attr('id', 'var_comp_panel')
  
   plot_groupvar_hists(var_dist_group)
@@ -91,8 +92,9 @@ function group_panel (svg_elem) {
     
   return svg_elem.node()
 }
-)});
-  main.variable(observer("plot_groupvar_hists")).define("plot_groupvar_hists", ["d3","group_vars","var_dist_size","z","hist_data","cor_scale","group_data","draw_groupvar_buttons"], function(d3,group_vars,var_dist_size,z,hist_data,cor_scale,group_data,draw_groupvar_buttons){return(
+)}
+
+function _plot_groupvar_hists(d3,group_vars,var_dist_size,z,hist_data,var_stat_scale,group_data,response_var,draw_groupvar_buttons){return(
 function plot_groupvar_hists(hist_group) {
   
   let hgroups = []
@@ -108,6 +110,7 @@ function plot_groupvar_hists(hist_group) {
   const cor_width = 30;
   var y_offset1 = (cell_height/2) - (hist_height / 2) - (gvar_buffer*2); // approximately 1/4 of the way down the cell
   var y_offset2 = (cell_height/2) - (gvar_buffer*2); // approximately 1/2 of the way down the cell
+  var box_offset_x = 10 + (cell_width * (1/2)) // approximately 1/2 of the way across the cell
   
   
   for (var i=0; i < group_vars.length; i++){
@@ -118,7 +121,7 @@ function plot_groupvar_hists(hist_group) {
     
     hgroups[i] = hist_group.append('g')
       .attr("transform", `translate(${gvar_buffer},${hgroup_scale(v)+gvar_buffer})`)
-      .attr('class',v)
+      .attr('id', v)
     
     // seperating line
     if (i !== 0) {
@@ -141,15 +144,39 @@ function plot_groupvar_hists(hist_group) {
       .attr('text-anchor','start')
     
 
-    // genotype correlation
+    // target variable correlation
     hgroups[i].append('rect')
       .attr('class', v)
-      .attr('x', 10+(cell_width*(1/2)))
+      .attr('x', box_offset_x)
       .attr('y', y_offset2)
-      .attr('width',cor_width)
-      .attr('height',cor_height)
-      .attr('fill', cor_scale(group_data[i].corr))
+      .attr('width', cor_width)
+      .attr('height', cor_height)
+      .attr('fill', var_stat_scale(group_data[i].pval))
       .attr('stroke', d3.hcl(0,0,70))
+      .on('mouseover', function(d) {
+        let this_group = d3.select('#'+v);
+        this_group.append('text')
+          .attr("class", "corr_description")
+          .text("Correlation with "+response_var[0].msg) 
+          .attr('text-anchor', 'start')
+          .attr('x', +d3.select(this).attr('x'))
+          .attr('y', +d3.select(this).attr('y')-5)
+          .attr('font-size', '11px')
+          .attr('fill', 'darkslategrey')
+          .raise()
+      })
+      .on('mouseout', (d, i, arr) => {
+        let this_group = d3.select('#'+v);
+        this_group.selectAll('.corr_description').remove()
+      })
+
+    hgroups[i].append('text')
+      .text(group_data[i].corr.toFixed(2))
+      .attr('font-size','12px')
+      .attr('font-weight','bold')
+      .attr('text-anchor','middle')
+      .attr('x', box_offset_x + cor_width*0.5)
+      .attr('y', y_offset2 + cor_height*0.6)
 
     var x_scale = d3.scaleLinear()
         .domain([d3.min(v_data, d => d.xmin),d3.max(v_data, d => d.xmax)])
@@ -200,8 +227,9 @@ function plot_groupvar_hists(hist_group) {
   
   draw_groupvar_buttons(hist_group, hgroup_scale,cell_height,cell_width,y_offset2 + (cor_height/2))
 }
-)});
-  main.variable(observer("draw_groupvar_buttons")).define("draw_groupvar_buttons", ["var_comp","d3","z","mutable var_comp","cov_select","mutable cov_select"], function(var_comp,d3,z,$0,cov_select,$1){return(
+)}
+
+function _draw_groupvar_buttons(var_comp,d3,z,$0,cov_select,$1){return(
 function draw_groupvar_buttons(hist_group, groupvar_scale, cell_height, cell_width, y_offset) {
   let button_color = ["grey","yellow","black"]
   const button_size = 12
@@ -218,7 +246,7 @@ function draw_groupvar_buttons(hist_group, groupvar_scale, cell_height, cell_wid
     .attr('stroke',d3.hcl(0,0,70))
     .attr('stroke-width', 2)
     .attr("fill", d => button_color[d.s])
-    .attr("opacity",0.3)
+    .attr("opacity",0.7)
     .on('click', function(d) {
       let curr_select = z.getCol("s",var_comp)
       let num_selected = z.filter(r => r.s===1,var_comp).length
@@ -264,7 +292,7 @@ function draw_groupvar_buttons(hist_group, groupvar_scale, cell_height, cell_wid
     .attr('stroke',d3.hcl(0,0,70))
     .attr('stroke-width', 2)
     .attr("fill", d => button_color[d.s])
-    .attr("opacity",0.3)
+    .attr("opacity",0.7)
     .on('click', function(d) {
       let curr_select = z.getCol("s",cov_select)
       if (curr_select[d.id] === 1){
@@ -286,8 +314,9 @@ function draw_groupvar_buttons(hist_group, groupvar_scale, cell_height, cell_wid
 
   
 }
-)});
-  main.variable(observer("indep_comp")).define("indep_comp", ["jhist_data","var_dist2_size","z","var1_select","hist_data","var2_select","d3","comp_stats"], function(jhist_data,var_dist2_size,z,var1_select,hist_data,var2_select,d3,comp_stats){return(
+)}
+
+function _indep_comp(jhist_data,var_dist2_size,z,var1_select,hist_data,var2_select,d3,comp_stats){return(
 function indep_comp(var_comp_group) {
   if (jhist_data.length < 200 && jhist_data[0].msg === "no_data"){
     var_comp_group.append('text')
@@ -529,8 +558,9 @@ function indep_comp(var_comp_group) {
   }
 
 }
-)});
-  main.variable(observer("comp_stats")).define("comp_stats", ["d3","var_comp_stats","var_dist2_size","var1_select","var2_select","z","cor_scale","reg_beta_scale"], function(d3,var_comp_stats,var_dist2_size,var1_select,var2_select,z,cor_scale,reg_beta_scale){return(
+)}
+
+function _comp_stats(d3,var_comp_stats,var_dist2_size,var1_select,var2_select,z,var_stat_scale,response_var){return(
 function comp_stats (stats_comp_group){
   const mh = 40
   const mw = 140
@@ -551,14 +581,14 @@ function comp_stats (stats_comp_group){
   stats_comp_group.append("text")
     .text(var1_select)
     .attr('text-anchor','end')
-    .attr("transform",`translate(${text_offset},${mh+row_scale(var1_select)+row_scale.bandwidth()/2})`)
+    .attr("transform",`translate(${text_offset},${5+mh+row_scale(var1_select)+row_scale.bandwidth()/2})`)
     .attr('font-size', '12px')
     .attr('font-weight', 'bold')
   
   stats_comp_group.append("text")
     .text(var2_select)
     .attr('text-anchor','end')
-    .attr("transform",`translate(${text_offset},${mh+row_scale(var2_select)+row_scale.bandwidth()/2})`)
+    .attr("transform",`translate(${text_offset},${5+mh+row_scale(var2_select)+row_scale.bandwidth()/2})`)
     .attr('font-size', '12px')
     .attr('font-weight', 'bold')
   
@@ -574,13 +604,34 @@ function comp_stats (stats_comp_group){
     .attr('width', col_scale.bandwidth())
     .attr('height', row_scale.range()[1])
     .attr('stroke-width',2)
-    .attr('fill', d => cor_scale(d.result))
+    .attr('fill', d => var_stat_scale(d.pval))
     .attr('stroke', d3.hcl(0,0,70))
+    .on('mouseover', function(d) {
+        stats_comp_group.append('text')
+          .attr("class", "corr2_description")
+          .text("Correlation between "+var1_select+" and "+var2_select) 
+          .attr('text-anchor', 'start')
+          .attr('x', +d3.select(this).attr('x')+10)
+          .attr('y', mh+row_scale.range()[1]+40)
+          .attr('font-size', '11px')
+          .attr('fill', 'darkslategrey')
+          .raise()
+      })
+      .on('mouseout', (d, i, arr) => {
+        stats_comp_group.selectAll('.corr2_description').remove()
+      })
+
+  corr_group.append('text')
+    .text(d => d.result.toFixed(4))
+    .attr('font-size','12px')
+    .attr('font-weight','bold')
+    .attr('text-anchor','middle')
+    .attr('x', col_scale.bandwidth()/2)
+    .attr('y',row_scale.range()[1]-25)
   
   corr_group.append('text')
     .text('Correlation')
     .attr('font-size','12px')
-    .attr('font-weight','bold')
     .attr('text-anchor','middle')
     .attr('x', col_scale.bandwidth()/2)
     .attr('y',row_scale.range()[1]+20)
@@ -596,13 +647,34 @@ function comp_stats (stats_comp_group){
     .attr('width', col_scale.bandwidth())
     .attr('height', row_scale.bandwidth())
     .attr('stroke-width',2)
-    .attr('fill', d => reg_beta_scale(d.result))
+    .attr('fill', d => var_stat_scale(d.pval))
     .attr('stroke', d3.hcl(0,0,70))
+    .on('mouseover', function(d) {
+        stats_comp_group.append('text')
+          .attr("class", "univariate_description")
+          .text("Reg coeff for "+d.var+" [ "+response_var[0].msg+" ~ "+d.var+" ]") 
+          .attr('text-anchor', 'start')
+          .attr('x', +d3.select(this).attr('x')+10)
+          .attr('y', mh+row_scale.range()[1]+40)
+          .attr('font-size', '11px')
+          .attr('fill', 'darkslategrey')
+          .raise()
+      })
+    .on('mouseout', (d, i, arr) => {
+        stats_comp_group.selectAll('.univariate_description').remove()
+      })
+
+  uni_group.selectAll("empty").data(uni_data).enter().append('text')
+    .text(d => d.result.toFixed(4))
+    .attr('font-size','12px')
+    .attr('font-weight','bold')
+    .attr('text-anchor','middle')
+    .attr('x', col_scale.bandwidth()/2)
+    .attr('y',d => row_scale(d.var)+(mh/2))
   
   uni_group.append('text')
     .text('Univariate Reg')
     .attr('font-size','12px')
-    .attr('font-weight','bold')
     .attr('text-anchor','middle')
     .attr('x', col_scale.bandwidth()/2)
     .attr('y',row_scale.range()[1]+20)
@@ -618,27 +690,49 @@ function comp_stats (stats_comp_group){
     .attr('width', col_scale.bandwidth())
     .attr('height', row_scale.bandwidth())
     .attr('stroke-width',2)
-    .attr('fill', d => reg_beta_scale(d.result))
+    .attr('fill', d => var_stat_scale(d.pval))
     .attr('stroke', d3.hcl(0,0,70))
+    .on('mouseover', function(d) {
+        stats_comp_group.append('text')
+          .attr("class", "multivariate_description")
+          .text("Reg coeff for "+d.var+" [ "+response_var[0].msg+" ~ "+var1_select+" + "+var2_select+" ]") 
+          .attr('text-anchor', 'start')
+          .attr('x', +d3.select(this).attr('x')+10)
+          .attr('y', mh+row_scale.range()[1]+40)
+          .attr('font-size', '11px')
+          .attr('fill', 'darkslategrey')
+          .raise()
+      })
+    .on('mouseout', (d, i, arr) => {
+        stats_comp_group.selectAll('.multivariate_description').remove()
+      })
+
+  mul_group.selectAll("empty").data(mul_data).enter().append('text')
+    .text(d => d.result.toFixed(4))
+    .attr('font-size','12px')
+    .attr('font-weight','bold')
+    .attr('text-anchor','middle')
+    .attr('x', col_scale.bandwidth()/2)
+    .attr('y',d => row_scale(d.var)+(mh/2))
   
   mul_group.append('text')
     .text('Multivariate Reg')
     .attr('font-size','12px')
-    .attr('font-weight','bold')
     .attr('text-anchor','middle')
     .attr('x', col_scale.bandwidth()/2)
     .attr('y',row_scale.range()[1]+20)
   
 }
-)});
-  main.variable(observer("reg_builder")).define("reg_builder", ["group_data","reg_builder_size","var_dist_size","d3","response_var","math","reg_types","mutable reg_types","z","cov_selection"], function(group_data,reg_builder_size,var_dist_size,d3,response_var,math,reg_types,$0,z,cov_selection){return(
+)}
+
+function _reg_builder(group_data,reg_builder_size,var_dist_size,d3,response_var,math,reg_types,$0,z,cov_selection){return(
 function reg_builder(main_group){
   
   const num_g0 = group_data[0].g0.length
   const num_g1 = group_data[0].g1.length
   const cohort_size = num_g0+num_g1
   
-  const geno_offset = {x:30,y:reg_builder_size.height/3}
+  const geno_offset = {x:30,y:reg_builder_size.height/3 - 5}
   const hist_width = 75
   const geno_panel_width = reg_builder_size.width/4
   const reg_panel_width = reg_builder_size.width*(3/4)
@@ -660,7 +754,7 @@ function reg_builder(main_group){
     .text(cohort_size+" Subjects in Cohort")
     .attr('text-anchor', 'middle')
     .attr('x', geno_panel_width/2)
-    .attr('y', 25)
+    .attr('y', geno_offset.y -35)
     .attr('font-size', '14px')
     .attr('font-weight', 'bold')
   reg_builder_group.append('text')
@@ -724,7 +818,7 @@ function reg_builder(main_group){
     .attr('stroke',d3.hcl(0,0,70))
     .attr('stroke-width', 3)
     .attr("fill", d => button_color[d.s])
-    .attr("opacity",0.2)
+    .attr("opacity",0.5)
     .on('click', function(d) {
       let new_select = [0,0,0]
       new_select[d.rtype] = 1
@@ -744,8 +838,9 @@ function reg_builder(main_group){
   cov_selection(cov_select_group,reg_panel_width)
 
 }
-)});
-  main.variable(observer("cov_selection")).define("cov_selection", ["z","cov_select","reg_builder_size","d3","response_var","run_status","reg_types","reg_list","mutable reg_list","mutable reg_args","mutable start_ix","mutable run_status","hist_data"], function(z,cov_select,reg_builder_size,d3,response_var,run_status,reg_types,reg_list,$0,$1,$2,$3,hist_data){return(
+)}
+
+function _cov_selection(z,cov_select,reg_builder_size,d3,response_var,run_status,reg_types,reg_list,save_covariate_data,$0,$1,$2,$3,$4,hist_data){return(
 function cov_selection(cov_select_group,reg_panel_width){
   
   let selected = z.getCol("vname", z.filter(r => r.s === 1, cov_select))
@@ -789,9 +884,9 @@ function cov_selection(cov_select_group,reg_panel_width){
         let s = z.getCol("vname", z.filter(r => r.s === 1, cov_select))
         let next_ix = reg_list.length
         let reg_list_copy = [...reg_list]
-        reg_list_copy.unshift({ cmd:"run_reg", cov:s, rtype:rtype[0].rtype })
+        reg_list_copy.unshift({ cmd:"run_reg", cov:s, rtype:rtype[0].rtype, save_cov:save_covariate_data})
         $0.value = [...reg_list_copy];
-        $1.value = [{ cmd:"run_reg", cov:s, rtype:rtype[0].rtype}];
+        $1.value = [{ cmd:"run_reg", cov:s, rtype:rtype[0].rtype, save_cov:save_covariate_data}];
         $2.value = 0;
         $3.value = 1;
       }
@@ -802,6 +897,36 @@ function cov_selection(cov_select_group,reg_panel_width){
     .attr('font-size', '16px')
     .attr('text-anchor', 'middle')
     .attr('font-weight','bold')
+
+
+  // Toggle for saving covariate regression info
+  let button_size = 15;
+  let button_color = 'grey';
+  if (save_covariate_data === 1){
+    button_color = 'yellow';
+  }
+    
+  cov_select_group.append('rect')
+    .attr('id','Cov_Save_button')
+    .attr('transform', d=> `translate(${button_size},10)`)
+    .attr('width', button_size)
+    .attr('height', button_size)
+    .attr('stroke',d3.hcl(0,0,70))
+    .attr('stroke-width', 3)
+    .attr("fill", button_color)
+    .attr("opacity", 0.5)
+    .on('click', function(d) {
+      $4.value = (save_covariate_data + 1) % 2;
+      
+    })
+  cov_select_group.append('text')
+    .text('Save Cov Data')
+    .attr('transform', d=> `translate(${(button_size)*2+5},${button_size+7})`)
+    .attr('font-size', '11px')
+    .attr('text-anchor', 'start')
+    .attr('font-weight','bold')
+
+
   
   // Show selected covariates
   const hist_height = 75
@@ -871,132 +996,108 @@ function cov_selection(cov_select_group,reg_panel_width){
     
     
 }
-)});
-  main.variable(observer("group_legend")).define("group_legend", ["group_panel_size","legend_height","d3","response_var","cor_scale","makeArr","reg_beta_scale"], function(group_panel_size,legend_height,d3,response_var,cor_scale,makeArr,reg_beta_scale){return(
+)}
+
+function _group_legend(var_dist2_size,legend_height,d3,response_var,var_stat_scale){return(
 function group_legend(legend_group){
   
   legend_group.append('rect')
-    .attr('width', group_panel_size)
+    .attr('width', var_dist2_size.width)
     .attr('height', legend_height)
     .attr('stroke', d3.hcl(0,0,70))
     .attr('stroke-width', 2)
     .attr('fill','none')
     .lower()
   
-  const mw = 20
   let legend_scale = d3.scaleBand()
-    .domain(['genotype','correlation','regression'])
-    .range([mw,group_panel_size-mw])
-    .paddingInner(0.1)
-  let colorbar_width = legend_scale.bandwidth()/2
-  let bar_width = 1
+    .domain(['genotype','pvals'])
+    .range([0, var_dist2_size.width])
+    .paddingInner(0.2)
+    .paddingOuter(0.1)
+    .align(0.5)
+
+  const box_height = legend_height * 0.45;
+  const box_offset = legend_height * 0.45;
+  const txt_offset = box_offset + 12; // 12 point font
+  const hdr_offset = legend_height * 0.3;
   
   // genotype colors
-  let geno_data = [{name:response_var[0].msg +' 0',color:"purple",opacity:0.6},
-                   {name:response_var[0].msg +' 1',color:"green",opacity:0.4}]
+  let geno_data = [{name:'0',color:"purple",opacity:0.6},
+                   {name:'1',color:"green",opacity:0.4}]
+
+  let geno_group = legend_group.append('g')
+    .attr('transform',`translate(${legend_scale('genotype')}, 0)`)
+    .selectAll("empty").data(geno_data).enter()
+  
   let geno_scale = d3.scaleBand()
     .domain(d3.set(geno_data, d=> d.name).values())
     .range([0,legend_scale.bandwidth()])
-  const box_width = legend_scale.bandwidth()*0.15
-  let geno_group = legend_group.append('g')
-    .attr('transform',`translate(${legend_scale('genotype')},0)`)
-    .selectAll("empty").data(geno_data).enter()
+    .paddingInner(0.1)
+    .align(0.5)
+
+  geno_group.append('text')
+    .text(response_var[0].msg)
+    .attr('font-size','12px')
+    .attr('font-weight', 'bold')
+    .attr("text-anchor", "middle")
+    .attr('x', legend_scale.bandwidth()/2)
+    .attr('y', hdr_offset)
   
   geno_group.append('rect')
     .attr('fill', d=> d.color)
     .attr('opacity',d=> d.opacity)
-    .attr('width', box_width)
-    .attr('height', legend_height*0.5)
+    .attr('width', geno_scale.bandwidth())
+    .attr('height', box_height)
     .attr('x',d => geno_scale(d.name))
-    .attr('y', legend_height*0.25)
+    .attr('y', box_offset)
   
   geno_group.append('text')
     .text(d => d.name)
     .attr('font-size','12px')
-    .attr('x',d => geno_scale(d.name)+box_width*1.1)
-    .attr('y', legend_height*0.6)
+    .attr("text-anchor", "middle")
+    .attr('x',d => geno_scale(d.name)+(geno_scale.bandwidth()*0.5))
+    .attr('y', txt_offset)
   
-  // correlation colors
-  let c_end = cor_scale.domain().length - 1
-  let corr_arr = makeArr(cor_scale.domain()[0],cor_scale.domain()[c_end],colorbar_width)
-  let corr_legend_scale = d3.scaleLinear()
-    .domain([-1,1])
-    .range([0,colorbar_width])
-  let corr_group = legend_group.append('g')
-    .attr('transform',`translate(${legend_scale('correlation')},0)`)
-    
-  corr_group.selectAll("empty").data(corr_arr).enter().append('rect')
-    .attr('fill', d=> cor_scale(d))
-    .attr('width', bar_width)
-    .attr('height', legend_height*0.4)
-    .attr('x',d => corr_legend_scale(d) + legend_scale.bandwidth()/4)
-    .attr('y', legend_height*0.15)
-    .attr('stroke','none')
+  // p-value significance colors
+  let pval_data = [{name:'p >= 0.05', color:var_stat_scale(0.1)},
+                   {name:'p < 0.05',  color:var_stat_scale(0.01)}]
+
+  let pval_group = legend_group.append('g')
+    .attr('transform',`translate(${legend_scale('pvals')}, 0)`)
+    .selectAll("empty").data(pval_data).enter()
   
-  corr_group.append('text')
-    .text("-1")
+  let pval_scale = d3.scaleBand()
+    .domain(d3.set(pval_data, d=> d.name).values())
+    .range([0,legend_scale.bandwidth()])
+    .paddingInner(0.1)
+    .align(0.5)
+
+  pval_group.append('text')
+    .text('Significance')
     .attr('font-size','12px')
-    .attr('font-weight','bold')
-    .attr('x',d => legend_scale.bandwidth()/4 - 15)
-    .attr('y', legend_height*0.45)
+    .attr('font-weight', 'bold')
+    .attr("text-anchor", "middle")
+    .attr('x', legend_scale.bandwidth()/2)
+    .attr('y', hdr_offset)
   
-  corr_group.append('text')
-    .text("+1")
+  pval_group.append('rect')
+    .attr('fill', d=> d.color)
+    .attr('opacity',d=> d.opacity)
+    .attr('width', pval_scale.bandwidth())
+    .attr('height', box_height)
+    .attr('x',d => pval_scale(d.name))
+    .attr('y', box_offset)
+  
+  pval_group.append('text')
+    .text(d => d.name)
     .attr('font-size','12px')
-    .attr('font-weight','bold')
-    .attr('x',corr_legend_scale(1) + legend_scale.bandwidth()/4 + 5)
-    .attr('y', legend_height*0.45)
-  
-  corr_group.append('text')
-    .text("Correlation")
-    .attr('font-size','12px')
-    .attr('text-anchor','middle')
-    .attr('x',legend_scale.bandwidth()/2)
-    .attr('y', legend_height*0.9)
-  
-  // regression colors
-  let r_end = reg_beta_scale.domain().length-1
-  let reg_arr = makeArr(reg_beta_scale.domain()[0],reg_beta_scale.domain()[r_end],colorbar_width)
-  
-  let reg_legend_scale = d3.scaleLinear()
-    .domain(d3.extent(reg_beta_scale.domain()))
-    .range([0,colorbar_width])
-  
-  let reg_group = legend_group.append('g')
-    .attr('transform',`translate(${legend_scale('regression')},0)`)
-    
-  reg_group.selectAll("empty").data(reg_arr).enter().append('rect')
-    .attr('fill', d=> reg_beta_scale(d))
-    .attr('width', bar_width)
-    .attr('height', legend_height*0.4)
-    .attr('x',d => reg_legend_scale(d) + legend_scale.bandwidth()/4)
-    .attr('y', legend_height*0.15)
-    .attr('stroke','none')
-  
-  reg_group.append('text')
-    .text(reg_legend_scale.domain()[0])
-    .attr('font-size','12px')
-    .attr('font-weight','bold')
-    .attr('x',d => legend_scale.bandwidth()/4 - 15)
-    .attr('y', legend_height*0.45)
-  
-  reg_group.append('text')
-    .text(`+${reg_beta_scale.domain()[r_end]}`)
-    .attr('font-size','12px')
-    .attr('font-weight','bold')
-    .attr('x',reg_legend_scale(reg_beta_scale.domain()[r_end]) + legend_scale.bandwidth()/4 + 5)
-    .attr('y', legend_height*0.45)
-  
-  reg_group.append('text')
-    .text("Regression Coefficient")
-    .attr('font-size','12px')
-    .attr('text-anchor','middle')
-    .attr('x',legend_scale.bandwidth()/2)
-    .attr('y', legend_height*0.9)
-  
+    .attr("text-anchor", "middle")
+    .attr('x',d => pval_scale(d.name)+(pval_scale.bandwidth()*0.5))
+    .attr('y', txt_offset)
 }
-)});
-  main.variable(observer("makeArr")).define("makeArr", function(){return(
+)}
+
+function _makeArr(){return(
 function makeArr(startValue, stopValue, cardinality) {
   var arr = [];
   var step = (stopValue - startValue) / (cardinality - 1);
@@ -1005,11 +1106,13 @@ function makeArr(startValue, stopValue, cardinality) {
   }
   return arr;
 }
-)});
-  main.variable(observer()).define(["md"], function(md){return(
+)}
+
+function _14(md){return(
 md `### Regression Panel Functions`
-)});
-  main.variable(observer("reg_panel")).define("reg_panel", ["draw_cat_legend","draw_volcano_legend","thresh_select_panel","plot_logOdds","plot_volcano","drawTable","mutable run_status"], function(draw_cat_legend,draw_volcano_legend,thresh_select_panel,plot_logOdds,plot_volcano,drawTable,$0){return(
+)}
+
+function _reg_panel(draw_cat_legend,draw_volcano_legend,thresh_select_panel,plot_logOdds,plot_volcano,drawTable,$0){return(
 function reg_panel(svg_elem) {
   
   let main_group = svg_elem.append('g')
@@ -1024,9 +1127,14 @@ function reg_panel(svg_elem) {
   
   $0.value = 0
 }
-)});
-  main.variable(observer("plot_logOdds")).define("plot_logOdds", ["z","thresh_value","reg_data","d3","reg_plot_size","reg_plot_legend_height","buffer","phe_cat_colors","vol_color"], function(z,thresh_value,reg_data,d3,reg_plot_size,reg_plot_legend_height,buffer,phe_cat_colors,vol_color){return(
+)}
+
+function _plot_logOdds(z,thresh_value,reg_data,d3,reg_plot_size,low_lim_col,up_lim_col,reg_plot_legend_height,buffer,phe_cat_colors,vol_color,xaxis_name,phe_cat_markers,point_col,OR_type,$0){return(
 function plot_logOdds(main_group)  {
+  // NOTE 
+  // This is is not necessarily a log odds plot anymore!! There is a toggle to switch between Odds Ratio and Log Odds Ratio.
+  // Toggle button code is at the bottom of this cell
+
   let margin = 15
   let amargin = 50
   // filter data
@@ -1036,8 +1144,8 @@ function plot_logOdds(main_group)  {
                           .domain(d3.set(filtered_reg, d => d.PheCode).values())
                           .range([margin,reg_plot_size.height-amargin])
   let logodds_x_scale = d3.scaleLinear()
-                          .domain([d3.min(filtered_reg, d=>d.beta_ci_low), 
-                                   d3.max(filtered_reg, d=>d.beta_ci_up)])
+                          .domain([d3.min(filtered_reg, d=>d[low_lim_col]), 
+                                   d3.max(filtered_reg, d=>d[up_lim_col])])
                           .range([margin,reg_plot_size.width-margin])
                           .nice()
   
@@ -1062,13 +1170,12 @@ function plot_logOdds(main_group)  {
     .on('click', function(d) {
       main_group.selectAll('.logodds')
         .attr('opacity', 1.0)
-        .attr('stroke', d => phe_cat_colors(d.category))
+        .attr('stroke', d => phe_cat_colors(d.category_id))
       main_group.selectAll('.volcano')
         .attr('opacity', 1.0)
         .attr('stroke', d => vol_color(d.pval))
       main_group.selectAll('.phelabel_click').remove()
       main_group.selectAll('.phecode_row').attr("fill","grey")
-      main_group.selectAll('.phecode_row_text').attr("font-weight","normal")
     })
   
   if (reg_data.length == 1 && reg_data[0].msg === "no_data"){
@@ -1098,7 +1205,7 @@ function plot_logOdds(main_group)  {
       .call(log_xaxis)
 
     log_odds_group.append('text')
-      .text('Log Odds Ratio')
+      .text(xaxis_name)
       .attr('id', 'xaxis_label')
       .attr('transform', `translate(${reg_plot_size.width/2},${logodds_y_scale.range()[1]+35})`)
       .attr('text-anchor', 'middle')
@@ -1109,30 +1216,29 @@ function plot_logOdds(main_group)  {
     beta_group.append('line')
       .attr('class','logodds')
       .attr('id',d=>d.Pheno_id)
-      .attr('x1', d=>logodds_x_scale(d.beta_ci_low))
+      .attr('x1', d=>logodds_x_scale(d[low_lim_col]))
       .attr('y1', d=>logodds_y_scale(d.PheCode))
-      .attr('x2', d=>logodds_x_scale(d.beta_ci_up))
+      .attr('x2', d=>logodds_x_scale(d[up_lim_col]))
       .attr('y2', d=>logodds_y_scale(d.PheCode))
-      .attr('stroke',d => phe_cat_colors(d.category))
+      .attr('stroke',d => phe_cat_colors(d.category_id))
       .attr('stroke-width', 2)
 
     // point estimate 
-    beta_group.append('circle')
+    beta_group.append('path')
       .attr('id',d=>d.Pheno_id)
       .attr('class','logodds')
-      .attr('cx', d=>logodds_x_scale(d.beta))
-      .attr('cy', d=>logodds_y_scale(d.PheCode))
-      .attr('r', 3)
-      .attr('stroke-width', 2)
-      .attr('stroke', d => phe_cat_colors(d.category))
-      .attr('fill', d => phe_cat_colors(d.category))
+      .attr('fill', d => phe_cat_colors(d.category_id))
+      .attr("d", d => phe_cat_markers(d.category_id)) 
+      .attr("transform",  d => `translate(${logodds_x_scale(d[point_col])}, ${logodds_y_scale(d.PheCode)})`)
+      .attr('x', d=>logodds_x_scale(d[point_col])) // path doesn't use x/y
+      .attr('y', d=>logodds_y_scale(d.PheCode)) // but this makes it easy to place text on click
       .on('mouseover', function(d) {
         log_odds_group.append('text')
           .attr("class","phelabel")
           .text(d.Phenotype)
           .attr('text-anchor', 'start')
-          .attr('x', +d3.select(this).attr('cx')+10)
-          .attr('y', +d3.select(this).attr('cy')-10)
+          .attr('x', +d3.select(this).attr('x')+10)
+          .attr('y', +d3.select(this).attr('y')-10)
           .attr('font-weight', 'bold')
           .style('font-size', 13)
           .raise()
@@ -1144,13 +1250,12 @@ function plot_logOdds(main_group)  {
         // reset attributes
         main_group.selectAll('.logodds')
           .attr('opacity', 0.2)
-          .attr('stroke', d => phe_cat_colors(d.category))
+          .attr('stroke', d => phe_cat_colors(d.category_id))
         main_group.selectAll('.volcano')
           .attr('opacity', 0.2)
           .attr('stroke', d => vol_color(d.pval))
         main_group.selectAll('.phelabel_click').remove()
         main_group.selectAll('.phecode_row').attr("fill","grey")
-        main_group.selectAll('.phecode_row_text').attr("font-weight","normal")
 
         // highlight selected point in both plots
         log_odds_group.selectAll('#'+d.Pheno_id)
@@ -1166,8 +1271,8 @@ function plot_logOdds(main_group)  {
         log_odds_group.append('text')
           .attr("class","phelabel_click")
           .text(d.Phenotype)
-          .attr('x',+d3.select(this).attr('cx')+10)
-          .attr('y', +d3.select(this).attr('cy')-10)
+          .attr('x',+d3.select(this).attr('x')+10)
+          .attr('y', +d3.select(this).attr('y')-10)
           .attr('font-weight', 'bold')
           .style('font-size', 13)
           .attr('text-anchor', 'start')
@@ -1178,21 +1283,50 @@ function plot_logOdds(main_group)  {
           .filter(function(r) { 
             return (r.Pheno_id === d.Pheno_id)
           })
-          .attr("fill",d => phe_cat_colors(d.category))
-        // bold row
-        main_group.selectAll('.phecode_row_text')
-          .filter(function(r) { 
-            return (r.Pheno_id === d.Pheno_id)
-          })
-          .attr("font-weight","bold")
+          .attr("fill",d => phe_cat_colors(d.category_id))
       })
 
+
+  // Toggle for Odds Ratio display
+  let button_size = 15;
+  let button_color = 'grey';
+  if (xaxis_name === 'Odds Ratio'){
+    button_color = 'yellow';
+  }
+    
+  log_odds_group.append('rect')
+    .attr('id','OR_button')
+    .attr('transform', d=> `translate(${margin},${reg_plot_size.height-button_size-5})`)
+    .attr('width', button_size)
+    .attr('height', button_size)
+    .attr('stroke',d3.hcl(0,0,70))
+    .attr('stroke-width', 3)
+    .attr("fill", button_color)
+    .attr("opacity", 0.5)
+    .on('click', function(d) {
+      let curr_select = z.getCol("s", OR_type)
+      let new_select = [0,0];
+      if (curr_select[0] === 1){
+        new_select = [0,1];
+      }
+      else{
+        new_select = [1,0];
+      }
+      $0.value = z.addCol("s",new_select,OR_type)
+    })
+  log_odds_group.append('text')
+    .text('Toggle OR')
+    .attr('transform', d=> `translate(${margin+button_size+5},${reg_plot_size.height-button_size+7})`)
+    .attr('font-size', '11px')
+    .attr('text-anchor', 'start')
+    .attr('font-weight','bold')
 
     return beta_group
  }
 }
-)});
-  main.variable(observer("plot_volcano")).define("plot_volcano", ["d3","reg_data","reg_plot_size","reg_plot_legend_height","buffer","phe_cat_colors","vol_color"], function(d3,reg_data,reg_plot_size,reg_plot_legend_height,buffer,phe_cat_colors,vol_color){return(
+)}
+
+function _plot_volcano(d3,reg_data,reg_plot_size,point_col,reg_plot_legend_height,buffer,phe_cat_colors,vol_color,xaxis_name){return(
 function plot_volcano(main_group)  {
   let margin = 15
   let amargin = 50
@@ -1202,7 +1336,7 @@ function plot_volcano(main_group)  {
                           .range([reg_plot_size.height-amargin,margin])
                           .nice()
   let volcano_x_scale = d3.scaleLinear()
-                          .domain(d3.extent(reg_data, d=>d.beta))
+                          .domain(d3.extent(reg_data, d=>d[point_col]))
                           .range([amargin,reg_plot_size.width-margin])
                           .nice()
   
@@ -1228,13 +1362,12 @@ function plot_volcano(main_group)  {
     .on('click', function(d) {
       main_group.selectAll('.logodds')
         .attr('opacity', 1.0)
-        .attr('stroke', d => phe_cat_colors(d.category))
+        .attr('stroke', d => phe_cat_colors(d.category_id))
       main_group.selectAll('.volcano')
         .attr('opacity', 1.0)
         .attr('stroke', d => vol_color(d.pval))
       main_group.selectAll('.phelabel_click').remove()
       main_group.selectAll('.phecode_row').attr("fill","grey")
-      main_group.selectAll('.phecode_row_text').attr("font-weight","normal")
     })
   
   if (reg_data.length == 1 && reg_data[0].msg === "no_data"){
@@ -1252,23 +1385,23 @@ function plot_volcano(main_group)  {
     let vol_yaxis = d3.axisLeft(volcano_y_scale).ticks(6)
 
     volcano_group.append('g')
-      .attr('id', 'xaxis')
+      .attr('id', 'yaxis')
       .attr('transform', 'translate(0,'+volcano_y_scale.range()[0]+')')
       .call(vol_xaxis)
     volcano_group.append('text')
       .text('-log(p)')
-      .attr('id', 'xaxis_label')
+      .attr('id', 'yaxis_label')
       .attr('transform', `rotate(270) translate(-${reg_plot_size.height/2},20)`)
       .attr('text-anchor', 'middle')
       .attr('font-size', '15px')
       .attr('font-weight', 'bold')
 
     volcano_group.append('g')
-      .attr('id', 'yaxis')
+      .attr('id', 'xaxis')
       .attr('transform', 'translate('+(amargin)+',0)')
       .call(vol_yaxis)
     volcano_group.append('text')
-      .text('Log Odds Ratio')
+      .text(xaxis_name)
       .attr('id', 'xaxis_label')
       .attr('transform', `translate(${reg_plot_size.width/2},${volcano_y_scale.range()[0]+35})`)
       .attr('text-anchor', 'middle')
@@ -1279,7 +1412,7 @@ function plot_volcano(main_group)  {
     beta_group.append('circle')
       .attr('id',d=>d.Pheno_id)
       .attr("class","volcano")
-      .attr('cx', d=>volcano_x_scale(d.beta))
+      .attr('cx', d=>volcano_x_scale(d[point_col]))
       .attr('cy', d=>volcano_y_scale(d.neg_log_p))
       .attr('r', 3)
       .attr('stroke-width', 2)
@@ -1309,13 +1442,12 @@ function plot_volcano(main_group)  {
         // reset attributes
         main_group.selectAll('.logodds')
           .attr('opacity', 0.2)
-          .attr('stroke', d => phe_cat_colors(d.category))
+          .attr('stroke', d => phe_cat_colors(d.category_id))
         main_group.selectAll('.volcano')
           .attr('opacity', 0.2)
           .attr('stroke', d => vol_color(d.pval))
         main_group.selectAll('.phelabel_click').remove()
         main_group.selectAll('.phecode_row').attr("fill","grey")
-        main_group.selectAll('.phecode_row_text').attr("font-weight","normal")
 
         // highlight selected point in both plots
         volcano_group.selectAll('#'+d.Pheno_id)
@@ -1349,18 +1481,13 @@ function plot_volcano(main_group)  {
           .filter(function(r) { 
             return (r.Pheno_id === d.Pheno_id)
           })
-          .attr("fill",d => phe_cat_colors(d.category))
-        // bold row
-        main_group.selectAll('.phecode_row_text')
-          .filter(function(r) { 
-            return (r.Pheno_id === d.Pheno_id)
-          })
-          .attr("font-weight","bold")
+          .attr("fill",d => phe_cat_colors(d.category_id))
       })
   }
 }
-)});
-  main.variable(observer("draw_volcano_legend")).define("draw_volcano_legend", ["cat_legend_width","d3"], function(cat_legend_width,d3){return(
+)}
+
+function _draw_volcano_legend(cat_legend_width,d3){return(
 function draw_volcano_legend(main_group){
   const legend_width = 90
   const legend_height = 100
@@ -1410,8 +1537,9 @@ function draw_volcano_legend(main_group){
     .attr('font-size', '12px')
   
 }
-)});
-  main.variable(observer("draw_cat_legend")).define("draw_cat_legend", ["cat_legend_width","reg_plot_legend_height","d3","phe_categories","phe_cat_colors"], function(cat_legend_width,reg_plot_legend_height,d3,phe_categories,phe_cat_colors){return(
+)}
+
+function _draw_cat_legend(cat_legend_width,reg_plot_legend_height,d3,phe_categories,phe_cat_colors,phe_cat_markers){return(
 function draw_cat_legend(main_group){
   
   let cat_square_size = 5
@@ -1435,7 +1563,7 @@ function draw_cat_legend(main_group){
   main_group.append('text')
     .text("PheCode Categories")
     .attr('text-anchor', 'middle')
-    .attr('x', cat_legend_width*0.725)
+    .attr('x', cat_legend_width*0.75)
     .attr('y', reg_plot_legend_height*0.9)
     .attr('font-size', '15px')
     .attr('font-weight', 'bold')
@@ -1443,12 +1571,12 @@ function draw_cat_legend(main_group){
   // category legend
   let square_scale = d3.scaleBand()
     .domain(d3.range(squares_per_row))
-    .range([0,cat_legend_width])
+    .range([0,cat_legend_width-20])
     .paddingInner(0.1)
 
   let annotation_group = legend_group.selectAll("empty").data(phe_categories).enter()
-  
-  annotation_group.append("circle")
+
+  annotation_group.append("path")
     .attr('transform', (d,i) => {
       var y_off = Math.floor(i/squares_per_row)
       var square_offset_y = y_off*y_space
@@ -1456,10 +1584,9 @@ function draw_cat_legend(main_group){
       var square_offset_x = square_scale(x_off)
       return 'translate('+square_offset_x+','+square_offset_y+')'
     })
-   .attr('r', cat_square_size)
-   .attr('x', cat_square_size+3)
-   .attr('y', cat_square_size/2+3)
-   .attr("fill", function(d){return phe_cat_colors(d.category_string)})
+   .attr('fill', d => phe_cat_colors(d.category))
+   .attr("d", r => phe_cat_markers(r.category)) 
+ 
   
   annotation_group.append("text")
     .attr('transform', (d,i) => {
@@ -1476,8 +1603,9 @@ function draw_cat_legend(main_group){
     .attr('text-anchor', 'start')
 
 }
-)});
-  main.variable(observer("thresh_select_panel")).define("thresh_select_panel", ["reg_panel_size","cat_legend_width","reg_plot_legend_height","d3","thresh_types","mutable thresh_types","z"], function(reg_panel_size,cat_legend_width,reg_plot_legend_height,d3,thresh_types,$0,z){return(
+)}
+
+function _thresh_select_panel(reg_panel_size,cat_legend_width,reg_plot_legend_height,d3,thresh_types,$0,z){return(
 function thresh_select_panel(main_group){
   
   let ts_width = reg_panel_size - (cat_legend_width+90)
@@ -1521,7 +1649,7 @@ function thresh_select_panel(main_group){
     .attr('stroke',d3.hcl(0,0,70))
     .attr('stroke-width', 3)
     .attr("fill", d => button_color[d.s])
-    .attr("opacity",0.2)
+    .attr("opacity",0.5)
     .on('click', function(d) {
       let new_select = [0,0]
       new_select[d.id] = 1
@@ -1537,8 +1665,9 @@ function thresh_select_panel(main_group){
   
   
 }
-)});
-  main.variable(observer("drawTable")).define("drawTable", ["reg_plot_legend_height","reg_plot_size","reg_panel_size","reg_table_height","d3","reg_data","table_data","table_cols","z","phe_cat_colors","vol_color","buffer","start_ix","num_rows","mutable start_ix"], function(reg_plot_legend_height,reg_plot_size,reg_panel_size,reg_table_height,d3,reg_data,table_data,table_cols,z,phe_cat_colors,vol_color,buffer,start_ix,num_rows,$0){return(
+)}
+
+function _drawTable(reg_plot_legend_height,reg_plot_size,reg_panel_size,reg_table_height,d3,reg_data,table_data,table_cols,z,phe_cat_colors,vol_color,buffer,start_ix,num_rows,$0){return(
 function drawTable(main_group) {
   let table_group = main_group.append('g')
     .attr('transform', 
@@ -1621,12 +1750,12 @@ function drawTable(main_group) {
       .attr('font-size','12px')
       .attr('x', col.offset)
 
-    // Beta
-    col = z.filter(r => r.name === 'Beta',table_cols)[0]
+    // OR
+    col = z.filter(r => r.name === 'OR',table_cols)[0]
     data_group.append('text')
       .attr('class','phecode_row_text')
       .attr('id',d => d.Pheno_id)
-      .text(d => f_beta(d.beta))
+      .text(d => f_beta(d.OR))
       .attr('font-size','12px')
       .attr('x', col.offset)
 
@@ -1661,13 +1790,12 @@ function drawTable(main_group) {
         // reset
         main_group.selectAll('.logodds')
           .attr('opacity', 0.2)
-          .attr('stroke', d => phe_cat_colors(d.category))
+          .attr('stroke', d => phe_cat_colors(d.category_id))
         main_group.selectAll('.volcano')
           .attr('opacity', 0.2)
           .attr('stroke', d => vol_color(d.pval))
         main_group.selectAll('.phelabel_click').remove()
         data_group.selectAll('.phecode_row').attr("fill","grey")
-        data_group.selectAll('.phecode_row_text').attr("font-weight","normal")
         // highlight selected point in both plots
         main_group.selectAll('.volcano')
           .filter(function(r) { 
@@ -1686,37 +1814,44 @@ function drawTable(main_group) {
           .filter(function(r) { 
             return (r.Pheno_id === d.Pheno_id)
           })
-          .attr("fill",d => phe_cat_colors(d.category))
-        // bold row
-        data_group.selectAll('.phecode_row_text')
-          .filter(function(r) { 
-            return (r.Pheno_id === d.Pheno_id)
-          })
-          .attr("font-weight","bold")
+          .attr("fill",d => phe_cat_colors(d.category_id))
       })
     data_group.append('rect')
       .attr('x',col.offset)
       .attr('y',-row_scale.bandwidth()+3)
       .attr('height',row_scale.bandwidth())
       .attr('width',col.width)
-      .attr('fill', d=> phe_cat_colors(d.category))
+      .attr('fill', d=> phe_cat_colors(d.category_id))
       .attr("opacity",0.2)
       .on("click", function(d){
         // reset
+        main_group.selectAll('.logodds')
+          .attr('opacity', 0.2)
+          .attr('stroke', d => phe_cat_colors(d.category_id))
+        main_group.selectAll('.volcano')
+          .attr('opacity', 0.2)
+          .attr('stroke', d => vol_color(d.pval))
+        main_group.selectAll('.phelabel_click').remove()
         data_group.selectAll('.phecode_row').attr("fill","grey")
-        data_group.selectAll('.phecode_row_text').attr("font-weight","normal")
+        // highlight selected point in both plots
+        main_group.selectAll('.volcano')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr('opacity', 1.0)
+          .attr('stroke','black')
+        main_group.selectAll('.logodds')
+          .filter(function(r) { 
+            return (r.Pheno_id === d.Pheno_id)
+          })
+          .attr('opacity', 1.0)
+          .attr('stroke','black')
         // color row
         data_group.selectAll('.phecode_row')
           .filter(function(r) { 
             return (r.Pheno_id === d.Pheno_id)
           })
-          .attr("fill",d => phe_cat_colors(d.category))
-        // bold row
-        data_group.selectAll('.phecode_row_text')
-          .filter(function(r) { 
-            return (r.Pheno_id === d.Pheno_id)
-          })
-          .attr("font-weight","bold")
+          .attr("fill",d => phe_cat_colors(d.category_id))
       })
 
     // scrolling arrows
@@ -1778,11 +1913,13 @@ function drawTable(main_group) {
         })
   }
 }
-)});
-  main.variable(observer()).define(["md"], function(md){return(
+)}
+
+function _22(md){return(
 md `### Threshold Calculations`
-)});
-  main.variable(observer("fdr_thresh")).define("fdr_thresh", ["z","reg_data","alpha"], function(z,reg_data,alpha)
+)}
+
+function _fdr_thresh(z,reg_data,alpha)
 {
 	//
 	// Calculate the false discovery rate threshold.
@@ -1809,8 +1946,9 @@ md `### Threshold Calculations`
                                 
 	return thresh
 }
-);
-  main.variable(observer("bon_thresh")).define("bon_thresh", ["z","reg_data","alpha"], function(z,reg_data,alpha)
+
+
+function _bon_thresh(z,reg_data,alpha)
 {
   //
 	// Calculate the bonferroni correction threshold.
@@ -1825,8 +1963,9 @@ md `### Threshold Calculations`
   let p_values = z.getCol("pval",z.sortByCol("pval", "asc", reg_data));
 	return alpha / p_values.length
 }
-);
-  main.variable(observer("thresh_value")).define("thresh_value", ["z","thresh_types","fdr_thresh","bon_thresh"], function(z,thresh_types,fdr_thresh,bon_thresh)
+
+
+function _thresh_value(z,thresh_types,fdr_thresh,bon_thresh)
 {
   let thresh = z.filter(r => r.s === 1, thresh_types)
   if (thresh[0].name === "FDR"){
@@ -1836,48 +1975,59 @@ md `### Threshold Calculations`
     return bon_thresh
   }
 }
-);
-  main.variable(observer()).define(["md"], function(md){return(
-md `### Color Scales`
-)});
-  main.variable(observer("phe_cat_colors")).define("phe_cat_colors", ["d3"], function(d3)
-{
-  let cats = ['circulatory system',
-        'congenital anomalies',
-        'dermatologic',
-        'digestive',
-        'endocrine/metabolic',
-        'genitourinary',
-        'hematopoietic',
-        'infectious diseases',
-        'injuries & poisonings',
-        'mental disorders',
-        'musculoskeletal',
-        'neoplasms',
-        'neurological',
-        'pregnancy complications',
-        'respiratory',
-        'sense organs',
-        'symptoms',
-        'other'];
-  
-var myColor = d3.scaleOrdinal().domain(cats)
-  .range(["#840000", "#ff000d", "#f97306", "#de7e5d","#ffb07c","#f5bf03",  "#c0fb2d", "#39ad48", "#53fca1", "#13eac9","#8ab8fe","#0343df","#004577","#5729ce","#966ebd","#a00498","#94568c","#59656d"])
 
-return myColor
+
+function _26(md){return(
+md `### Color Scales`
+)}
+
+function _phe_cat_colors(){return(
+function phe_cat_colors(category_id) {
+  let remainder = category_id % 5;
+  if (remainder === 0){
+    return "#ff000d"
+  }
+  else if (remainder === 1){
+    return "#f5bf03"
+  }
+  else if (remainder === 2){
+    return "#39ad48" // "#13eac9"
+  }
+  else if (remainder === 3){
+    return "#0343df" // "#004577"
+  }
+  
+  return "#a00498" // "#94568c"
 }
-);
-  main.variable(observer("cor_scale")).define("cor_scale", ["d3"], function(d3){return(
-d3.scaleLinear()
-  .domain([-1,0,1])
-  .range(['red', '#ddd', 'blue'])
-)});
-  main.variable(observer("reg_beta_scale")).define("reg_beta_scale", ["d3"], function(d3){return(
-d3.scaleLinear()
-  .domain([-2,0,2])
-  .range(['orange', '#ddd', 'navy'])
-)});
-  main.variable(observer("vol_color")).define("vol_color", ["bon_thresh","fdr_thresh"], function(bon_thresh,fdr_thresh){return(
+)}
+
+function _phe_cat_markers(d3){return(
+function phe_cat_markers(category_id) {
+  let quotient = Math.floor(category_id / 5);
+  if (quotient === 0){
+    return d3.symbol().type(d3.symbolCircle).size(75)();
+  }
+  else if (quotient === 1){
+    return d3.symbol().type(d3.symbolDiamond).size(75)();
+  }
+  else if (quotient === 2){
+    return d3.symbol().type(d3.symbolSquare).size(75)();
+  }
+  
+  return d3.symbol().type(d3.symbolTriangle).size(75)();
+}
+)}
+
+function _var_stat_scale(d3){return(
+function var_stat_scale(pval) {
+  if (pval < 0.05){
+    return "gold"
+  }
+  return d3.hcl(0,0,80)
+}
+)}
+
+function _vol_color(bon_thresh,fdr_thresh){return(
 function vol_color(pval) {
   if (pval < bon_thresh){
     return "gold"
@@ -1887,60 +2037,106 @@ function vol_color(pval) {
   }
   return "grey"
 }
-)});
-  main.variable(observer()).define(["md"], function(md){return(
+)}
+
+function _31(md){return(
 md `### Parameters`
-)});
-  main.variable(observer("buffer")).define("buffer", function(){return(
+)}
+
+function _buffer(){return(
 10
-)});
-  main.variable(observer("margin")).define("margin", function(){return(
+)}
+
+function _margin(){return(
 {x: 10, y: 10}
-)});
-  main.variable(observer("alpha")).define("alpha", function(){return(
+)}
+
+function _alpha(){return(
 0.05
-)});
-  main.variable(observer()).define(["md"], function(md){return(
+)}
+
+function _35(md){return(
 md `#### Regression Panel`
-)});
-  main.variable(observer("reg_panel_size")).define("reg_panel_size", function(){return(
+)}
+
+function _reg_panel_size(){return(
 900
-)});
-  main.variable(observer("reg_plot_size")).define("reg_plot_size", ["reg_panel_size","reg_plot_legend_height","reg_table_height"], function(reg_panel_size,reg_plot_legend_height,reg_table_height){return(
+)}
+
+function _reg_plot_size(reg_panel_size,reg_plot_legend_height,reg_table_height){return(
 {width: (reg_panel_size)/2,
                   height: (reg_panel_size-reg_plot_legend_height - reg_table_height)}
-)});
-  main.variable(observer("reg_plot_legend_height")).define("reg_plot_legend_height", function(){return(
+)}
+
+function _reg_plot_legend_height(){return(
 100
-)});
-  main.variable(observer("reg_table_height")).define("reg_table_height", function(){return(
+)}
+
+function _reg_table_height(){return(
 150
-)});
-  main.variable(observer("cat_legend_width")).define("cat_legend_width", ["reg_panel_size"], function(reg_panel_size){return(
+)}
+
+function _cat_legend_width(reg_panel_size){return(
 reg_panel_size*(3/4)
-)});
-  main.variable(observer("num_rows")).define("num_rows", function(){return(
+)}
+
+function _num_rows(){return(
 7
-)});
-  main.variable(observer()).define(["md"], function(md){return(
+)}
+
+function _point_col(z,OR_type)
+{
+  let selected_data = z.filter(r => r.s===1, OR_type)
+  return selected_data[0].point
+}
+
+
+function _up_lim_col(z,OR_type)
+{
+  let selected_data = z.filter(r => r.s===1, OR_type)
+  return selected_data[0].up_lim
+}
+
+
+function _low_lim_col(z,OR_type)
+{
+  let selected_data = z.filter(r => r.s===1, OR_type)
+  return selected_data[0].low_lim
+}
+
+
+function _xaxis_name(z,OR_type)
+{
+  let selected_data = z.filter(r => r.s===1, OR_type)
+  return selected_data[0].name
+}
+
+
+function _46(md){return(
 md`#### Group Panel`
-)});
-  main.variable(observer("legend_height")).define("legend_height", function(){return(
+)}
+
+function _legend_height(){return(
 39
-)});
-  main.variable(observer("group_panel_size")).define("group_panel_size", function(){return(
+)}
+
+function _group_panel_size(){return(
 700
-)});
-  main.variable(observer("var_dist_size")).define("var_dist_size", ["group_panel_size"], function(group_panel_size){return(
-{width:group_panel_size*(2/5), height:group_panel_size*(2/3)}
-)});
-  main.variable(observer("var_dist2_size")).define("var_dist2_size", ["group_panel_size"], function(group_panel_size){return(
-{width:group_panel_size*(3/5), height:group_panel_size*(2/3)}
-)});
-  main.variable(observer("reg_builder_size")).define("reg_builder_size", ["group_panel_size","legend_height"], function(group_panel_size,legend_height){return(
-{width:group_panel_size, height:(group_panel_size)*(1/3)-legend_height}
-)});
-  main.variable(observer("var1_select")).define("var1_select", ["z","var_comp"], function(z,var_comp)
+)}
+
+function _var_dist_size(group_panel_size){return(
+{width:group_panel_size*(2/5), height:group_panel_size*(3/4)}
+)}
+
+function _var_dist2_size(group_panel_size,legend_height){return(
+{width:group_panel_size*(3/5), height:group_panel_size*(3/4)-legend_height}
+)}
+
+function _reg_builder_size(group_panel_size){return(
+{width:group_panel_size, height:(group_panel_size)*(1/4)}
+)}
+
+function _var1_select(z,var_comp)
 {
   let num_selected = z.filter(r => r.s===1, var_comp).length
   if (num_selected > 0)
@@ -1949,8 +2145,9 @@ md`#### Group Panel`
     return ''
   }
 }
-);
-  main.variable(observer("var2_select")).define("var2_select", ["z","var_comp"], function(z,var_comp)
+
+
+function _var2_select(z,var_comp)
 {
   let num_selected = z.filter(r => r.s===1, var_comp).length
   if (num_selected === 1){
@@ -1963,8 +2160,9 @@ md`#### Group Panel`
     return ''
   }
 }
-);
-  main.variable(observer("reg_list_strings")).define("reg_list_strings", ["reg_list"], function(reg_list)
+
+
+function _reg_list_strings(reg_list)
 {
   let list = []
   let reg_str = ""
@@ -1981,24 +2179,25 @@ md`#### Group Panel`
   }
   return list
 }
-);
-  main.variable(observer()).define(["md"], function(md){return(
+
+
+function _55(md){return(
 md `## Data`
-)});
-  main.variable(observer()).define(["md"], function(md){return(
+)}
+
+function _56(md){return(
 md `### Mutables`
-)});
-  main.define("initial reg_args", function(){return(
-[{ cmd:"run_reg", cov:[], rtype:-1}]
-)});
-  main.variable(observer("mutable reg_args")).define("mutable reg_args", ["Mutable", "initial reg_args"], (M, _) => new M(_));
-  main.variable(observer("reg_args")).define("reg_args", ["mutable reg_args"], _ => _.generator);
-  main.define("initial reg_list", function(){return(
+)}
+
+function _reg_args(){return(
+[{ cmd:"run_reg", cov:[], rtype:-1, save_cov:0}]
+)}
+
+function _reg_list(){return(
 [{ cmd:"run_reg", cov:[], rtype:0}]
-)});
-  main.variable(observer("mutable reg_list")).define("mutable reg_list", ["Mutable", "initial reg_list"], (M, _) => new M(_));
-  main.variable(observer("reg_list")).define("reg_list", ["mutable reg_list"], _ => _.generator);
-  main.define("initial var_comp", ["group_vars"], function(group_vars)
+)}
+
+function _var_comp(group_vars)
 {
   let var_info = []
   for (var i=0; i < group_vars.length; i++){
@@ -2009,10 +2208,9 @@ md `### Mutables`
   }
   return var_info
 }
-);
-  main.variable(observer("mutable var_comp")).define("mutable var_comp", ["Mutable", "initial var_comp"], (M, _) => new M(_));
-  main.variable(observer("var_comp")).define("var_comp", ["mutable var_comp"], _ => _.generator);
-  main.define("initial cov_select", ["group_vars"], function(group_vars)
+
+
+function _cov_select(group_vars)
 {
   let var_info = []
   for (var i=0; i < group_vars.length; i++){
@@ -2023,41 +2221,46 @@ md `### Mutables`
   }
   return var_info
 }
-);
-  main.variable(observer("mutable cov_select")).define("mutable cov_select", ["Mutable", "initial cov_select"], (M, _) => new M(_));
-  main.variable(observer("cov_select")).define("cov_select", ["mutable cov_select"], _ => _.generator);
-  main.define("initial reg_types", function(){return(
+
+
+function _reg_types(){return(
 [{rname:'Binary',rtype:0,s:1},
                      {rname:'Count',rtype:1,s:0},
                      {rname:'Duration',rtype:2,s:0}]
-)});
-  main.variable(observer("mutable reg_types")).define("mutable reg_types", ["Mutable", "initial reg_types"], (M, _) => new M(_));
-  main.variable(observer("reg_types")).define("reg_types", ["mutable reg_types"], _ => _.generator);
-  main.define("initial thresh_types", function(){return(
+)}
+
+function _thresh_types(){return(
 [{name:'FDR',id:0,s:1},
                         {name:'Bonferroni',id:1,s:0}]
-)});
-  main.variable(observer("mutable thresh_types")).define("mutable thresh_types", ["Mutable", "initial thresh_types"], (M, _) => new M(_));
-  main.variable(observer("thresh_types")).define("thresh_types", ["mutable thresh_types"], _ => _.generator);
-  main.define("initial start_ix", function(){return(
+)}
+
+function _OR_type(){return(
+[{name:'Log Odds Ratio',point:'beta',low_lim:'beta_ci_low',up_lim:'beta_ci_up',s:1},
+                   {name:'Odds Ratio',point:'OR',low_lim:'OR_ci_low',up_lim:'OR_ci_up',s:0}]
+)}
+
+function _start_ix(){return(
 0
-)});
-  main.variable(observer("mutable start_ix")).define("mutable start_ix", ["Mutable", "initial start_ix"], (M, _) => new M(_));
-  main.variable(observer("start_ix")).define("start_ix", ["mutable start_ix"], _ => _.generator);
-  main.define("initial run_status", function(){return(
+)}
+
+function _run_status(){return(
 0
-)});
-  main.variable(observer("mutable run_status")).define("mutable run_status", ["Mutable", "initial run_status"], (M, _) => new M(_));
-  main.variable(observer("run_status")).define("run_status", ["mutable run_status"], _ => _.generator);
-  main.variable(observer()).define(["md"], function(md){return(
+)}
+
+function _save_covariate_data(){return(
+0
+)}
+
+function _67(md){return(
 md `### Import Data`
-)});
-  main.variable(observer("response_var")).define("response_var", ["$","Promises"], async function*($,Promises)
+)}
+
+async function* _response_var($,Promises)
 {
   let data_for_server = { cmd:"init", ftype: "response"};
 
     let next_data = await $.ajax({
-      url: 'http://localhost:5000/grab_data',
+      url: 'http://127.0.0.1:5000/grab_data',
       dataType: 'json',
       data: JSON.stringify(data_for_server),
       contentType: 'application/json;charset=UTF-8',
@@ -2066,13 +2269,14 @@ md `### Import Data`
 
     yield Promises.delay(1000, JSON.parse(next_data));
 }
-);
-  main.variable(observer("group_data")).define("group_data", ["$","Promises"], async function*($,Promises)
+
+
+async function* _group_data($,Promises)
 {
   let data_for_server = { cmd:"init", ftype: "group"};
 
     let next_data = await $.ajax({
-      url: 'http://localhost:5000/grab_data',
+      url: 'http://127.0.0.1:5000/grab_data',
       dataType: 'json',
       data: JSON.stringify(data_for_server),
       contentType: 'application/json;charset=UTF-8',
@@ -2081,13 +2285,14 @@ md `### Import Data`
 
     yield Promises.delay(1000, JSON.parse(next_data));
 }
-);
-  main.variable(observer("reg")).define("reg", ["reg_args","$","Promises"], async function*(reg_args,$,Promises)
+
+
+async function* _reg(reg_args,$,Promises)
 {
   let data_for_server = reg_args[0];
 
     let next_data = await $.ajax({
-      url: 'http://localhost:5000/grab_data',
+      url: 'http://127.0.0.1:5000/grab_data',
       dataType: 'json',
       data: JSON.stringify(data_for_server),
       contentType: 'application/json;charset=UTF-8',
@@ -2096,24 +2301,44 @@ md `### Import Data`
 
     yield Promises.delay(1000, JSON.parse(next_data));
 }
-);
-  main.variable(observer("reg_data")).define("reg_data", ["z","reg"], function(z,reg)
+
+
+function _reg_data(z,reg)
 {
   // small pvals sometimes get convereted to 0 by jsonify - this fixes them
   const pvals = z.deriveCol((r) => parseFloat(r.pval_str), reg)
   let reg_data = z.addCol("pval", pvals, reg)
   return z.sortByCol("category_id", "asc", reg_data)
 }
-);
-  main.variable(observer("phe_categories")).define("phe_categories", function(){return(
-[{"category":0,"category_string":"circulatory system"},{"category":1,"category_string":"congenital anomalies"},{"category":2,"category_string":"dermatologic"},{"category":3,"category_string":"digestive"},{"category":4,"category_string":"endocrine\/metabolic"},{"category":5,"category_string":"genitourinary"},{"category":6,"category_string":"hematopoietic"},{"category":7,"category_string":"infectious diseases"},{"category":8,"category_string":"injuries & poisonings"},{"category":9,"category_string":"mental disorders"},{"category":10,"category_string":"musculoskeletal"},{"category":11,"category_string":"neoplasms"},{"category":12,"category_string":"neurological"},{"category":13,"category_string":"pregnancy complications"},{"category":14,"category_string":"respiratory"},{"category":15,"category_string":"sense organs"},{"category":16,"category_string":"symptoms"},{"category":17,"category_string":"other"}]
-)});
-  main.variable(observer("hist_data")).define("hist_data", ["$","Promises"], async function*($,Promises)
+
+
+function _phe_categories(){return(
+[{"category":0,"category_string":"circulatory system"},
+                  {"category":1,"category_string":"congenital anomalies"},
+                  {"category":2,"category_string":"dermatologic"},
+                  {"category":3,"category_string":"digestive"},
+                  {"category":4,"category_string":"endocrine\/metabolic"},
+                  {"category":5,"category_string":"genitourinary"},
+                  {"category":6,"category_string":"hematopoietic"},
+                  {"category":7,"category_string":"infectious diseases"},
+                  {"category":8,"category_string":"injuries & poisonings"},
+                  {"category":9,"category_string":"mental disorders"},
+                  {"category":10,"category_string":"musculoskeletal"},
+                  {"category":11,"category_string":"neoplasms"},
+                  {"category":12,"category_string":"neurological"},
+                  {"category":13,"category_string":"other"},
+                  {"category":14,"category_string":"pregnancy complications"},
+                  {"category":15,"category_string":"respiratory"},
+                  {"category":16,"category_string":"sense organs"},
+                  {"category":17,"category_string":"symptoms"}]
+)}
+
+async function* _hist_data($,Promises)
 {
   let data_for_server = { cmd:"init", ftype: "histograms"};
 
     let next_data = await $.ajax({
-      url: 'http://localhost:5000/grab_data',
+      url: 'http://127.0.0.1:5000/grab_data',
       dataType: 'json',
       data: JSON.stringify(data_for_server),
       contentType: 'application/json;charset=UTF-8',
@@ -2122,16 +2347,18 @@ md `### Import Data`
 
     yield Promises.delay(1000, JSON.parse(next_data));
 }
-);
-  main.variable(observer("group_vars")).define("group_vars", ["z","hist_data"], function(z,hist_data){return(
+
+
+function _group_vars(z,hist_data){return(
 z.unique(z.getCol("var_name",hist_data))
-)});
-  main.variable(observer("jhist_data")).define("jhist_data", ["var1_select","var2_select","$","Promises"], async function*(var1_select,var2_select,$,Promises)
+)}
+
+async function* _jhist_data(var1_select,var2_select,$,Promises)
 {
   let data_for_server = { cmd:"compute_hist2D", var1: var1_select, var2: var2_select};
 
     let next_data = await $.ajax({
-      url: 'http://localhost:5000/grab_data',
+      url: 'http://127.0.0.1:5000/grab_data',
       dataType: 'json',
       data: JSON.stringify(data_for_server),
       contentType: 'application/json;charset=UTF-8',
@@ -2140,13 +2367,14 @@ z.unique(z.getCol("var_name",hist_data))
 
     yield Promises.delay(1000, JSON.parse(next_data));
 }
-);
-  main.variable(observer("var_comp_stats")).define("var_comp_stats", ["var1_select","var2_select","$","Promises"], async function*(var1_select,var2_select,$,Promises)
+
+
+async function* _var_comp_stats(var1_select,var2_select,$,Promises)
 {
   let data_for_server = { cmd:"independence_tests", var1: var1_select, var2: var2_select};
 
     let next_data = await $.ajax({
-      url: 'http://localhost:5000/grab_data',
+      url: 'http://127.0.0.1:5000/grab_data',
       dataType: 'json',
       data: JSON.stringify(data_for_server),
       contentType: 'application/json;charset=UTF-8',
@@ -2155,13 +2383,14 @@ z.unique(z.getCol("var_name",hist_data))
 
     yield Promises.delay(1000, JSON.parse(next_data));
 }
-);
-  main.variable(observer("table_cols")).define("table_cols", ["reg_panel_size"], function(reg_panel_size)
+
+
+function _table_cols(reg_panel_size)
 {
   let base_data = [{name: 'PheCode', width:reg_panel_size*0.07},
                    {name: 'Phenotype', width:reg_panel_size*0.4},
                    {name: 'Count', width:reg_panel_size*0.07},
-                   {name: 'Beta', width:reg_panel_size*0.07},
+                   {name: 'OR', width:reg_panel_size*0.07},
                    {name: 'P-value', width:reg_panel_size*0.09},
                    {name: 'Category', width:reg_panel_size*0.15}
                   ]
@@ -2172,26 +2401,136 @@ z.unique(z.getCol("var_name",hist_data))
   }
   return base_data
 }
-);
-  main.variable(observer("table_data")).define("table_data", ["z","reg_data","start_ix","num_rows"], function(z,reg_data,start_ix,num_rows)
+
+
+function _table_data(z,reg_data,start_ix,num_rows)
 {
   let table_data = z.sortByCol('pval','asc',reg_data)
       
   return table_data.slice(start_ix,start_ix+num_rows,table_data)
 }
-);
-  main.variable(observer()).define(["md"], function(md){return(
+
+
+function _79(md){return(
 md `### Imports`
-)});
-  main.variable(observer("d3")).define("d3", ["require"], function(require){return(
+)}
+
+function _d3(require){return(
 require('d3@5')
-)});
-  main.variable(observer("z")).define("z", ["require"], function(require){return(
+)}
+
+function _z(require){return(
 require('zebras')
-)});
-  main.variable(observer("math")).define("math", ["require"], function(require){return(
+)}
+
+function _math(require){return(
 require('https://unpkg.com/mathjs@5.9.0/dist/math.min.js')
-)});
+)}
+
+export default function define(runtime, observer) {
+  const main = runtime.module();
+  main.variable(observer()).define(["md"], _1);
+  main.variable(observer()).define(["group_panel_size","margin","d3","group_panel"], _2);
+  main.variable(observer()).define(["reg_panel_size","margin","d3","reg_panel"], _3);
+  main.variable(observer()).define(["md"], _4);
+  main.variable(observer("group_panel")).define("group_panel", ["group_panel_size","margin","var_dist_size","legend_height","plot_groupvar_hists","indep_comp","reg_builder","group_legend","d3","var_dist2_size"], _group_panel);
+  main.variable(observer("plot_groupvar_hists")).define("plot_groupvar_hists", ["d3","group_vars","var_dist_size","z","hist_data","var_stat_scale","group_data","response_var","draw_groupvar_buttons"], _plot_groupvar_hists);
+  main.variable(observer("draw_groupvar_buttons")).define("draw_groupvar_buttons", ["var_comp","d3","z","mutable var_comp","cov_select","mutable cov_select"], _draw_groupvar_buttons);
+  main.variable(observer("indep_comp")).define("indep_comp", ["jhist_data","var_dist2_size","z","var1_select","hist_data","var2_select","d3","comp_stats"], _indep_comp);
+  main.variable(observer("comp_stats")).define("comp_stats", ["d3","var_comp_stats","var_dist2_size","var1_select","var2_select","z","var_stat_scale","response_var"], _comp_stats);
+  main.variable(observer("reg_builder")).define("reg_builder", ["group_data","reg_builder_size","var_dist_size","d3","response_var","math","reg_types","mutable reg_types","z","cov_selection"], _reg_builder);
+  main.variable(observer("cov_selection")).define("cov_selection", ["z","cov_select","reg_builder_size","d3","response_var","run_status","reg_types","reg_list","save_covariate_data","mutable reg_list","mutable reg_args","mutable start_ix","mutable run_status","mutable save_covariate_data","hist_data"], _cov_selection);
+  main.variable(observer("group_legend")).define("group_legend", ["var_dist2_size","legend_height","d3","response_var","var_stat_scale"], _group_legend);
+  main.variable(observer("makeArr")).define("makeArr", _makeArr);
+  main.variable(observer()).define(["md"], _14);
+  main.variable(observer("reg_panel")).define("reg_panel", ["draw_cat_legend","draw_volcano_legend","thresh_select_panel","plot_logOdds","plot_volcano","drawTable","mutable run_status"], _reg_panel);
+  main.variable(observer("plot_logOdds")).define("plot_logOdds", ["z","thresh_value","reg_data","d3","reg_plot_size","low_lim_col","up_lim_col","reg_plot_legend_height","buffer","phe_cat_colors","vol_color","xaxis_name","phe_cat_markers","point_col","OR_type","mutable OR_type"], _plot_logOdds);
+  main.variable(observer("plot_volcano")).define("plot_volcano", ["d3","reg_data","reg_plot_size","point_col","reg_plot_legend_height","buffer","phe_cat_colors","vol_color","xaxis_name"], _plot_volcano);
+  main.variable(observer("draw_volcano_legend")).define("draw_volcano_legend", ["cat_legend_width","d3"], _draw_volcano_legend);
+  main.variable(observer("draw_cat_legend")).define("draw_cat_legend", ["cat_legend_width","reg_plot_legend_height","d3","phe_categories","phe_cat_colors","phe_cat_markers"], _draw_cat_legend);
+  main.variable(observer("thresh_select_panel")).define("thresh_select_panel", ["reg_panel_size","cat_legend_width","reg_plot_legend_height","d3","thresh_types","mutable thresh_types","z"], _thresh_select_panel);
+  main.variable(observer("drawTable")).define("drawTable", ["reg_plot_legend_height","reg_plot_size","reg_panel_size","reg_table_height","d3","reg_data","table_data","table_cols","z","phe_cat_colors","vol_color","buffer","start_ix","num_rows","mutable start_ix"], _drawTable);
+  main.variable(observer()).define(["md"], _22);
+  main.variable(observer("fdr_thresh")).define("fdr_thresh", ["z","reg_data","alpha"], _fdr_thresh);
+  main.variable(observer("bon_thresh")).define("bon_thresh", ["z","reg_data","alpha"], _bon_thresh);
+  main.variable(observer("thresh_value")).define("thresh_value", ["z","thresh_types","fdr_thresh","bon_thresh"], _thresh_value);
+  main.variable(observer()).define(["md"], _26);
+  main.variable(observer("phe_cat_colors")).define("phe_cat_colors", _phe_cat_colors);
+  main.variable(observer("phe_cat_markers")).define("phe_cat_markers", ["d3"], _phe_cat_markers);
+  main.variable(observer("var_stat_scale")).define("var_stat_scale", ["d3"], _var_stat_scale);
+  main.variable(observer("vol_color")).define("vol_color", ["bon_thresh","fdr_thresh"], _vol_color);
+  main.variable(observer()).define(["md"], _31);
+  main.variable(observer("buffer")).define("buffer", _buffer);
+  main.variable(observer("margin")).define("margin", _margin);
+  main.variable(observer("alpha")).define("alpha", _alpha);
+  main.variable(observer()).define(["md"], _35);
+  main.variable(observer("reg_panel_size")).define("reg_panel_size", _reg_panel_size);
+  main.variable(observer("reg_plot_size")).define("reg_plot_size", ["reg_panel_size","reg_plot_legend_height","reg_table_height"], _reg_plot_size);
+  main.variable(observer("reg_plot_legend_height")).define("reg_plot_legend_height", _reg_plot_legend_height);
+  main.variable(observer("reg_table_height")).define("reg_table_height", _reg_table_height);
+  main.variable(observer("cat_legend_width")).define("cat_legend_width", ["reg_panel_size"], _cat_legend_width);
+  main.variable(observer("num_rows")).define("num_rows", _num_rows);
+  main.variable(observer("point_col")).define("point_col", ["z","OR_type"], _point_col);
+  main.variable(observer("up_lim_col")).define("up_lim_col", ["z","OR_type"], _up_lim_col);
+  main.variable(observer("low_lim_col")).define("low_lim_col", ["z","OR_type"], _low_lim_col);
+  main.variable(observer("xaxis_name")).define("xaxis_name", ["z","OR_type"], _xaxis_name);
+  main.variable(observer()).define(["md"], _46);
+  main.variable(observer("legend_height")).define("legend_height", _legend_height);
+  main.variable(observer("group_panel_size")).define("group_panel_size", _group_panel_size);
+  main.variable(observer("var_dist_size")).define("var_dist_size", ["group_panel_size"], _var_dist_size);
+  main.variable(observer("var_dist2_size")).define("var_dist2_size", ["group_panel_size","legend_height"], _var_dist2_size);
+  main.variable(observer("reg_builder_size")).define("reg_builder_size", ["group_panel_size"], _reg_builder_size);
+  main.variable(observer("var1_select")).define("var1_select", ["z","var_comp"], _var1_select);
+  main.variable(observer("var2_select")).define("var2_select", ["z","var_comp"], _var2_select);
+  main.variable(observer("reg_list_strings")).define("reg_list_strings", ["reg_list"], _reg_list_strings);
+  main.variable(observer()).define(["md"], _55);
+  main.variable(observer()).define(["md"], _56);
+  main.define("initial reg_args", _reg_args);
+  main.variable(observer("mutable reg_args")).define("mutable reg_args", ["Mutable", "initial reg_args"], (M, _) => new M(_));
+  main.variable(observer("reg_args")).define("reg_args", ["mutable reg_args"], _ => _.generator);
+  main.define("initial reg_list", _reg_list);
+  main.variable(observer("mutable reg_list")).define("mutable reg_list", ["Mutable", "initial reg_list"], (M, _) => new M(_));
+  main.variable(observer("reg_list")).define("reg_list", ["mutable reg_list"], _ => _.generator);
+  main.define("initial var_comp", ["group_vars"], _var_comp);
+  main.variable(observer("mutable var_comp")).define("mutable var_comp", ["Mutable", "initial var_comp"], (M, _) => new M(_));
+  main.variable(observer("var_comp")).define("var_comp", ["mutable var_comp"], _ => _.generator);
+  main.define("initial cov_select", ["group_vars"], _cov_select);
+  main.variable(observer("mutable cov_select")).define("mutable cov_select", ["Mutable", "initial cov_select"], (M, _) => new M(_));
+  main.variable(observer("cov_select")).define("cov_select", ["mutable cov_select"], _ => _.generator);
+  main.define("initial reg_types", _reg_types);
+  main.variable(observer("mutable reg_types")).define("mutable reg_types", ["Mutable", "initial reg_types"], (M, _) => new M(_));
+  main.variable(observer("reg_types")).define("reg_types", ["mutable reg_types"], _ => _.generator);
+  main.define("initial thresh_types", _thresh_types);
+  main.variable(observer("mutable thresh_types")).define("mutable thresh_types", ["Mutable", "initial thresh_types"], (M, _) => new M(_));
+  main.variable(observer("thresh_types")).define("thresh_types", ["mutable thresh_types"], _ => _.generator);
+  main.define("initial OR_type", _OR_type);
+  main.variable(observer("mutable OR_type")).define("mutable OR_type", ["Mutable", "initial OR_type"], (M, _) => new M(_));
+  main.variable(observer("OR_type")).define("OR_type", ["mutable OR_type"], _ => _.generator);
+  main.define("initial start_ix", _start_ix);
+  main.variable(observer("mutable start_ix")).define("mutable start_ix", ["Mutable", "initial start_ix"], (M, _) => new M(_));
+  main.variable(observer("start_ix")).define("start_ix", ["mutable start_ix"], _ => _.generator);
+  main.define("initial run_status", _run_status);
+  main.variable(observer("mutable run_status")).define("mutable run_status", ["Mutable", "initial run_status"], (M, _) => new M(_));
+  main.variable(observer("run_status")).define("run_status", ["mutable run_status"], _ => _.generator);
+  main.define("initial save_covariate_data", _save_covariate_data);
+  main.variable(observer("mutable save_covariate_data")).define("mutable save_covariate_data", ["Mutable", "initial save_covariate_data"], (M, _) => new M(_));
+  main.variable(observer("save_covariate_data")).define("save_covariate_data", ["mutable save_covariate_data"], _ => _.generator);
+  main.variable(observer()).define(["md"], _67);
+  main.variable(observer("response_var")).define("response_var", ["$","Promises"], _response_var);
+  main.variable(observer("group_data")).define("group_data", ["$","Promises"], _group_data);
+  main.variable(observer("reg")).define("reg", ["reg_args","$","Promises"], _reg);
+  main.variable(observer("reg_data")).define("reg_data", ["z","reg"], _reg_data);
+  main.variable(observer("phe_categories")).define("phe_categories", _phe_categories);
+  main.variable(observer("hist_data")).define("hist_data", ["$","Promises"], _hist_data);
+  main.variable(observer("group_vars")).define("group_vars", ["z","hist_data"], _group_vars);
+  main.variable(observer("jhist_data")).define("jhist_data", ["var1_select","var2_select","$","Promises"], _jhist_data);
+  main.variable(observer("var_comp_stats")).define("var_comp_stats", ["var1_select","var2_select","$","Promises"], _var_comp_stats);
+  main.variable(observer("table_cols")).define("table_cols", ["reg_panel_size"], _table_cols);
+  main.variable(observer("table_data")).define("table_data", ["z","reg_data","start_ix","num_rows"], _table_data);
+  main.variable(observer()).define(["md"], _79);
+  main.variable(observer("d3")).define("d3", ["require"], _d3);
+  main.variable(observer("z")).define("z", ["require"], _z);
+  main.variable(observer("math")).define("math", ["require"], _math);
   const child1 = runtime.module(define1);
   main.import("jQuery", "$", child1);
   return main;

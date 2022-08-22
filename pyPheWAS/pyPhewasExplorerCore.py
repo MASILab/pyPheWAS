@@ -474,11 +474,7 @@ def run_phewas(fm, genotypes, covariates, response, reg_type, save_cov=False, ou
 	header = ','.join(['reg_type', reg_type, 'group', 'group.csv', 'response', response, 'covariates', covariates])
 	save_pheno_model(regressions, var_list, base_path, header)
 
-	# Prep for Explorer
 	regressions = regressions[regressions['result_type'] == 'y'].drop(columns=['result_type'])
-	regressions['pval_str'] = regressions.apply(lambda x: str(x['pval']),axis=1)
-	regressions.drop(columns=['pval','Conf-interval beta'], inplace=True)
-
 	return regressions.sort_values(by=['PheCode'])
 
 

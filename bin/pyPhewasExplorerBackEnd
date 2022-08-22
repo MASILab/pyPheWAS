@@ -32,7 +32,7 @@ parser.add_argument('indir', type=str, help='Input directory for pyPheWAS analys
 parser.add_argument('--response', type=str, required=False, default='target', help='Name of column to use as the response (dependent) variable')
 args = parser.parse_args()
 
-data_path = Path(args.indir)
+data_path = Path(args.indir).resolve()
 response = args.response
 
 group_f = data_path / "group.csv"
@@ -166,7 +166,6 @@ def get_signals():
 
 	elif command == "run_reg":
 		reg_type = int(client_data['rtype'])
-		save_cov_data = bool(client_data['save_cov'])
 		if reg_type == -1:
 			# init - don't do anything
 			msg = pd.DataFrame(columns=['msg'])
@@ -174,10 +173,17 @@ def get_signals():
 			data_obj = msg.to_json(orient='records')
 		else:
 			# build & send regressions to notebook
+			save_cov_data = bool(client_data['save_cov']) & (len(client_data['cov']) > 0) # disable if there are no covariates to save
 			cov = '+'.join(client_data['cov'])
 			# check if reg exists - can just reload it instead of re-calculating
-			rpath = data_path/('regressions-%s-%s-%s.csv' %(reg_key[reg_type], response, cov))
-			if rpath.exists():
+			base_name = 'regressions-%s-%s-%s___' %(reg_key[reg_type], response, cov)
+			rpath = data_path/(base_name + 'phecode.csv')
+			skip_calc = rpath.exists()
+			if save_cov_data: # check for covariate files if the user wants them saved too
+				for c in client_data['cov']:
+					cov_path = data_path/(base_name + c + '.csv')
+					skip_calc &= cov_path.exists()
+			if skip_calc:
 				regressions = pd.read_csv(rpath, skiprows=1)
 			else:
 				if reg_type == bin_reg:
@@ -186,7 +192,9 @@ def get_signals():
 					regressions = run_phewas(fm_cnt, group_data, cov, response, reg_key[count_reg], save_cov=save_cov_data, outpath=data_path)
 				elif reg_type == dur_reg:
 					regressions = run_phewas(fm_dur, group_data, cov, response, reg_key[dur_reg], save_cov=save_cov_data, outpath=data_path)
-
+			# prep for Explorer
+			regressions['pval_str'] = regressions.apply(lambda x: str(x['pval']),axis=1)
+			regressions.drop(columns=['pval','Conf-interval beta'], inplace=True)
 			data_obj = regressions.to_json(orient='records')
 	else:
 		data_obj = "ERROR Unknown command %s" % command
