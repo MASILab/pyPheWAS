@@ -14,7 +14,7 @@ Bennett Landman, PhD
 Kerley, C.I., Chaganti, S., Nguyen, T.Q. et al. pyPheWAS: A Phenome-Disease Association Tool for Electronic Medical Record Analysis. *Neuroinform* (2022). https://doi.org/10.1007/s12021-021-09553-4
 
 
-## Latest Release: pyPheWAS 4.0
+## Latest Release: pyPheWAS 4.1
 
 #### 4.1.0
 - pyPheWAS Explorer updates
