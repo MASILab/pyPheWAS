@@ -114,9 +114,7 @@ def get_icd_codes(path, filename, reg_type):
 
 	# check ICD types present in file
 	if not all((icd_types == 9) | (icd_types == 10)):
-		# TODO: add actual exception
-		print('Found an ICD_TYPE that was not 9 or 10 - Please check phenotype file.\nExiting pyPheWAS')
-		sys.exit()
+		raise Exception('Found an ICD_TYPE that was not 9 or 10 - Please check phenotype file.')
 	
 	# merge with Phecode table, depends on which type(s) of ICD codes are in the icd file
 	if icd_types.shape[0] == 2:
@@ -125,7 +123,7 @@ def get_icd_codes(path, filename, reg_type):
 		icd10s = icdfile[icdfile['ICD_TYPE'] == 10]
 		phenotypes_9 = pd.merge(icd9s, icd9_codes,on='ICD_CODE',how='left')
 		phenotypes_10 = pd.merge(icd10s, icd10_codes, on='ICD_CODE',how='left')
-		phenotypes = phenotypes_9.append(phenotypes_10,sort=False)
+		phenotypes = pd.concat([phenotypes_9, phenotypes_10], sort=False, ignore_index=True)
 	elif icd_types[0] == 9:
 		print('Found only ICD-9 codes.')
 		phenotypes = pd.merge(icdfile,icd9_codes,on='ICD_CODE',how='left')
@@ -133,9 +131,7 @@ def get_icd_codes(path, filename, reg_type):
 		print('Found only ICD-10 codes.')
 		phenotypes = pd.merge(icdfile, icd10_codes, on='ICD_CODE',how='left')
 	else:
-		# TODO: add actual exception
-		print('An issue occurred while parsing the ICD_TYPE column - Please check phenotype file.\nExiting pyPheWAS')
-		sys.exit()
+		raise Exception('An issue occurred while parsing the ICD_TYPE column - Please check phenotype file.')
 
 	# check to see if anything was dropped because of incomplete mapping
 	na_mask = phenotypes['PheCode'].isna()
@@ -1127,7 +1123,7 @@ if sum(icd9_codes.columns.isin(['category','category_string'])) == 2:
 else:
 	mcols = ['PheCode','Phenotype']
 	phe_cats = False
-phewas_codes = icd9_codes.append(icd10_codes[mcols])
+phewas_codes = pd.concat([icd9_codes, icd10_codes[mcols]], sort=False, ignore_index=True)
 phewas_codes = phewas_codes[mcols].dropna()
 phewas_codes.drop_duplicates(subset='PheCode',inplace=True)
 phewas_codes.sort_values(by=['PheCode'], inplace=True)
