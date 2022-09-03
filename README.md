@@ -16,6 +16,9 @@ Kerley, C.I., Chaganti, S., Nguyen, T.Q. et al. pyPheWAS: A Phenome-Disease Asso
 
 ## Latest Release: pyPheWAS 4.1
 
+### 4.1.1
+- Minor Bug Fixes
+
 #### 4.1.0
 - pyPheWAS Explorer updates
 - New demographic variables added to synthetic dataset
