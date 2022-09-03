@@ -302,6 +302,8 @@ def get_phenotype_info(p_index):
 	p_name = phewas_codes.loc[p_index, 'Phenotype']
 	p_id = p_name.replace('(','')
 	p_id = p_id.replace(')', '')
+	p_id = p_id.replace('[', '')
+	p_id = p_id.replace(']', '')
 	p_id = p_id.replace(',', '')
 	p_id = p_id.replace(' ', '')
 	p_id = p_id.replace('\'', '')

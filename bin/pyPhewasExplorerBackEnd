@@ -60,8 +60,13 @@ try:
 		gvars = gvars[0:10]
 		print(', '.join(gvars))
 	for g in gvars:
+		g_new = g
 		if len(g) > 15: # shorten so they fit in the Explorer
-			group_data.rename(columns={g : g[:15]}, inplace=True)
+			g_new = g_new[:15]
+		if ' ' in g_new:
+			g_new = g_new.replace(' ', '_')
+		if g_new != g:
+			group_data.rename(columns={g : g_new}, inplace=True)
 	# reset in case names were changed
 	gvars = group_data.columns
 	gvars = gvars.drop(['id', response])
@@ -90,7 +95,7 @@ try:
 
 except Exception as e:
 	print('\nERROR encountered while setting up pyPheWAS Explorer')
-	print(e.args)
+	print(e.args[0])
 	print('----')
 	print('Please press Ctrl+C to quit')
 	sys.exit()
