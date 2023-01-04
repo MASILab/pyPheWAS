@@ -350,104 +350,75 @@ def get_phenotype_info(p_index, code_type):
 		return [p_code, p_name, p_cat, p_cpt_rollup]
 
 
-def fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3='', covariates='', response='genotype',  lr=0, phenotype='', code_type='ICD'):
+
+def fit_pheno_model(model_str, model_type, model_data, phe_thresh=5):
 	"""
-	Runs a logistic regression for a specific phenotype vector
+	Compute the specified logistic regression. Note: model intercept automatically added.
 
-	Compute a logistic regression of the form:
 
-	:math:`Pr(response) \sim logit(phen\_vector1 + covariates)`
+	:param model_str: a patsy-like regression formula
+	:param model_type: type of model [linear, log-0 (logistic without regularization), log-1 (logistic with regularization)]
+	:param model_data: data for estimating model; all variables from the model_str must be included as columns.
+	:param phe_thresh: *[optional]* threshold for running regression; see note (default: *5*)
 
-	``phen_vector1`` is a vector of phenotype aggregates of length N, where N = number of subjects.
-	To use the age feature vector (``phen_vector2``), include 'MaxAgeAtICD' or 'MaxAgeAtCPT' in the ``covariates`` string.
-	Other than 'MaxAgeAtICD' and 'MaxAgeAtCPT', all covariates and the response variable must be included in
-	the group DataFrame.
+	:type model_str: str
+	:type model_type: str
+	:type model_data: pandas DataFrame
+	:type phe_thresh: int
 
-	The returned results list consists of (in order) the -log\ :sub:`10`\ (p-value), p-value, beta, beta's confidence interval,
-	and beta's standard error, estimated from the logit model for the ``phen_vector1`` variable.
-
-	:param genotypes: group data
-	:param phen_vector1: the aggregate phenotype vector
-	:param phen_vector2: the maximum event age phenotype vector
-	:param phen_vector3: *[optional]* the phenotype covariate vector
-	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
-	:param response: *[optional]* response variable in the logit model (default: *genotype*)
-	:param lr: *[optional]* regularized maximum likelihood optimization flag (0 [default] = not regularized; 1 = regularized)
-	:param phenotype: *[optional]* phenotype info [code, description] for this regression (used only for error handling)
-	:param code_type: *[optional]*  EMR data type ('ICD' [default], or 'CPT')
-	:type genotypes: pandas DataFrame
-	:type phen_vector1: numpy array
-	:type phen_vector2: numpy array
-	:type phen_vector3: numpy array
-	:type covariates: str
-	:type response: str
-	:type lr: int [0,1]
-	:type phenotype: list of str
-	:type code_type: str
-
-	:returns: regression results
-	:rtype: list
+	:returns: (regression_model, note)
+	:rtype: tuple (statsmodels model, str)
 
 	"""
-
-	data = genotypes.copy()
-	data['y'] = phen_vector1 # aggregate phenotype data
-
-	# append '+' to covariates (if there are any) -> makes definition of 'f' more elegant
-	if covariates != '':
-		covariates = '+' + covariates
-
-	# add MaxAgeAtEvent to data (if needed)
-	if (code_type == 'ICD') and ('MaxAgeAtICD' in covariates):
-		data['MaxAgeAtICD'] = phen_vector2
-	elif (code_type == 'CPT') and ('MaxAgeAtCPT' in covariates):
-		data['MaxAgeAtCPT'] = phen_vector2
-
-	# add phewas_cov feature matrix to data & covariates (if needed)
-	if phen_vector3.any():
-		data['phe_cov'] = phen_vector3
-		covariates = covariates + '+ phe_cov'
-
-	# define model ('f') for the logisitc regression
-	if lr == 1:
-		predictors = covariates.replace(" ", "").split('+')
-		predictors[0] = 'y'
-		f = [response.strip(), predictors]
+	
+	note = None
+	# to prevent false positives, only run regressions if more than phe_thresh records have positive values
+	if not np.where(model_data['phe'] > 0)[0].shape[0] > phe_thresh: #TODO: check if this works for duration
+		note = f"ERROR < {phe_thresh} records with phecode"
+		model = None
 	else:
-		f = response + '~ y' + covariates
+		try:
+			if model_type == "linear":
+				model = smf.glm(model_str, model_data).fit(disp=False)
+			elif model_type == "log-0": # TODO: fix legacy. or just delete.
+				model = smf.logit(model_str, model_data).fit(disp=False)
+			else:
+				model = smf.logit(model_str, model_data).fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
+		except ValueError as ve:
+			note = f"ERROR computing regression: {str(ve).strip()}"
+			model = None
+		except Exception as e:
+			note = f"ERROR computing regression: {str(e).strip()}"
+			model = None
+	return (model, note)
 
-	try:
-		if lr == 0:
-			# fit logit without regulatization
-			model = smf.logit(f, data).fit(disp=False)
-		elif lr == 1:
-			# fit logit with regularization
-			logit = sm.Logit(data[f[0]], data[f[1]])
-			model = logit.fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
-		else:
-			linreg = smf.logit(f, data).fit(method='bfgs', disp=False)
-		# get results
-		p = model.pvalues.y
-		beta = model.params.y
-		conf = model.conf_int()
-		conf_int = '[%s,%s]' % (conf[0]['y'], conf[1]['y'])
-		stderr = model.bse.y
-		reg_result = [-math.log10(p), p, beta, conf_int, stderr]  # collect results
 
-	except ValueError as ve:
-		print('\n')
-		if phenotype != '':
-			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
-		print(ve)
-		print('lr = % d' %lr)
-		reg_result = [np.nan, np.nan, np.nan, np.nan, np.nan]
-	except Exception as e:
-		print('\n')
-		if phenotype != '':
-			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
-		print(e)
-		reg_result = [np.nan, np.nan, np.nan, np.nan, np.nan]
-	return reg_result
+
+def parse_pheno_model(reg, phe_model, note, phe_info, var='phe'):
+	"""
+	Parse results from fit_pheno_model()
+
+	:param reg: regression dataframe
+	:param phe_model: regression model for phenotype var
+	:param phe_info: metadata for phenotype var
+
+	:returns: None
+	"""
+
+	ix = reg.shape[0] # next available index in reg
+	if phe_model is not None:
+		p = phe_model.pvalues[var]
+		beta = phe_model.params[var]
+		conf = phe_model.conf_int()
+		conf_int = '[%s,%s]' % (conf[0][var], conf[1][var])
+		stderr = phe_model.bse[var]
+		stat_info = [-math.log10(p), p, beta, conf_int, stderr]  # collect results
+	else:
+		stat_info = [np.nan, np.nan, np.nan, None, np.nan]
+
+	reg.loc[ix] = phe_info[0:2] + [note] + stat_info + phe_info[2:]
+	return
+
 
 
 def run_phewas_legacy(fm, genotypes, code_type, covariates='', response='genotype', phe_thresh=5):
@@ -538,11 +509,15 @@ def run_phewas_legacy(fm, genotypes, code_type, covariates='', response='genotyp
 
 
 
-def run_phewas(fm, genotypes, code_type, covariates='', response='genotype', phe_thresh=5):
+def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype', phe_thresh=5, reverse=False):
 	"""
 	Run mass phenotype regressions
 
 	Iterate over all PheWAS/ProWAS codes in the feature matrix, running a logistic regression of the form:
+
+	:math:`Pr(phenotype\_aggregate) \sim logit(response + covariates)`
+
+	or the *reverse* form:
 
 	:math:`Pr(response) \sim logit(phenotype\_aggregate + covariates)`
 
@@ -557,17 +532,21 @@ def run_phewas(fm, genotypes, code_type, covariates='', response='genotype', phe
 	CPT codes that map to the phenotype.
 
 	:param fm: phenotype feature matrix derived via ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix``
-	:param genotypes: group data
+	:param demo: group data
 	:param code_type:  type of EMR code ('ICD' or 'CPT')
+	:param reg_type: type of regression (0:binary, 1:count, 2:duration)
 	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
 	:param response: *[optional]* response variable in the logisitc model (default: *genotype*)
 	:param phe_thresh: *[optional]* threshold for running regression; see note (default: *5*)
+	:param reverse: *[optional]*  if True, use the reverse regression formula. if False [default] use the canonical formula.
 	:type fm: numpy array
-	:type genotypes: pandas DataFrame
+	:type demo: pandas DataFrame
 	:type code_type: str
+	:type reg_type: int
 	:type covariates: str
 	:type response: str
 	:type phe_thresh: int
+	:type reverse: bool
 
 	:returns: regression results for each phenotype
 	:rtype: pandas DataFrame
@@ -581,36 +560,60 @@ def run_phewas(fm, genotypes, code_type, covariates='', response='genotype', phe
 
 	# sort group data by id
 	print('Sorting group data...')
-	genotypes.sort_values(by='id', inplace=True)
-	genotypes.reset_index(inplace=True, drop=True)
+	demo.sort_values(by='id', inplace=True)
+	demo.reset_index(inplace=True, drop=True)
+
 
 	fm_shape = len(fm[0, 0])
 	# check number of phenotypes in the feature matrix
 	num_pheno = pheno_map[code_type]['codes'].shape[0]
 	assert fm_shape == num_pheno, "Expected %d columns in feature matrix, but found %d. Please check the feature matrix" % (num_pheno, fm_shape)
+	
+	### define model ###############################################################
+	cols = covariates.split('+') + [response]
+	model_data = demo[cols].copy()
 
-	# store all of the pertinent data from the regressions
+	if (code_type == 'ICD') and ('MaxAgeAtICD' in model_str):
+		age_col = 'MaxAgeAtICD'
+	elif (code_type == 'CPT') and ('MaxAgeAtCPT' in model_str):
+		age_col = 'MaxAgeAtCPT'
+	else:
+		age_col = None
+
+	if fm[2].any(): # phewas_cov feature matrix
+		model_data['phe_cov'] = fm[2][:,0] # all columns are the same in this one
+		covariates += '+phe_cov'
+
+	if reverse:
+		model_str = f"{response} ~ phe + {covariates}"
+	else:
+		model_str = f"phe ~ {response} + {covariates}"
+
+	model_type = "linear" if (not reverse) and (reg_type != 0) else "log"
+	################################################################################
+
+	# look for perfect separation between response variable and phecodes
+	r_0 = fm[0][model_data[response] == 0, :]
+	r_1 = fm[0][model_data[response] == 1, :]
+	sep_flat = (r_0.any(axis=0) & ~r_1.any(axis=0)) | (~r_0.any(axis=0) & r_1.any(axis=0))
+
 	regressions = pd.DataFrame(columns=pheno_map[code_type]['reg_cols'])
 
 	for index in tqdm(range(fm_shape), desc='Running Regressions'):
 		phen_info = get_phenotype_info(index, code_type)
-		phen_vector1 = fm[0][:, index]
-		phen_vector2 = fm[1][:, index]
-		phen_vector3 = fm[2][:, index]
-		# to prevent false positives, only run regressions if more than phe_thresh records have positive values
-		if np.where(phen_vector1 > 0)[0].shape[0] > phe_thresh:
-			stat_info = fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3, covariates,
-										response, phenotype=phen_info[0:2], lr=1, code_type=code_type)
-		else:
-			# not enough samples to run regression
-			stat_info = [np.nan, np.nan, np.nan, np.nan, np.nan]
 
-		# save regression data
-		info = phen_info[0:2] + stat_info + phen_info[2:]
+		model_data['phe'] = fm[0][:, index] # aggregate phenotype data 
+		if age_col is not None: model_data[age_col] = fm[1][:, index] # MaxAgeAtEvent
 
-		regressions.loc[index] = info
+		phe_model, note = fit_pheno_model(response, model_str, model_type, model_data, phe_thresh=phe_thresh)
+		if sep_flat[index] and (note is None): note = "WARNING perfect separation between phecode and response"
 
-	return regressions.dropna(subset=['p-val']).sort_values(by='p-val')  # sort by significance
+		parse_pheno_model(regressions, phe_model, note, phen_info)
+
+		model_data.drop(columns=['phe'], inplace=True)
+		if age_col is not None: model_data.drop(columns=[age_col], inplace=True)
+
+	return regressions.sort_values(by='p-val')  # sort by significance # TODO: make sure this works!!!! (bin, lin, and dur)
 
 
 """
@@ -1150,7 +1153,7 @@ pheno_map['ICD'] = {'codes' : phewas_codes,
 					'map_name' : 'Phenotype',
 					'cat_key' : 'category' if phe_cats else None,
 					'cat_name' : 'category_string' if phe_cats else None,
-					'reg_cols' : ['PheWAS Code', 'PheWAS Name', '\"-log(p)\"',
+					'reg_cols' : ['PheWAS Code', 'PheWAS Name', 'note', '\"-log(p)\"',
 								  'p-val', 'beta', 'Conf-interval beta',
 								  'std_error', 'category_string', 'ICD-9', 'ICD-10']
 }
@@ -1162,7 +1165,7 @@ pheno_map['CPT'] = {'codes' : prowas_codes,
 					'map_name' : 'prowas_desc',
 					'cat_key' : 'ccs' if pro_cats else None,
 					'cat_name' : 'CCS Label' if pro_cats else None,
-					'reg_cols' : ['ProWAS Code', 'ProWAS Name', '\"-log(p)\"',
+					'reg_cols' : ['ProWAS Code', 'ProWAS Name', 'note', '\"-log(p)\"',
 								  'p-val', 'beta', 'Conf-interval beta',
 								  'std_error', 'CCS Label', 'CPT']
 }
