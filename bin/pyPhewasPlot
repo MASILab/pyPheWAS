@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 
-from pyPheWAS.pyPhewasCorev2 import *
-import os
-import sys
 import argparse
-import time
-import math
-import matplotlib.pyplot as plt
-from pathlib import Path
-import os.path as osp
 
 def parse_args():
     parser = argparse.ArgumentParser(description="pyPheWAS Plotting Tool")
@@ -25,9 +17,21 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+args = parse_args()
+
 """
 Print Start Message
 """
+from pyPheWAS.pyPhewasCorev2 import *
+import os
+import sys
+
+import time
+import math
+import matplotlib.pyplot as plt
+from pathlib import Path
+import os.path as osp
+
 start = time.time()
 print_start_msg()
 print('\npyPhewasPlot: Plot Mass PheCode Regression Results\n')
@@ -36,7 +40,7 @@ print('\npyPhewasPlot: Plot Mass PheCode Regression Results\n')
 """
 Retrieve and validate all arguments.
 """
-args = parse_args()
+
 kwargs = {'path': Path(args.path),
           'statfile': args.statfile,
           'thresh_type': args.thresh_type,
@@ -88,8 +92,8 @@ regressions = pd.read_csv(ff,dtype={'PheWAS Code':str})
 try:
     # make confidence interval numberic instead of a string
     regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
-    regressions['uplim'] = regressions.uplim.str.replace(']', '')
-    regressions['lowlim'] = regressions.lowlim.str.replace('[', '')
+    regressions['uplim'] = regressions.uplim.str.replace(']', '', regex=False)
+    regressions['lowlim'] = regressions.lowlim.str.replace('[', '', regex=False)
     regressions = regressions.astype(dtype={'uplim':float,'lowlim':float})
 except Exception as e:
     print('Error reading regression file:')

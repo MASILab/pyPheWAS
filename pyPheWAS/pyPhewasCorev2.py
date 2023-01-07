@@ -17,6 +17,7 @@ import matplotlib.lines as mlines
 from tqdm import tqdm
 import sys
 import matplotlib
+import warnings
 
 
 def print_start_msg():
@@ -378,12 +379,15 @@ def fit_pheno_model(model_str, model_type, model_data, phe_thresh=5):
 		model = None
 	else:
 		try:
-			if model_type == "linear":
-				model = smf.glm(model_str, model_data).fit(disp=False)
-			elif model_type == "log-0": # TODO: fix legacy. or just delete.
-				model = smf.logit(model_str, model_data).fit(disp=False)
-			else:
-				model = smf.logit(model_str, model_data).fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
+			with warnings.catch_warnings(record=True) as cx_manager:
+				if model_type == "linear":
+					model = smf.glm(model_str, model_data).fit(disp=False)
+				elif model_type == "log-0": # TODO: fix legacy. or just delete.
+					model = smf.logit(model_str, model_data).fit(disp=False)
+				else:
+					model = smf.logit(model_str, model_data).fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0, warn_convergence=False)
+				# deal with statsmodels warnings
+				if len(cx_manager) > 0: note = '|'.join( [str(w.message).replace('\n','. ') for w in cx_manager] )
 		except ValueError as ve:
 			note = f"ERROR computing regression: {str(ve).strip()}"
 			model = None
@@ -394,13 +398,14 @@ def fit_pheno_model(model_str, model_type, model_data, phe_thresh=5):
 
 
 
-def parse_pheno_model(reg, phe_model, note, phe_info, var='phe'):
+def parse_pheno_model(reg, phe_model, note, phe_info, var):
 	"""
 	Parse results from fit_pheno_model()
 
 	:param reg: regression dataframe
 	:param phe_model: regression model for phenotype var
 	:param phe_info: metadata for phenotype var
+	:param var: variable for which to collect results
 
 	:returns: None
 	"""
@@ -412,7 +417,9 @@ def parse_pheno_model(reg, phe_model, note, phe_info, var='phe'):
 		conf = phe_model.conf_int()
 		conf_int = '[%s,%s]' % (conf[0][var], conf[1][var])
 		stderr = phe_model.bse[var]
-		stat_info = [-math.log10(p), p, beta, conf_int, stderr]  # collect results
+		stat_info = [-math.log10(p), p, beta, conf_int, stderr]
+		if phe_model.summary().extra_txt:
+			note = phe_model.summary().extra_txt.replace('\n', '. ')
 	else:
 		stat_info = [np.nan, np.nan, np.nan, None, np.nan]
 
@@ -509,7 +516,7 @@ def run_phewas_legacy(fm, genotypes, code_type, covariates='', response='genotyp
 
 
 
-def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype', phe_thresh=5, reverse=False):
+def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype', phe_thresh=5, canonical=True):
 	"""
 	Run mass phenotype regressions
 
@@ -517,7 +524,7 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 
 	:math:`Pr(phenotype\_aggregate) \sim logit(response + covariates)`
 
-	or the *reverse* form:
+	or the *reverse* form (`canonical=False`):
 
 	:math:`Pr(response) \sim logit(phenotype\_aggregate + covariates)`
 
@@ -538,7 +545,8 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
 	:param response: *[optional]* response variable in the logisitc model (default: *genotype*)
 	:param phe_thresh: *[optional]* threshold for running regression; see note (default: *5*)
-	:param reverse: *[optional]*  if True, use the reverse regression formula. if False [default] use the canonical formula.
+	:param canonical: *[optional]*  if False, use the reverse regression formula. if True [default] use the canonical formula.
+
 	:type fm: numpy array
 	:type demo: pandas DataFrame
 	:type code_type: str
@@ -548,8 +556,8 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 	:type phe_thresh: int
 	:type reverse: bool
 
-	:returns: regression results for each phenotype
-	:rtype: pandas DataFrame
+	:returns: tuple -> (regression results, model equation)
+	:rtype: tuple(pandas DataFrame, str)
 
 
 	.. note:: To prevent false positives & improve statistical power, regressions are only computed for
@@ -571,25 +579,27 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 	
 	### define model ###############################################################
 	cols = covariates.split('+') + [response]
-	model_data = demo[cols].copy()
 
-	if (code_type == 'ICD') and ('MaxAgeAtICD' in model_str):
-		age_col = 'MaxAgeAtICD'
-	elif (code_type == 'CPT') and ('MaxAgeAtCPT' in model_str):
-		age_col = 'MaxAgeAtCPT'
+	age_col = 'MaxAgeAtICD' if (code_type == 'ICD') else 'MaxAgeAtCPT'
+	if age_col in cols:
+		cols.remove(age_col)
 	else:
 		age_col = None
+	
+	model_data = demo[cols].copy()
 
+	phe_cov = 'phewas_cov' if (code_type == 'ICD') else 'prowas_cov'
 	if fm[2].any(): # phewas_cov feature matrix
-		model_data['phe_cov'] = fm[2][:,0] # all columns are the same in this one
-		covariates += '+phe_cov'
+		model_data[phe_cov] = fm[2][:,0] # all columns are the same in this one
+		covariates += f'+{phe_cov}'
 
-	if reverse:
-		model_str = f"{response} ~ phe + {covariates}"
+	if not canonical:
+		model_str = f"{response}~phe+{covariates}"
 	else:
-		model_str = f"phe ~ {response} + {covariates}"
+		model_str = f"phe~{response}+{covariates}"
 
-	model_type = "linear" if (not reverse) and (reg_type != 0) else "log"
+	model_type = "linear" if canonical and (reg_type != 0) else "log"
+	res_var = response if canonical else "phe"
 	################################################################################
 
 	# look for perfect separation between response variable and phecodes
@@ -605,15 +615,15 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 		model_data['phe'] = fm[0][:, index] # aggregate phenotype data 
 		if age_col is not None: model_data[age_col] = fm[1][:, index] # MaxAgeAtEvent
 
-		phe_model, note = fit_pheno_model(response, model_str, model_type, model_data, phe_thresh=phe_thresh)
+		phe_model, note = fit_pheno_model(model_str, model_type, model_data, phe_thresh)
 		if sep_flat[index] and (note is None): note = "WARNING perfect separation between phecode and response"
 
-		parse_pheno_model(regressions, phe_model, note, phen_info)
+		parse_pheno_model(regressions, phe_model, note, phen_info, res_var)
 
 		model_data.drop(columns=['phe'], inplace=True)
 		if age_col is not None: model_data.drop(columns=[age_col], inplace=True)
 
-	return regressions.sort_values(by='p-val')  # sort by significance # TODO: make sure this works!!!! (bin, lin, and dur)
+	return regressions.sort_values(by='p-val'), model_str # sort by significance # TODO: make sure this works!!!! (bin, lin, and dur)
 
 
 """
@@ -1110,6 +1120,8 @@ threshold_map = {
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
+
+RESERVED_COL_NAMES = ['MaxAgeAtICD', 'MaxAgeAtCPT', 'phe', 'phewas_cov', 'prowas_cov']
 
 #----------------------------------------------------------
 # load ICD maps (pyPheWAS)

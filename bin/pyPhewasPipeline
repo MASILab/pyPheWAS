@@ -1,12 +1,6 @@
 #!/usr/bin/env python
 
-from pyPheWAS.pyPhewasCorev2 import *
-import time
-import math
 import argparse
-import sys
-from pathlib import Path
-import os.path as osp
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run the Entire pyPheWAS Pipeline (Lookup, Model, Plot)")
@@ -20,6 +14,7 @@ def parse_args():
     parser.add_argument('--phewas_cov', required=False, default=None, type=str, help='PheCodes to use as covariates in pyPhewasModel regression')
     parser.add_argument('--covariates', required=False, default='', type=str, help='Variables to be used as covariates')
     parser.add_argument('--response', required=False, default='genotype', type=str, help='Variable to predict instead of genotype')
+    parser.add_argument('--canonical', required=False, default="True", type=str, help='Use response as a predictor [True, default] or the dependent variable [False] in the PheWAS equation')
     parser.add_argument('--reg_thresh', required=False, default=5, type=int, help='Threshold of subjects presenting a PheCode required for running regression (default: 5)')
     parser.add_argument('--legacy', required=False, default="False", type=str, help='Use legacy solver scheme (default: False)')
 
@@ -33,9 +28,19 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
+args = parse_args()
+
 """
 Print Start Message
 """
+from pyPheWAS.pyPhewasCorev2 import *
+import time
+import math
+import sys
+from pathlib import Path
+import os.path as osp
+
 start = time.time()
 print_start_msg()
 print('\npyPhewasPipeline: Run the entire pyPheWAS Pipeline (Lookup, Model, Plot)\n')
@@ -44,13 +49,13 @@ print('\npyPhewasPipeline: Run the entire pyPheWAS Pipeline (Lookup, Model, Plot
 """
 Retrieve and validate all arguments.
 """
-args = parse_args()
 kwargs = {'path': Path(args.path),
           'phenotype': args.phenotype,
           'group': args.group,
           'reg_type': args.reg_type,
           'postfix': args.postfix,
           'response': args.response,
+          'canonical': args.canonical,
           'reg_thresh':args.reg_thresh,
           'covariates': args.covariates,
           'phewas_cov': args.phewas_cov,
@@ -85,7 +90,7 @@ else:
 # Assign the output postfix if none was assigned
 if kwargs['postfix'] is None:
     kwargs['postfix'] = osp.splitext(kwargs['group'])[0]
-    if kwargs['covariates'] is not '':
+    if kwargs['covariates'] != '':
         kwargs['postfix'] = kwargs['covariates'] + '_' + kwargs['postfix']
 else:
     # make sure there's not an extension
@@ -93,6 +98,8 @@ else:
 
 assert kwargs['phewas_label'] in ["plot","axis"], "%s is not a valid PheCode label location" % (kwargs['phewas_label'])
 
+assert kwargs['canonical'] in ["True", "False"], "%s is not a valid canonical value (True or False)" % kwargs['canonical']
+kwargs['canonical'] = eval(kwargs['canonical'])
 assert kwargs['legacy'] in ["True", "False"], "%s is not a valid legacy value (True or False)" % kwargs['legacy']
 kwargs['legacy'] = eval(kwargs['legacy'])
 assert kwargs['imbalance'] in ["True", "False"], "%s is not a valid imbalance value (True or False)" % kwargs['imbalance']
@@ -123,10 +130,10 @@ assert response in genotypes.columns, "response %s is not a column in the group 
 # check covariates
 if covariates != '':
     for cov in covariates.replace(" ", "").split('+'):
-        if cov != 'MaxAgeAtICD':
-            assert cov in genotypes.columns, "covariate %s is not a column in the group file" % cov
+        if cov in RESERVED_COL_NAMES:
+            assert cov not in genotypes.columns, "%s is a reserved covariate name [%s]; please remove or rename this column in the group file" % (cov, ','.join(RESERVED_COL_NAMES))
         else:
-            assert 'MaxAgeAtICD' not in genotypes.columns, "covariate %s is a reserved covariate name; please remove or rename this column in the group file" % cov
+            assert cov in genotypes.columns, "covariate %s is not a column in the group file" % cov
 
 if not {'MaxAgeAtVisit'}.issubset(genotypes.columns):
 	print('WARNING: MaxAgeAtVisit was not found in group file. Calculating MaxAgeAtVisit from phenotype data')
@@ -154,19 +161,21 @@ pyPhewasModel
 """
 
 print("Running PheWAS regressions...")
-if legacy:
+if legacy: # TODO: maybe get rid of this
     # regressions are run with regularization is only one target group has them; regressions are run without regularization otherwise
     regressions = run_phewas_legacy(fm, genotypes, 'ICD', covariates, response, reg_thresh)
 else:
     # all regressions are run with regularization
-    regressions = run_phewas(fm, genotypes, 'ICD', covariates, response, reg_thresh)
+    regressions, model_str = run_phewas(fm, genotypes, 'ICD', regression_map[reg_type], 
+                        covariates=covariates, response=response, 
+                        phe_thresh=reg_thresh, canonical=canonical)
 
 reg_outfile = "regressions_" + postfix + ".csv"
 print("Saving regression data to %s" % (path / reg_outfile))
 
 if phewas_cov is not None:
-    covariates = covariates + '+' + phewas_cov
-h = ['group', group, 'feature_matrix', fm_outfile, 'reg_type', reg_type, 'code_type', 'ICD', 'covariates', covariates]
+    model_str = model_str.replace('phewas_cov', phewas_cov)
+h = ['model_equation', model_str, 'group', group, 'feature_matrix', fm_outfile, 'reg_type', reg_type, 'code_type', 'ICD']
 header = ','.join(h) + '\n'
 f = open(path / reg_outfile, 'w')
 f.write(header)
@@ -180,8 +189,8 @@ pyPhewasPlot
 try:
     # make confidence interval numberic instead of a string
     regressions[['lowlim', 'uplim']] = regressions['Conf-interval beta'].str.split(',', expand=True)
-    regressions['uplim'] = regressions.uplim.str.replace(']', '')
-    regressions['lowlim'] = regressions.lowlim.str.replace('[', '')
+    regressions['uplim'] = regressions.uplim.str.replace(']', '', regex=False)
+    regressions['lowlim'] = regressions.lowlim.str.replace('[', '', regex=False)
     regressions = regressions.astype(dtype={'uplim':float,'lowlim':float})
 except Exception as e:
     print('Error reading regression file:')

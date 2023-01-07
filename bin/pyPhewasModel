@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 
-from pyPheWAS.pyPhewasCorev2 import *
 import argparse
-import time
-import math
-from pathlib import Path
-import os.path as osp
 
 def parse_args():
     parser = argparse.ArgumentParser(description="pyPheWAS Mass PheCode Regression Tool")
@@ -17,18 +12,26 @@ def parse_args():
     parser.add_argument('--outfile', required=False, default=None, type=str,help='Name of the output file for the feature matrix')
     parser.add_argument('--covariates', required=False, default='', type=str, help='Variables to be used as covariates')
     parser.add_argument('--response', required=False, default='genotype', type=str, help='Variable to predict (default: genotype)')
+    parser.add_argument('--canonical', required=False, default="True", type=str, help='Use response as a predictor [True, default] or the dependent variable [False] in the PheWAS equation')
     parser.add_argument('--phewas_cov', required=False, default=None, type=str, help='PheCode to use as a covariate in regression')
     parser.add_argument('--reg_thresh', required=False, default=5, type=int, help='Threshold of subjects presenting a PheCode required for running regression (default: 5)')
     parser.add_argument('--legacy', required=False, default="False", type=str, help='Use legacy solver scheme (default: False)')
-
 
     args = parser.parse_args()
     return args
 
 
+args = parse_args() # doing this first reduces help message time
+
 """
-Print Start Message
+Import and Print Start Message
 """
+import time
+import math
+from pathlib import Path
+import os.path as osp
+from pyPheWAS.pyPhewasCorev2 import *
+
 start = time.time()
 print_start_msg()
 print('\npyPhewasModel: Mass PheCode Regression Tool\n')
@@ -37,7 +40,6 @@ print('\npyPhewasModel: Mass PheCode Regression Tool\n')
 """
 Retrieve and validate all arguments.
 """
-args = parse_args()
 kwargs = {'path': Path(args.path),
 		  'feature_matrix': args.feature_matrix,
 		  'group': args.group,
@@ -45,6 +47,7 @@ kwargs = {'path': Path(args.path),
           'covariates':args.covariates,
 		  'phewas_cov':args.phewas_cov,
           'response':args.response,
+          'canonical': args.canonical,
           'reg_thresh':args.reg_thresh,
           'legacy':args.legacy,
           'outfile':args.outfile
@@ -66,6 +69,8 @@ if kwargs['outfile'] is None:
 # Assert that the output file is valid
 assert kwargs['outfile'].endswith('.csv'), "%s is not a valid outputfile, must be a .csv file" % (kwargs['outfile'])
 
+assert kwargs['canonical'] in ["True", "False"], "%s is not a valid canonical value (True or False)" % kwargs['canonical']
+kwargs['canonical'] = eval(kwargs['canonical'])
 assert kwargs['legacy'] in ["True", "False"], "%s is not a valid legacy value (True or False)" % kwargs['legacy']
 kwargs['legacy'] = eval(kwargs['legacy'])
 
@@ -88,10 +93,10 @@ assert response in genotypes.columns, "response %s is not a column in the group 
 # check covariates
 if covariates != '':
     for cov in covariates.replace(" ", "").split('+'):
-        if cov != 'MaxAgeAtICD':
-            assert cov in genotypes.columns, "covariate %s is not a column in the group file" % cov
+        if cov in RESERVED_COL_NAMES:
+            assert False, "covariate %s is a reserved covariate name [%s]; please remove or rename this column in the group file" % (cov, ','.join(RESERVED_COL_NAMES))
         else:
-            assert 'MaxAgeAtICD' not in genotypes.columns, "covariate %s is a reserved covariate name; please remove or rename this column in the group file" % cov
+            assert cov in genotypes.columns, "covariate %s is not a column in the group file" % cov
 
 print('Loading feature matrices.')
 
@@ -122,13 +127,19 @@ if legacy:
     regressions = run_phewas_legacy(fm, genotypes, 'ICD', covariates, response, reg_thresh)
 else:
     # all regressions are run with regularization
-    regressions = run_phewas(fm, genotypes, 'ICD', covariates, response, reg_thresh)
+    regressions, model_str = run_phewas(fm, genotypes, 'ICD', regression_map[reg_type], 
+                        covariates=covariates, response=response, 
+                        phe_thresh=reg_thresh, canonical=canonical)
+
+
+# TODO: add model string output to other model scripts
+# TODO: check beginning of Plot scripts
 
 print("Saving regression data to %s" % (path / outfile))
 if phewas_cov is not None:
-    covariates = covariates + '+' + phewas_cov
+    model_str = model_str.replace('phewas_cov', phewas_cov)
     
-header = ','.join(['group', group, 'feature_matrix', feature_matrix, 'reg_type', reg_type, 'code_type', 'ICD', 'covariates', covariates]) + '\n'
+header = ','.join(['model_equation', model_str, 'group', group, 'feature_matrix', feature_matrix, 'reg_type', reg_type, 'code_type', 'ICD']) + '\n' 
 f = open(path / outfile, 'w')
 f.write(header)
 regressions.to_csv(f,index=False)
