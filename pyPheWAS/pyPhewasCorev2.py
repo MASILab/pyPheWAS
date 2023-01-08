@@ -122,15 +122,15 @@ def get_icd_codes(path, filename, reg_type):
 		print('Found both ICD-9 and ICD-10 codes.')
 		icd9s = icdfile[icdfile['ICD_TYPE'] == 9]
 		icd10s = icdfile[icdfile['ICD_TYPE'] == 10]
-		phenotypes_9 = pd.merge(icd9s, icd9_codes,on='ICD_CODE',how='left')
-		phenotypes_10 = pd.merge(icd10s, icd10_codes, on='ICD_CODE',how='left')
+		phenotypes_9 = pd.merge(icd9s, icd9_codes[['ICD_CODE', 'PheCode']],on='ICD_CODE',how='left')
+		phenotypes_10 = pd.merge(icd10s, icd10_codes[['ICD_CODE', 'PheCode']], on='ICD_CODE',how='left')
 		phenotypes = pd.concat([phenotypes_9, phenotypes_10], sort=False, ignore_index=True)
 	elif icd_types[0] == 9:
 		print('Found only ICD-9 codes.')
-		phenotypes = pd.merge(icdfile,icd9_codes,on='ICD_CODE',how='left')
+		phenotypes = pd.merge(icdfile,icd9_codes[['ICD_CODE', 'PheCode']],on='ICD_CODE',how='left')
 	elif icd_types[0] == 10:
 		print('Found only ICD-10 codes.')
-		phenotypes = pd.merge(icdfile, icd10_codes, on='ICD_CODE',how='left')
+		phenotypes = pd.merge(icdfile, icd10_codes[['ICD_CODE', 'PheCode']], on='ICD_CODE',how='left')
 	else:
 		raise Exception('An issue occurred while parsing the ICD_TYPE column - Please check phenotype file.')
 
@@ -183,7 +183,7 @@ def get_cpt_codes(path, filename, reg_type):
 	wholefname = path / filename
 	cptfile = pd.read_csv(wholefname,dtype={'CPT_CODE':str})
 	cptfile['CPT_CODE'] = cptfile['CPT_CODE'].str.strip()
-	phenotypes = pd.merge(cptfile, cpt_codes, on='CPT_CODE', how='left')
+	phenotypes = pd.merge(cptfile, cpt_codes[['CPT_CODE','prowas_code']], on='CPT_CODE', how='left')
 
 	# check to see if anything was dropped because of incomplete mapping
 	na_mask = phenotypes['prowas_code'].isna()
@@ -358,7 +358,7 @@ def fit_pheno_model(model_str, model_type, model_data, phe_thresh=5):
 
 
 	:param model_str: a patsy-like regression formula
-	:param model_type: type of model [linear, log-0 (logistic without regularization), log-1 (logistic with regularization)]
+	:param model_type: type of model [linear (GLM - Gaussian family w/ identity link), log (logistic with regularized max likelihood)]
 	:param model_data: data for estimating model; all variables from the model_str must be included as columns.
 	:param phe_thresh: *[optional]* threshold for running regression; see note (default: *5*)
 
@@ -370,11 +370,14 @@ def fit_pheno_model(model_str, model_type, model_data, phe_thresh=5):
 	:returns: (regression_model, note)
 	:rtype: tuple (statsmodels model, str)
 
+	.. note:: To prevent false positives & improve statistical power, regressions are only computed for
+		phenotypes which present for greater than ``phe_thresh`` subjects in the cohort.
+
 	"""
 	
 	note = None
-	# to prevent false positives, only run regressions if more than phe_thresh records have positive values
-	if not np.where(model_data['phe'] > 0)[0].shape[0] > phe_thresh: #TODO: check if this works for duration
+
+	if not np.where(model_data['phe'] > 0)[0].shape[0] > phe_thresh:
 		note = f"ERROR < {phe_thresh} records with phecode"
 		model = None
 	else:
@@ -382,10 +385,8 @@ def fit_pheno_model(model_str, model_type, model_data, phe_thresh=5):
 			with warnings.catch_warnings(record=True) as cx_manager:
 				if model_type == "linear":
 					model = smf.glm(model_str, model_data).fit(disp=False)
-				elif model_type == "log-0": # TODO: fix legacy. or just delete.
-					model = smf.logit(model_str, model_data).fit(disp=False)
 				else:
-					model = smf.logit(model_str, model_data).fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0, warn_convergence=False)
+					model = smf.logit(model_str, model_data).fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
 				# deal with statsmodels warnings
 				if len(cx_manager) > 0: note = '|'.join( [str(w.message).replace('\n','. ') for w in cx_manager] )
 		except ValueError as ve:
@@ -425,94 +426,6 @@ def parse_pheno_model(reg, phe_model, note, phe_info, var):
 
 	reg.loc[ix] = phe_info[0:2] + [note] + stat_info + phe_info[2:]
 	return
-
-
-
-def run_phewas_legacy(fm, genotypes, code_type, covariates='', response='genotype', phe_thresh=5):
-	"""
-	Run mass phenotype regressions (legacy version)
-
-	Iterate over all PheWAS/ProWAS codes in the feature matrix, running a logistic regression of the form:
-
-	:math:`Pr(response) \sim logit(phenotype\_aggregate + covariates)`
-
-	``fm`` is a 3xNxP matrix, where N = number of subjects and P = number of PheWAS/ProWAS Codes; this should only
-	be consutrcted by ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix`` - otherwise results will be untrustworthy.
-	To use the age feature matrix (``fm[1]``), include 'MaxAgeAtICD' or 'MaxAgeAtCPT' in the ``covariates`` string.
-	Other than 'MaxAgeAtICD' and 'MaxAgeAtCPT', all covariates and the response variable must be included in
-	the group DataFrame.
-
-	The returned DataFrame includes the PheWAS/ProWAS code, Phenotype (code description, e.g. 'Pain in joint'),
-	-log\ :sub:`10`\ (p-value), p-value, beta, beta's confidence interval, beta's standard error, and lists of the ICD-9/ICD-10 or
-	CPT codes that map to the phenotype.
-
-	:param fm: phenotype feature matrix derived via ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix``
-	:param genotypes: group data
-	:param code_type:  type of EMR code ('ICD' or 'CPT')
-	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
-	:param response: *[optional]* response variable in the logisitc model (default: *genotype*)
-	:param phe_thresh: *[optional]* threshold for running regression; see note (default: *5*)
-	:type fm: numpy array
-	:type genotypes: pandas DataFrame
-	:type code_type: str
-	:type covariates: str
-	:type response: str
-	:type phe_thresh: int
-
-	:returns: regression results for each phenotype
-	:rtype: pandas DataFrame
-
-
-	.. note:: To prevent false positives & improve statistical power, regressions are only computed for
-		  phenotypes which present for greater than ``phe_thresh`` subjects in the cohort. Phenotypes which do not meet
-		  this criteria are not included in the returned regression results.
-
-	.. note:: For phenotypes that present in both the case (``response`` = 1) and control (``response`` = 0) groups, maximum
-		  likelihood optimization is used to compute the logistic regression. For phenotypes that only present in
-		  one of those groups, regularized maximum likelihood optimization is used.
-
-	"""
-
-	# sort group data by id
-	print('Sorting group data...')
-	genotypes.sort_values(by='id', inplace=True)
-	genotypes.reset_index(inplace=True, drop=True)
-
-	fm_shape = len(fm[0, 0])
-	# check number of phenotypes in the feature matrix
-	num_pheno = pheno_map[code_type]['codes'].shape[0]
-	assert fm_shape == num_pheno, "Expected %d columns in feature matrix, but found %d. Please check the feature matrix" % (num_pheno, fm_shape)
-
-	# store all of the pertinent data from the regressions
-	regressions = pd.DataFrame(columns=pheno_map[code_type]['reg_cols'])
-
-	control = fm[0][genotypes[response] == 0, :]
-	disease = fm[0][genotypes[response] == 1, :]
-	# find all phecodes that only present for a single group (ie only controls or only case show the phecode) -> have to use regularization
-	inds = np.where((control.any(axis=0) & ~disease.any(axis=0)) | (~control.any(axis=0) & disease.any(axis=0)))[0]
-	for index in tqdm(range(fm_shape), desc='Running Regressions'):
-		phen_info = get_phenotype_info(index, code_type)
-		phen_vector1 = fm[0][:, index]
-		phen_vector2 = fm[1][:, index]
-		phen_vector3 = fm[2][:, index]
-		# to prevent false positives, only run regressions if more than phe_thresh records have positive values
-		if np.where(phen_vector1 > 0)[0].shape[0] > phe_thresh:
-			if index in inds: # decide whether or not to use regularization in logistic regression
-				use_regular = 1
-			else:
-				use_regular = 0
-			stat_info = fit_pheno_model(genotypes, phen_vector1, phen_vector2, phen_vector3, covariates,
-			                                 response, phenotype = phen_info[0:2], lr=use_regular, code_type=code_type)
-		else:
-			# not enough samples to run regression
-			stat_info = [np.nan, np.nan, np.nan, np.nan, np.nan]
-
-		# save regression data
-		info = phen_info[0:2] + stat_info + phen_info[2:]
-
-		regressions.loc[index] = info
-
-	return regressions.dropna(subset=['p-val']).sort_values(by='p-val') # sort by significance
 
 
 
@@ -561,8 +474,7 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 
 
 	.. note:: To prevent false positives & improve statistical power, regressions are only computed for
-		  phenotypes which present for greater than ``phe_thresh`` subjects in the cohort. Phenotypes which do not meet
-		  this criteria are not included in the returned regression results.
+		  phenotypes which present for greater than ``phe_thresh`` subjects in the cohort.
 
 	"""
 

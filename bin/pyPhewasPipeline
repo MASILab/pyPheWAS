@@ -16,7 +16,6 @@ def parse_args():
     parser.add_argument('--response', required=False, default='genotype', type=str, help='Variable to predict instead of genotype')
     parser.add_argument('--canonical', required=False, default="True", type=str, help='Use response as a predictor [True, default] or the dependent variable [False] in the PheWAS equation')
     parser.add_argument('--reg_thresh', required=False, default=5, type=int, help='Threshold of subjects presenting a PheCode required for running regression (default: 5)')
-    parser.add_argument('--legacy', required=False, default="False", type=str, help='Use legacy solver scheme (default: False)')
 
     parser.add_argument('--imbalance', required=False, default="True", type=str, help='Whether or not to show the direction of imbalance in the plot')
     parser.add_argument('--plot_all_pts', required=False, default="True", help='Show all points regardless of significance in the Manhattan plot [True (default) or False]')
@@ -59,7 +58,6 @@ kwargs = {'path': Path(args.path),
           'reg_thresh':args.reg_thresh,
           'covariates': args.covariates,
           'phewas_cov': args.phewas_cov,
-          'legacy': args.legacy,
           'thresh_type': args.thresh_type,
           'imbalance': args.imbalance,
           'plot_all_pts': args.plot_all_pts,
@@ -100,8 +98,6 @@ assert kwargs['phewas_label'] in ["plot","axis"], "%s is not a valid PheCode lab
 
 assert kwargs['canonical'] in ["True", "False"], "%s is not a valid canonical value (True or False)" % kwargs['canonical']
 kwargs['canonical'] = eval(kwargs['canonical'])
-assert kwargs['legacy'] in ["True", "False"], "%s is not a valid legacy value (True or False)" % kwargs['legacy']
-kwargs['legacy'] = eval(kwargs['legacy'])
 assert kwargs['imbalance'] in ["True", "False"], "%s is not a valid imbalance value (True or False)" % kwargs['imbalance']
 kwargs['imbalance'] = eval(kwargs['imbalance'])
 assert kwargs['plot_all_pts'] in ["True", "False"], "%s is not a valid plot_all_pts value (\"True\" or \"False\")" % kwargs['plot_all_pts']
@@ -161,14 +157,9 @@ pyPhewasModel
 """
 
 print("Running PheWAS regressions...")
-if legacy: # TODO: maybe get rid of this
-    # regressions are run with regularization is only one target group has them; regressions are run without regularization otherwise
-    regressions = run_phewas_legacy(fm, genotypes, 'ICD', covariates, response, reg_thresh)
-else:
-    # all regressions are run with regularization
-    regressions, model_str = run_phewas(fm, genotypes, 'ICD', regression_map[reg_type], 
-                        covariates=covariates, response=response, 
-                        phe_thresh=reg_thresh, canonical=canonical)
+regressions, model_str = run_phewas(fm, genotypes, 'ICD', regression_map[reg_type], 
+                    covariates=covariates, response=response, 
+                    phe_thresh=reg_thresh, canonical=canonical)
 
 reg_outfile = "regressions_" + postfix + ".csv"
 print("Saving regression data to %s" % (path / reg_outfile))

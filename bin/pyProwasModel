@@ -15,7 +15,6 @@ def parse_args():
     parser.add_argument('--canonical', required=False, default="True", type=str, help='Use response as a predictor [True, default] or the dependent variable [False] in the ProWAS equation')
     parser.add_argument('--prowas_cov', required=False, default=None, type=str, help='ProCode to use as a covariate in regression')
     parser.add_argument('--reg_thresh', required=False, default=5, type=int, help='Threshold of subjects presenting a ProCode required for running regression (default: 5)')
-    parser.add_argument('--legacy', required=False, default="False", type=str, help='Use legacy solver scheme (default: False)')
 
     args = parser.parse_args()
     return args
@@ -50,7 +49,6 @@ kwargs = {'path': Path(args.path),
           'response':args.response,
           'canonical': args.canonical,
           'reg_thresh':args.reg_thresh,
-          'legacy':args.legacy,
           'outfile':args.outfile,
 }
 
@@ -72,8 +70,7 @@ assert kwargs['outfile'].endswith('.csv'), "%s is not a valid outputfile, must b
 
 assert kwargs['canonical'] in ["True", "False"], "%s is not a valid canonical value (True or False)" % kwargs['canonical']
 kwargs['canonical'] = eval(kwargs['canonical'])
-assert kwargs['legacy'] in ["True", "False"], "%s is not a valid legacy value (True or False)" % kwargs['legacy']
-kwargs['legacy'] = eval(kwargs['legacy'])
+
 
 # Print Arguments
 display_kwargs(kwargs)
@@ -123,14 +120,9 @@ fm = np.array([a,b,c])
 Run Regressions
 """
 print("Running ProWAS regressions...")
-if legacy:
-    # regressions are run with regularization is only one target group has them; regressions are run without regularization otherwise
-    regressions = run_phewas_legacy(fm, genotypes, 'CPT', covariates, response, reg_thresh)
-else:
-    # all regressions are run with regularization
-    regressions, model_str = run_phewas(fm, genotypes, 'CPT', regression_map[reg_type], 
-                    covariates=covariates, response=response, 
-                    phe_thresh=reg_thresh, canonical=canonical)
+regressions, model_str = run_phewas(fm, genotypes, 'CPT', regression_map[reg_type], 
+                covariates=covariates, response=response, 
+                phe_thresh=reg_thresh, canonical=canonical)
 
 print("Saving regression data to %s" % (path / outfile))
 if prowas_cov is not None:
