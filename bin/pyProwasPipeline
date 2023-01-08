@@ -76,6 +76,7 @@ assert osp.exists(kwargs['path'] / kwargs['group']), "%s does not exist" %(kwarg
 
 # Assert that valid regression & threshold types were used
 assert kwargs['reg_type'] in regression_map.keys(), "%s is not a valid regression type" % kwargs['reg_type']
+assert (kwargs['prowas_cov'] is None) or (kwargs['prowas_cov'] in prowas_codes['prowas_code']), "prowas_cov input (%s) is not a valid ProCode" % kwargs['prowas_cov']
 
 if kwargs['thresh_type'] is None:
     kwargs['thresh_type'] = ['fdr','bon']

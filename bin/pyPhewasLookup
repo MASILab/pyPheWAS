@@ -47,6 +47,7 @@ kwargs = {'path': Path(args.path),
 
 # Assert that a valid regression type was used
 assert args.reg_type in regression_map.keys(), "%s is not a valid regression type" % args.reg_type
+assert (kwargs['phewas_cov'] is None) or (kwargs['phewas_cov'] in phewas_codes['PheCode']), "phewas_cov input (%s) is not a valid PheCode" % kwargs['phewas_cov']
 
 # Assert that valid file names were given
 assert kwargs['phenotype'].endswith('.csv'), "%s is not a valid phenotype file, must be a .csv file" % (kwargs['phenotype'])

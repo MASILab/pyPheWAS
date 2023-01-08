@@ -11,7 +11,7 @@ def parse_args():
     
     parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files')
     parser.add_argument('--postfix', required=False, default=None, type=str, help='Descriptive postfix for output files (e.g. poster or ages50-60)')
-    parser.add_argument('--phewas_cov', required=False, default=None, type=str, help='PheCodes to use as covariates in pyPhewasModel regression')
+    parser.add_argument('--phewas_cov', required=False, default=None, type=str, help='A PheCode to use as a covariate in pyPhewasModel regression')
     parser.add_argument('--covariates', required=False, default='', type=str, help='Variables to be used as covariates')
     parser.add_argument('--response', required=False, default='genotype', type=str, help='Variable to predict instead of genotype')
     parser.add_argument('--canonical', required=False, default="True", type=str, help='Use response as a predictor [True, default] or the dependent variable [False] in the PheWAS equation')
@@ -75,6 +75,7 @@ assert osp.exists(kwargs['path'] / kwargs['group']), "%s does not exist" %(kwarg
 
 # Assert that valid regression & threshold types were used
 assert kwargs['reg_type'] in regression_map.keys(), "%s is not a valid regression type" % kwargs['reg_type']
+assert (kwargs['phewas_cov'] is None) or (kwargs['phewas_cov'] in phewas_codes['PheCode']), "phewas_cov input (%s) is not a valid PheCode" % kwargs['phewas_cov']
 
 if kwargs['thresh_type'] is None:
     kwargs['thresh_type'] = ['fdr','bon']
