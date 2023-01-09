@@ -8,25 +8,17 @@ Department of Electrical Engineering and Computer Science
 Vanderbilt University
 """
 
-from pyPheWAS.pyPhewasCorev2 import icd9_codes, icd10_codes, phewas_codes
-from collections import Counter
-import getopt
+from pyPheWAS.pyPhewasCorev2 import icd9_codes, icd10_codes, phewas_codes, fit_pheno_model
 import math
 import numpy as np
 import os
 import pandas as pd
-import statsmodels.discrete.discrete_model as sm
 import statsmodels.formula.api as smf
 from tqdm import tqdm
-import sys
 import scipy.stats
 import http.server
 import socketserver
 from pathlib import Path
-
-import warnings
-from statsmodels.tools.sm_exceptions import ConvergenceWarning
-warnings.simplefilter('ignore', ConvergenceWarning)
 
 
 """
@@ -317,82 +309,41 @@ def get_phenotype_info(p_index):
 	return [p_code, p_name, p_id, cat_id, cat]
 
 
-def fit_pheno_model(genotypes, phen_vector, response, covariates='', phenotype=''):
-	"""
-	Runs the regression for a specific phenotype vector relative to the genotype data and covariates.
-
-	:param genotypes: a DataFrame containing the genotype information
-	:param phen_vector: a array containing the aggregate phenotype vector
-	:param response: response variable in the logit model
-	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
-	:param phenotype: *[optional]* phenotype info [code, description] for this regression (used only for error handling)
-	:type genotypes: pandas DataFrame
-	:type phen_vector: numpy array
-	:type response: string
-	:type covariates: string
-	:type phenotype: list of strings
-
-	:returns: regression model
-	:rtype: list
-
-	.. note::
-		The covariates must be a string that is delimited by '+', not a list.
-		If you are using a list of covariates and would like to convert it to the pyPhewas format, use the following::
-
-			l = ['genotype', 'age'] # a list of your covariates
-			covariates = '+'.join(l) # pyPhewas format
-
-		The covariates that are listed here *must* be headers to your genotype CSV file.
-	"""
-
-	data = genotypes.copy()
-	data['y'] = phen_vector
-
-	# append '+' to covariates (if there are any) -> makes definition of 'f' more elegant
-	if covariates != '':
-		covariates = '+' + covariates
-
-	# define model ('f') for the logisitc regression
-	predictors = covariates.replace(" ", "").split('+')
-	predictors[0] = 'y'
-
-	try:
-		# fit logit with regularization
-		logit = sm.Logit(data[response.strip()], data[predictors])
-		model = logit.fit_regularized(method='l1', alpha=0.1, disp=0, trim_mode='size', qc_verbose=0)
-	except Exception as e:
-		print('\n')
-		if phenotype != '':
-			print('ERROR computing regression for phenotype %s (%s)' %(phenotype[0],phenotype[1]))
-		print(e)
-		model = None
-	return model
-
-
-
-def parse_pheno_model(reg, phe_model, phe_info, n_subs, var_list):
+def parse_pheno_model(reg, phe_model, phe_info, n_subs, note, var_list):
 	"""
 	Parse results from fit_pheno_model()
 
 	:param reg: regression dataframe
-	:param pheno_model: logistic regression model for phecode 'phe'
-	:param phe_info: metadata for phecode 'phe'
-	:param n_subs: number of subjects with data present for phecode 'phe'
+	:param phe_model: logistic regression model for a phecode 
+	:param phe_info: metadata for phecode
+	:param n_subs: number of subjects with data present for phecode 
+	:param note: notes from model fitting
 	:param var_list: list of model variables to save
 
 	:returns: None
 	"""
-	
-	if phe_model is not None:
-		ix = reg.shape[0] # next available index in reg
-		for var in var_list:
+
+	ix = reg.shape[0] # next available index in reg
+	for var in var_list:
+		if phe_model is not None:
 			p = phe_model.pvalues[var]
+			try: log_p = -math.log10(p)
+			except:
+				log_p = np.nan
+				note += "[WARNING p==0.0; PheCode will be excluded from result plots]"
 			beta = phe_model.params[var]
 			conf = phe_model.conf_int()
 			conf_int = '[%s,%s]' % (conf[0][var], conf[1][var])
-			stat_info = [-math.log10(p), p, beta, conf_int, conf[0][var], conf[1][var]]  # collect results
-			reg.loc[ix] = [var] + phe_info[0:3] + [n_subs] + stat_info + phe_info[3:]
-			ix+=1
+			stderr = phe_model.bse[var]
+			stat_info = [log_p, p, beta, conf_int, conf[0][var], conf[1][var], stderr]
+
+			if phe_model.summary().extra_txt:
+				note = "[" + phe_model.summary().extra_txt.replace('\n', '. ') + "]"
+		else:
+			stat_info = [np.nan, np.nan, np.nan, None, np.nan, np.nan, np.nan]
+
+		reg.loc[ix] = [var] + phe_info[0:3] + [note, n_subs] + stat_info + phe_info[3:]
+		ix+=1
 
 	return
 
@@ -404,30 +355,35 @@ def save_pheno_model(reg, var_list, base_path, base_header):
 
 	:param reg: regression dataframe
 	:param var_list: list of model variables to save
-	:param data_path: path to save data
+	:param base_path: generic file path for all variables
+	:param base_header: generic header for all variables
 
 	:returns: None
 	"""
-
 	for var in var_list:
 		var_data = reg[reg['result_type'] == var].drop(columns=['result_type'])
-
-		disp_name = 'phecode' if var=='y' else var
-		var_file = base_path + disp_name + '.csv'
-		var_header = 'result_variable,' + disp_name + ',' + base_header + '\n'
-
+		var_file = base_path + var + '.csv'
+		var_header = f"result_variable,{var},{base_header}\n"
 		# write regressions to file
-		f = open(var_file, 'w+')
-		f.write(var_header)
-		var_data.to_csv(f, index=False)
-		f.close()
-	
+		with open(var_file, 'w+') as f:
+			f.write(var_header)
+			var_data.to_csv(f, index=False)
 	return
 
 
-def run_phewas(fm, genotypes, covariates, response, reg_type, save_cov=False, outpath=Path('.')):
+def check_existing_models(base_path, var_list):
+	# check if reg exists - can just reload it instead of re-calculating
+	reg_exists = True
+	for var in var_list:
+		var_file = Path(base_path + var + '.csv')
+		reg_exists &= var_file.exists()
+	return reg_exists
+
+
+
+def run_phewas(fm, demo, model_str, reg_type, save_cov=False, outpath=Path('.')):
 	"""
-	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting p-values.
+	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting stats.
 
 	:param fm: The phewas feature matrix.
 	:param genotypes: A pandas DataFrame of the genotype file.
@@ -437,82 +393,92 @@ def run_phewas(fm, genotypes, covariates, response, reg_type, save_cov=False, ou
 	:returns: A dataframe containing regression data.
 	"""
 
-	num_phecodes = fm.shape[1]
-	thresh = 5 # math.ceil(genotypes.shape[0] * 0.05)
-	# store all of the pertinent data from the regressions
-	regressions = pd.DataFrame(columns=output_columns)
-
-	var_list = ['y'] # y = the aggregated phecode vector
+	dependent, predictors = model_str.split('~')
+	base_path = str(outpath/('regressions-%s-%s-%s_' %(reg_type, dependent, predictors)))
 	if save_cov:
-		var_list = var_list + covariates.split('+')
-
-	for index in tqdm(range(num_phecodes), desc='Running Regressions'):
-		phe_info = get_phenotype_info(index)
-		phen_vector = fm[:, index]
-		num_nonzero = np.where(phen_vector > 0)[0].shape[0]
-		# to prevent false positives, only run regressions if more than thresh records have positive values
-		if num_nonzero > thresh:
-			phe_model = fit_pheno_model(genotypes, phen_vector, response, covariates=covariates, phenotype=phe_info[0:2])
-			parse_pheno_model(regressions, phe_model, phe_info, num_nonzero, var_list)
-		else:
-			# not enough samples to run regression
-			phe_model = None
-		
+		var_list = predictors.split('+')
+	else:
+		var_list = [ predictors.split('+')[0] ]
 	
-	# Compute Odds Ratio
-	regressions['OR'] = np.exp(regressions['beta'])
-	regressions['OR_ci_low'] = np.exp(regressions['beta_ci_low'])
-	regressions['OR_ci_up'] = np.exp(regressions['beta_ci_up'])
+	reg_exists = check_existing_models(base_path, var_list)
 
-	# Drop phecodes with failed / no results
-	regressions = regressions.dropna(subset=['pval']).sort_values(by=['PheCode'])
+	if reg_exists:
+		phecode_file = base_path + var_list[0] + '.csv'
+		regressions = pd.read_csv(phecode_file, skiprows=1)
+	else:
+		cols = [dependent] + predictors.split('+')
+		cols.remove("PheCode")
+		model_data = demo[cols].copy()
 
-	# Export
-	base_path = str(outpath/('regressions-%s-%s-%s___' %(reg_type, response, covariates)))
-	header = ','.join(['reg_type', reg_type, 'group', 'group.csv', 'response', response, 'covariates', covariates])
-	save_pheno_model(regressions, var_list, base_path, header)
+		model_type = "linear" if (dependent == "PheCode") and (reg_type != "binary") else "log"
+		regressions = pd.DataFrame(columns=output_columns)
+		num_phecodes = fm.shape[1]
 
-	regressions = regressions[regressions['result_type'] == 'y'].drop(columns=['result_type'])
-	return regressions.sort_values(by=['PheCode'])
+		for index in tqdm(range(num_phecodes), desc='Running Regressions'):
+			phe_info = get_phenotype_info(index)
+			model_data["PheCode"] = fm[:, index]
+			num_nonzero = (model_data["PheCode"] > 0).sum()
+			phe_model, note = fit_pheno_model(model_str, model_type, model_data, phe_key = "PheCode")
+			parse_pheno_model(regressions, phe_model, phe_info, num_nonzero, note, var_list)
+			model_data["PheCode"] = np.nan
+		
+		if model_type == "log": # Compute Odds Ratio
+			regressions['OR'] = np.exp(regressions['beta'])
+			regressions['OR_ci_low'] = np.exp(regressions['beta_ci_low'])
+			regressions['OR_ci_up'] = np.exp(regressions['beta_ci_up'])
+
+		# Export
+		header = ','.join(['model_equation', model_str, 'group', 'group.csv', 'reg_type', reg_type, 'code_type', 'ICD'])
+		save_pheno_model(regressions, var_list, base_path, header)
+		regressions = regressions[regressions['result_type'] == var_list[0]].drop(columns=['result_type'])
+
+	regressions['pval_str'] = regressions.apply(lambda x: str(x['pval']), axis=1)
+	regressions = regressions.dropna(subset=['pval','neg_log_p']).drop(columns=['note','pval','Conf-interval beta'])
+
+	return regressions
 
 
 
 
 
-output_columns = ['result_type',
-				  'PheCode',
-				  'Phenotype',
-				  'Pheno_id',
-				  'count',
-				  'neg_log_p',
-				  'pval',
-				  'beta',
-				  'Conf-interval beta',
-				  'beta_ci_low',
-				  'beta_ci_up',
-				  'category_id',
-				  'category',
-				  ]
+output_columns = [
+	'result_type',
+	'PheCode',
+	'Phenotype',
+	'Pheno_id',
+	'note',
+	'count',
+	'neg_log_p',
+	'pval',
+	'beta',
+	'Conf-interval beta',
+	'beta_ci_low',
+	'beta_ci_up',
+	'std_error',
+	'category_id',
+	'category',
+	]
 
 cat_order =  {
-			  'circulatory system': 0,
-			  'congenital anomalies': 1,
-			  'dermatologic': 2,
-			  'digestive': 3,
-			  'endocrine/metabolic': 4,
-			  'genitourinary': 5,
-			  'hematopoietic': 6,
-			  'infectious diseases': 7,
-			  'injuries & poisonings': 8,
-			  'mental disorders': 9,
-			  'musculoskeletal': 10,
-			  'neoplasms': 11,
-			  'neurological': 12,
-			  'other': 13,
-			  'pregnancy complications': 14,
-			  'respiratory': 15,
-			  'sense organs': 16,
-			  'symptoms': 17}
+	'circulatory system': 0,
+	'congenital anomalies': 1,
+	'dermatologic': 2,
+	'digestive': 3,
+	'endocrine/metabolic': 4,
+	'genitourinary': 5,
+	'hematopoietic': 6,
+	'infectious diseases': 7,
+	'injuries & poisonings': 8,
+	'mental disorders': 9,
+	'musculoskeletal': 10,
+	'neoplasms': 11,
+	'neurological': 12,
+	'other': 13,
+	'pregnancy complications': 14,
+	'respiratory': 15,
+	'sense organs': 16,
+	'symptoms': 17,
+	}
 
 cat_order_df = pd.DataFrame.from_dict(cat_order, orient='index', columns=['category']).reset_index()
 cat_order_df.rename(columns={'index':'category_string'}, inplace=True)

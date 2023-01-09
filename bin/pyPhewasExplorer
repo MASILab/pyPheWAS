@@ -1,26 +1,27 @@
 #!/usr/bin/env python
 
-from subprocess import Popen, PIPE
-from pathlib import Path
-from pyPheWAS.pyPhewasCorev2 import print_start_msg
-from pyPheWAS.pyPhewasExplorerCore import run_Explorer_GUI
 import argparse
+
+parser = argparse.ArgumentParser(description='pyPheWAS Explorer Launch Script')
+parser.add_argument('--indir', required=False, default='.', type=str, help='Input directory for pyPheWAS analysis')
+parser.add_argument('--response', type=str, required=False, default='target', help='Name of column to use as the response (dependent) variable')
+args = parser.parse_args()
 
 
 """
 Print Start Message
 """
+from subprocess import Popen, PIPE
+from pathlib import Path
+from pyPheWAS.pyPhewasCorev2 import print_start_msg
+from pyPheWAS.pyPhewasExplorerCore import run_Explorer_GUI
+
 print_start_msg()
 print('\npyPheWAS Explorer: Interactive Visualization of PheDAS models\n')
 
 """
 Retrieve and validate all arguments.
 """
-parser = argparse.ArgumentParser(description='pyPheWAS Explorer Launch Script')
-parser.add_argument('--indir', required=False, default='.', type=str, help='Input directory for pyPheWAS analysis')
-parser.add_argument('--response', type=str, required=False, default='target', help='Name of column to use as the response (dependent) variable')
-args = parser.parse_args()
-
 data_path = Path(args.indir).resolve()
 response = args.response
 
