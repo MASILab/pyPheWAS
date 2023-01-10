@@ -394,6 +394,8 @@ def run_phewas(fm, demo, model_str, reg_type, save_cov=False, outpath=Path('.'))
 	"""
 
 	dependent, predictors = model_str.split('~')
+	model_type = "linear" if (dependent == "PheCode") and (reg_type != "binary") else "log"
+
 	base_path = str(outpath/('regressions-%s-%s-%s_' %(reg_type, dependent, predictors)))
 	if save_cov:
 		var_list = predictors.split('+')
@@ -410,7 +412,6 @@ def run_phewas(fm, demo, model_str, reg_type, save_cov=False, outpath=Path('.'))
 		cols.remove("PheCode")
 		model_data = demo[cols].copy()
 
-		model_type = "linear" if (dependent == "PheCode") and (reg_type != "binary") else "log"
 		regressions = pd.DataFrame(columns=output_columns)
 		num_phecodes = fm.shape[1]
 
@@ -434,6 +435,17 @@ def run_phewas(fm, demo, model_str, reg_type, save_cov=False, outpath=Path('.'))
 
 	regressions['pval_str'] = regressions.apply(lambda x: str(x['pval']), axis=1)
 	regressions = regressions.dropna(subset=['pval','neg_log_p']).drop(columns=['note','pval','Conf-interval beta'])
+
+	if model_type == "log":
+		regressions.rename(columns={'beta':'LOR'}, inplace=True)
+	else:
+		regressions.rename(columns={'beta':'Beta'}, inplace=True)
+
+	# add stat info so Explorer interface can disply plots correctly
+	regressions.loc[-1, "PheCode"] = "STAT_INFO"
+	tmp = dependent + " ~ " + predictors.replace("+", " + ")
+	regressions.loc[-1, "Phenotype"] = tmp.replace("PheCode", f"PheCode[{reg_type}]")
+	regressions.loc[-1, "Pheno_id"] = model_type
 
 	return regressions
 
