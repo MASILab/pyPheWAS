@@ -46,6 +46,59 @@ def get_group_file(filename):  # same
 	return genotypes_df
 
 
+
+def process_group_vars(df):		
+	gvars = df.columns.drop('id')
+	# fix column names and drop non-numeric columns
+	drop_list = []
+	gvars_fixed = {}
+	for g in gvars:
+		if df.dtypes[g] in [int, float, bool]:
+			g_new = g[:15] if (len(g) > 15) else g
+			g_new = g_new.replace(' ', '_')
+			if g_new != g:
+				gvars_fixed[g] = g_new
+		else:
+			drop_list.append(g)
+	if len(gvars_fixed.keys()) > 0:
+		df.rename(columns=gvars_fixed, inplace=True)
+	if len(drop_list) > 0:
+		df.drop(columns=drop_list, inplace=True)
+	
+	gvars = df.columns.drop('id')
+	if len(gvars) > 10: 
+		print('WARNING: more than 10 group variables found. Limiting display to first 10 group variables')
+		df.drop(columns=gvars[10:], inplace=True)
+		gvars = df.columns.drop('id')
+	
+	# Find potential target variables
+	drop_list = []
+	target_vals = {var : list(uv) for var in gvars if (df.dtypes[var] in [int, bool]) & (len(uv := df[var].unique()) == 2)}
+	for var, values in target_vals.items(): # make sure values are 0/1
+		if df.dtypes[var] == bool:
+			df[var] = df[var].astype(int)
+		else:
+			check01 = set(values + [0,1])
+			if len(check01) == 3:
+				fix = [0,1] if (0 in values) else [1,0]
+				df.loc[df[var]!= fix[0], var] = fix[1]
+			elif len(check01) == 4:
+				one_val = np.max(values)
+				var_old = f"{var}_old"
+				df.rename(columns={var:var_old}, inplace=True)
+				df[var] = 0
+				df.loc[df[var_old] == one_val, var] = 1
+				drop_list.append(var_old)
+	target_vars = list(target_vals.keys())
+	assert len(target_vars) > 0, "No valid binary target variables found"
+	if len(drop_list) > 0:
+		df.drop(columns=drop_list, inplace=True)
+		gvars = df.columns.drop('id')
+
+	return target_vars, gvars
+
+
+
 def get_icd_codes(filename):
 	"""
 	Read all of the phenotype data from the given file and load it into a pandas DataFrame.
@@ -83,8 +136,8 @@ def get_icd_codes(filename):
 		raise Exception('An issue occurred while parsing the ICD_TYPE column - Please check phenotype file.')
 
 	# pre-calculate durations for feature matrix step
-	phenotypes['duration'] = phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max') - \
-							 phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('min') + 1
+	phenotypes['duration'] =    phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('max') - \
+								phenotypes.groupby(['id', 'PheCode'])['AgeAtICD'].transform('min') + 1
 
 	phenotypes.sort_values(by='id', inplace=True)
 
@@ -153,24 +206,21 @@ def generate_feature_matrix(genotypes, icds):
 Group Var Analysis
 """
 
-def get_1D_histogram(group, var_name, response):
+def get_1D_histogram(group, mask0, var_name):
 
 	bin_max = max(group[var_name])
 	bin_min = min(group[var_name])
 
-	geno0 = group[group[response] == 0]
-	geno1 = group[group[response] == 1]
+	H0, edges0 = np.histogram(group.loc[mask0, var_name].to_numpy(),range=(bin_min,bin_max))
+	H1, edges1 = np.histogram(group.loc[~mask0, var_name].to_numpy(),range=(bin_min,bin_max))
 
-	H0, edges0 = np.histogram(geno0[var_name].to_numpy(),range=(bin_min,bin_max))
-	H1, edges1 = np.histogram(geno1[var_name].to_numpy(),range=(bin_min,bin_max))
-
-	H_df0 = pd.DataFrame(index=range(0,len(H0)))
+	H_df0 = pd.DataFrame(index=range(len(H0)))
 	H_df0['count'] = H0
 	H_df0['xmin'] = edges0[0:-1]
 	H_df0['xmax'] = edges0[1:]
 	H_df0['response'] = 0
 
-	H_df1 = pd.DataFrame(index=range(0, len(H1)))
+	H_df1 = pd.DataFrame(index=range(len(H1)))
 	H_df1['count'] = H1
 	H_df1['xmin'] = edges1[0:-1]
 	H_df1['xmax'] = edges1[1:]
@@ -179,7 +229,7 @@ def get_1D_histogram(group, var_name, response):
 	H_df = pd.concat([H_df0, H_df1], sort=False, ignore_index=True)
 
 	H_df['var_name'] = var_name
-	return H_df.reset_index(drop=True)
+	return H_df
 
 
 def get_2D_histogram(group, var1, var2, response):

@@ -3,8 +3,7 @@
 import argparse
 
 parser = argparse.ArgumentParser(description='pyPheWAS Explorer server')
-parser.add_argument('indir', type=str, help='Input directory for pyPheWAS analysis')
-parser.add_argument('--response', type=str, required=False, default='target', help='Name of column to use as the response (dependent) variable')
+parser.add_argument('--indir', required=False, default='.', type=str, help='Input directory for pyPheWAS analysis')
 args = parser.parse_args()
 
 
@@ -33,7 +32,6 @@ import scipy.stats
 from pathlib import Path
 
 data_path = Path(args.indir).resolve()
-response = args.response
 
 group_f = data_path / "group.csv"
 icd_f = data_path / "icds.csv"
@@ -48,28 +46,11 @@ Set everything up
 try:
 	# load group data
 	group_data = get_group_file(group_f)
-	gvars = group_data.columns
-	if not 'id' in gvars:
+	if not 'id' in group_data.columns:
 		raise Exception("Group file (%s) does not contain a subject identifier column ('id')" % group_f)
-	if not response in gvars:
-		raise Exception("Group file (%s) does not contain the target variable (%s)" % (group_f, response))
-
-	gvars = gvars.drop(['id', response])
-	if len(gvars) > 10:
-		print('WARNING: more than 10 group variables found. Limiting display to first 10 group variables')
-		gvars = gvars[0:10]
-		print(', '.join(gvars))
-	for g in gvars:
-		g_new = g
-		if len(g) > 15: # shorten so they fit in the Explorer
-			g_new = g_new[:15]
-		if ' ' in g_new:
-			g_new = g_new.replace(' ', '_')
-		if g_new != g:
-			group_data.rename(columns={g : g_new}, inplace=True)
-	# reset in case names were changed
-	gvars = group_data.columns
-	gvars = gvars.drop(['id', response])
+	
+	response_options, gvars = process_group_vars(group_data)
+	init_response = response_options[0]
 
 	if FMs_exist:
 		print('Loading binary feature matrix')
@@ -118,42 +99,45 @@ def get_signals():
 	client_data = flask.request.json
 	command = client_data['cmd']
 
-	if command == "init":
-		datatype = client_data['ftype']
-		if datatype == "response":
-			msg = pd.DataFrame(columns=['msg'])
-			msg.loc[0, 'msg'] = response
-			data_obj = msg.to_json(orient='records')
-		elif datatype == "group":
-			var_df = pd.DataFrame(columns=['var','corr','pval','extent','g0','g1'], index=range(0,len(gvars)))
-			var_df['var'] = gvars
-			mask0 = group_data[response] == 0
-			mask1 = group_data[response] == 1
-			x = group_data[response].values
-			for ix,data in var_df.iterrows():
-				gv = data['var']
-				y = group_data[gv].values
-				[corr, pval] = scipy.stats.spearmanr(x, y)
-				var_df.loc[ix,'corr'] = corr
-				var_df.loc[ix,'pval'] = pval
-				var_df.loc[ix, 'extent'] = np.array([group_data[gv].min(), group_data[gv].max()])
-				var_df.loc[ix, 'g0'] = group_data.loc[mask0, gv].values
-				var_df.loc[ix, 'g1'] = group_data.loc[mask1, gv].values
-			data_obj = var_df.to_json(orient='records')
-		elif datatype == "histograms":
-			h = pd.DataFrame()
-			for g in gvars:
-				print(g)
-				h_g = get_1D_histogram(group_data, g, response)
-				h = pd.concat([h, h_g], sort=False, ignore_index=True)
-			h.reset_index(drop=True)
-			data_obj = h.to_json(orient='records')
-		else:
-			data_obj = "ERROR executing command: INIT\nUnknown data type %s" % datatype
+	if command == "init_response": # this is only run for the INITAL response variable
+		msg = pd.DataFrame(columns=['msg'], data=[init_response])
+		data_obj = msg.to_json(orient='records')
+
+	elif command == "init_groupvars": # this is only run for the INITAL response variable
+		msg = pd.DataFrame(columns=['msg'], data=gvars)
+		data_obj = msg.to_json(orient='records')
+
+	elif command == "group_data":
+		response = init_response if (r := client_data['response']) == "INIT" else r
+		var_df = pd.DataFrame(columns=['var','corr','pval','g0','g1','ropt'], index=range(len(gvars)))
+		x = group_data[response].values
+		n_response1 = sum(x)
+		n_response0 = group_data.shape[0] - n_response1
+		for ix, gv in enumerate(gvars):
+			y = group_data[gv].values
+			[corr, pval] = scipy.stats.spearmanr(x, y)
+			data = [gv, corr, pval, 
+					n_response0, n_response1,
+					gv in response_options
+					]
+			var_df.loc[ix] = data
+		data_obj = var_df.to_json(orient='records')
+
+	elif command == "histograms":
+		response = init_response if (r := client_data['response']) == "INIT" else r
+		to_concat = []
+		mask0 = group_data[response] == 0
+		for g in gvars:
+			print(g)
+			h_g = get_1D_histogram(group_data, mask0, g)
+			to_concat.append(h_g)
+		h = pd.concat(to_concat, sort=False, ignore_index=True)
+		data_obj = h.to_json(orient='records')
 
 	elif command == "compute_hist2D":
 		var1 = client_data["var1"]
 		var2 = client_data["var2"]
+		response = client_data['response']
 		if var1 == '':
 			msg = pd.DataFrame(columns=['msg'])
 			msg.loc[0, 'msg'] = "no_data"
@@ -169,6 +153,7 @@ def get_signals():
 	elif command == "independence_tests":
 		var1 = client_data["var1"]
 		var2 = client_data["var2"]
+		response = client_data['response']
 		if var1 == '':
 			msg = pd.DataFrame(columns=['msg'])
 			msg.loc[0,'msg'] = "no_data"
