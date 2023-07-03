@@ -1,7 +1,7 @@
 {
   "name": "e38221a5df1e64b8",
-  "main": "e38221a5df1e64b8@3622.js",
-  "version": "3622.0.0",
+  "main": "e38221a5df1e64b8@3957.js",
+  "version": "3957.0.0",
   "homepage": "https://observablehq.com/d/e38221a5df1e64b8",
   "author": {
     "name": "clineci",
@@ -9,6 +9,6 @@
   },
   "type": "module",
   "peerDependencies": {
-    "@observablehq/runtime": "4"
+    "@observablehq/runtime": "4 - 5"
   }
 }

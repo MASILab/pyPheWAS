@@ -60,6 +60,7 @@ def process_group_vars(df):
 				gvars_fixed[g] = g_new
 		else:
 			drop_list.append(g)
+			print(f"WARNING: data type {df.dtypes[g]} in column {g} not supported")
 	if len(gvars_fixed.keys()) > 0:
 		df.rename(columns=gvars_fixed, inplace=True)
 	if len(drop_list) > 0:
@@ -412,7 +413,7 @@ def save_pheno_model(reg, var_list, base_path, base_header):
 	"""
 	for var in var_list:
 		var_data = reg[reg['result_type'] == var].drop(columns=['result_type'])
-		var_file = base_path + var + '.csv'
+		var_file = base_path + var + ("_primary.csv" if var == var_list[0] else '.csv')
 		var_header = f"result_variable,{var},{base_header}\n"
 		# write regressions to file
 		with open(var_file, 'w+') as f:
@@ -425,7 +426,7 @@ def check_existing_models(base_path, var_list):
 	# check if reg exists - can just reload it instead of re-calculating
 	reg_exists = True
 	for var in var_list:
-		var_file = Path(base_path + var + '.csv')
+		var_file = base_path + var + ("_primary.csv" if var == var_list[0] else '.csv')
 		reg_exists &= var_file.exists()
 	return reg_exists
 

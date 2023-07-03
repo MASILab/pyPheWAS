@@ -85,8 +85,6 @@ print("pyPheWAS Explorer Ready")
 print("Please open http://localhost:8000/ in a web brower (preferably Google Chrome)")
 print("---\n\n\n")
 
-
-
 """
 create Flask app
 """

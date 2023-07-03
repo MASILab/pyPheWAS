@@ -94,7 +94,7 @@ function group_panel (svg_elem) {
 }
 )}
 
-function _plot_groupvar_hists(d3,group_vars,var_dist_size,z,hist_data,var_stat_scale,group_data,response_var,draw_groupvar_buttons){return(
+function _plot_groupvar_hists(d3,group_vars,var_dist_size,z,hist_data,group_data,target_var,$0,$1,$2,cov_select,$3,var_comp,$4,var_stat_scale,draw_groupvar_buttons){return(
 function plot_groupvar_hists(hist_group) {
   
   let hgroups = []
@@ -111,7 +111,7 @@ function plot_groupvar_hists(hist_group) {
   var y_offset1 = (cell_height/2) - (hist_height / 2) - (gvar_buffer*2); // approximately 1/4 of the way down the cell
   var y_offset2 = (cell_height/2) - (gvar_buffer*2); // approximately 1/2 of the way down the cell
   var box_offset_x = 10 + (cell_width * (1/2)) // approximately 1/2 of the way across the cell
-  
+  let button_size = 11;
   
   for (var i=0; i < group_vars.length; i++){
     let v = group_vars[i]
@@ -142,7 +142,57 @@ function plot_groupvar_hists(hist_group) {
       .attr('font-size', '12px')
       .attr('font-weight', 'bold')
       .attr('text-anchor','start')
-    
+
+    if (group_data[i].ropt) {
+      let x_delta = cell_width*0.94
+      let button_color = 'gray';
+      if (v == target_var){button_color = 'yellow'}
+      // Target Variable Button
+      hgroups[i].append('rect')
+        .attr('class','target_button')
+        .attr('transform', `translate(${x_delta - gvar_buffer},${y_offset2})`)
+        .attr('width',button_size)
+        .attr('height',button_size)
+        .attr('stroke',d3.hcl(0,0,70))
+        .attr('stroke-width', 1)
+        .attr("fill", button_color)
+        .attr("opacity",0.7)
+        .on('click', function(d) {
+          if (v !== target_var){
+            $0.value = v
+            $1.value = [{cmd:"group_data", response: v}];
+            $2.value = [{cmd:"histograms", response: v}];
+            // if currently selected as covariate - deselect
+            // preserve if any other variables are selected
+            let curr_cov_select = z.getCol("s", cov_select)
+            let vc_id = z.getCol("id", z.filter(r => r.vname === v, cov_select))[0]
+            if (curr_cov_select[vc_id] === 1){
+              curr_cov_select[vc_id] = 0
+              $3.value = z.addCol("s",curr_cov_select,cov_select)
+            }
+            // if currently selected for comparison - deselect
+            // preserve if any other variables are selected
+            let curr_select = z.getCol("s",var_comp)
+            let v_id = z.getCol("id", z.filter(r => r.vname === v, var_comp))[0]
+            if (curr_select[v_id] === 1){
+              let num_selected = z.filter(r => r.s===1,var_comp).length
+              if (num_selected === 2){
+                let s_id = z.filter(r => r.s===1,var_comp)[0].id
+                if (s_id === v_id) { s_id = z.filter(r => r.s===1,var_comp)[1].id }
+                curr_select = new Array(curr_select.length).fill(0)
+                curr_select[s_id] = 1
+              }
+              else {curr_select[v_id] = 0}
+              $4.value = z.addCol("s",curr_select,var_comp)
+            }
+          }
+      })
+      hgroups[i].append('text')
+          .text("Target")
+          .attr('transform', d=> `translate(${x_delta - gvar_buffer - 3},${y_offset2 + gvar_buffer*2})`)
+          .attr('font-size', '11px')
+          .attr('text-anchor', 'end')
+    }
 
     // target variable correlation
     hgroups[i].append('rect')
@@ -157,7 +207,7 @@ function plot_groupvar_hists(hist_group) {
         let this_group = d3.select('#'+v);
         this_group.append('text')
           .attr("class", "corr_description")
-          .text("Correlation with "+response_var[0].msg) 
+          .text("Correlation with "+target_var) 
           .attr('text-anchor', 'start')
           .attr('x', +d3.select(this).attr('x'))
           .attr('y', +d3.select(this).attr('y')-5)
@@ -179,7 +229,7 @@ function plot_groupvar_hists(hist_group) {
       .attr('y', y_offset2 + cor_height*0.6)
 
     var x_scale = d3.scaleLinear()
-        .domain([d3.min(v_data, d => d.xmin),d3.max(v_data, d => d.xmax)])
+        .domain([d3.min(v_data, d => d.xmin),d3.max(v_data, d => d.xmax)]).nice()
         .range([0, hist_width]);
 
     var y_scale = d3.scaleLinear()
@@ -225,14 +275,13 @@ function plot_groupvar_hists(hist_group) {
       .call(yAxis);
   }
   
-  draw_groupvar_buttons(hist_group, hgroup_scale,cell_height,cell_width,y_offset2 + (cor_height/2))
+  draw_groupvar_buttons(hist_group, hgroup_scale, cell_height, cell_width, y_offset2+(2*gvar_buffer)+button_size, button_size)
 }
 )}
 
-function _draw_groupvar_buttons(var_comp,d3,z,$0,cov_select,$1){return(
-function draw_groupvar_buttons(hist_group, groupvar_scale, cell_height, cell_width, y_offset) {
+function _draw_groupvar_buttons(var_comp,d3,target_var,z,$0,cov_select,$1){return(
+function draw_groupvar_buttons(hist_group, groupvar_scale, cell_height, cell_width, y_offset, button_size) {
   let button_color = ["grey","yellow","black"]
-  const button_size = 12
   
  // Variable Comparison Buttons
   let varcomp_button_group = hist_group.append('g')
@@ -244,32 +293,37 @@ function draw_groupvar_buttons(hist_group, groupvar_scale, cell_height, cell_wid
     .attr('width',button_size)
     .attr('height',button_size)
     .attr('stroke',d3.hcl(0,0,70))
-    .attr('stroke-width', 2)
-    .attr("fill", d => button_color[d.s])
+    .attr('stroke-width', 1)
+    .attr("fill", function(d){
+      if (d.vname == target_var){ return button_color[2] }
+      return button_color[d.s];
+    })
     .attr("opacity",0.7)
     .on('click', function(d) {
-      let curr_select = z.getCol("s",var_comp)
-      let num_selected = z.filter(r => r.s===1,var_comp).length
-      if (curr_select[d.id] === 1){
-        curr_select[d.id] = 0
-        if (num_selected === 2){
-          let s_id = z.filter(r => r.s===1,var_comp)[0].id
-          if (s_id === d.id) { s_id = z.filter(r => r.s===1,var_comp)[1].id }
-          curr_select = new Array(curr_select.length).fill(0)
-          curr_select[s_id] = 1
+      if (d.vname !== target_var){
+        let curr_select = z.getCol("s",var_comp)
+        let num_selected = z.filter(r => r.s===1,var_comp).length
+        if (curr_select[d.id] === 1){
+          curr_select[d.id] = 0
+          if (num_selected === 2){
+            let s_id = z.filter(r => r.s===1,var_comp)[0].id
+            if (s_id === d.id) { s_id = z.filter(r => r.s===1,var_comp)[1].id }
+            curr_select = new Array(curr_select.length).fill(0)
+            curr_select[s_id] = 1
+          }
+          $0.value = z.addCol("s",curr_select,var_comp)
         }
-        $0.value = z.addCol("s",curr_select,var_comp)
-      }
-      else if (num_selected === 0) {
-        curr_select[d.id] = 1
-        $0.value = z.addCol("s",curr_select,var_comp)
-      }
-      else if (num_selected === 1) {
-        let s_id = z.filter(r => r.s===1,var_comp)[0].id
-        curr_select = new Array(curr_select.length).fill(2)
-        curr_select[d.id] = 1
-        curr_select[s_id] = 1
-        $0.value = z.addCol("s",curr_select,var_comp)
+        else if (num_selected === 0) {
+          curr_select[d.id] = 1
+          $0.value = z.addCol("s",curr_select,var_comp)
+        }
+        else if (num_selected === 1) {
+          let s_id = z.filter(r => r.s===1,var_comp)[0].id
+          curr_select = new Array(curr_select.length).fill(2)
+          curr_select[d.id] = 1
+          curr_select[s_id] = 1
+          $0.value = z.addCol("s",curr_select,var_comp)
+        }
       }
   })
   
@@ -290,18 +344,23 @@ function draw_groupvar_buttons(hist_group, groupvar_scale, cell_height, cell_wid
     .attr('width',button_size)
     .attr('height',button_size)
     .attr('stroke',d3.hcl(0,0,70))
-    .attr('stroke-width', 2)
-    .attr("fill", d => button_color[d.s])
+    .attr('stroke-width', 1)
+    .attr("fill", function(d){
+      if (d.vname == target_var){ return button_color[2] }
+      return button_color[d.s];
+    })
     .attr("opacity",0.7)
     .on('click', function(d) {
-      let curr_select = z.getCol("s",cov_select)
-      if (curr_select[d.id] === 1){
-        curr_select[d.id] = 0
-        $1.value = z.addCol("s",curr_select,cov_select)
-      }
-      else {
-        curr_select[d.id] = 1
-        $1.value = z.addCol("s",curr_select,cov_select)
+      if (d.vname !== target_var){
+        let curr_select = z.getCol("s",cov_select)
+        if (curr_select[d.id] === 1){
+          curr_select[d.id] = 0
+          $1.value = z.addCol("s",curr_select,cov_select)
+        }
+        else {
+          curr_select[d.id] = 1
+          $1.value = z.addCol("s",curr_select,cov_select)
+        }
       }
   })
 
@@ -560,7 +619,7 @@ function indep_comp(var_comp_group) {
 }
 )}
 
-function _comp_stats(d3,var_comp_stats,var_dist2_size,var1_select,var2_select,z,var_stat_scale,response_var){return(
+function _comp_stats(d3,var_comp_stats,var_dist2_size,var1_select,var2_select,z,var_stat_scale,target_var){return(
 function comp_stats (stats_comp_group){
   const mh = 40
   const mw = 140
@@ -652,7 +711,7 @@ function comp_stats (stats_comp_group){
     .on('mouseover', function(d) {
         stats_comp_group.append('text')
           .attr("class", "univariate_description")
-          .text("Reg coeff for "+d.var+" [ "+response_var[0].msg+" ~ "+d.var+" ]") 
+          .text("Reg coeff for "+d.var+" [ "+target_var+" ~ "+d.var+" ]") 
           .attr('text-anchor', 'start')
           .attr('x', +d3.select(this).attr('x')+10)
           .attr('y', mh+row_scale.range()[1]+40)
@@ -695,7 +754,7 @@ function comp_stats (stats_comp_group){
     .on('mouseover', function(d) {
         stats_comp_group.append('text')
           .attr("class", "multivariate_description")
-          .text("Reg coeff for "+d.var+" [ "+response_var[0].msg+" ~ "+var1_select+" + "+var2_select+" ]") 
+          .text("Reg coeff for "+d.var+" [ "+target_var+" ~ "+var1_select+" + "+var2_select+" ]") 
           .attr('text-anchor', 'start')
           .attr('x', +d3.select(this).attr('x')+10)
           .attr('y', mh+row_scale.range()[1]+40)
@@ -725,11 +784,11 @@ function comp_stats (stats_comp_group){
 }
 )}
 
-function _reg_builder(group_data,reg_builder_size,var_dist_size,d3,response_var,math,reg_types,$0,z,cov_selection){return(
+function _reg_builder(group_data,reg_builder_size,var_dist_size,d3,math,reg_types,$0,z,cov_selection){return(
 function reg_builder(main_group){
   
-  const num_g0 = group_data[0].g0.length
-  const num_g1 = group_data[0].g1.length
+  const num_g0 = group_data[0].g0
+  const num_g1 = group_data[0].g1
   const cohort_size = num_g0+num_g1
   
   const geno_offset = {x:30,y:reg_builder_size.height/3 - 5}
@@ -751,17 +810,17 @@ function reg_builder(main_group){
     .attr('fill','none')
     .lower()
   reg_builder_group.append('text')
-    .text(cohort_size+" Subjects in Cohort")
+    .text(cohort_size+" patients in cohort")
     .attr('text-anchor', 'middle')
     .attr('x', geno_panel_width/2)
     .attr('y', geno_offset.y -35)
     .attr('font-size', '14px')
     .attr('font-weight', 'bold')
-  reg_builder_group.append('text')
-    .text(response_var[0].msg)
-    .attr('text-anchor', 'middle')
-    .attr('transform', `rotate(270), translate(${-geno_offset.y},${geno_offset.x})`)
-    .attr('font-size', '14px')
+  // reg_builder_group.append('text')
+  //   .text(target_var)
+  //   .attr('text-anchor', 'middle')
+  //   .attr('transform', `rotate(270), translate(${-geno_offset.y},${geno_offset.x})`)
+  //   .attr('font-size', '14px')
   let geno_x_scale = d3.scaleLinear()
     .domain([0,math.max(num_g0,num_g1)])
     .range([geno_offset.x+15,geno_offset.x+hist_width+15])
@@ -840,7 +899,7 @@ function reg_builder(main_group){
 }
 )}
 
-function _cov_selection(z,cov_select,reg_builder_size,d3,response_var,run_status,reg_types,reg_list,save_covariate_data,$0,$1,$2,$3,$4,hist_data){return(
+function _cov_selection(z,cov_select,reg_builder_size,d3,gen_display_string,run_status,reg_types,gen_model_string,target_var,reg_list,save_covariate_data,$0,$1,$2,$3,$4,canonical,$5,hist_data){return(
 function cov_selection(cov_select_group,reg_panel_width){
   
   let selected = z.getCol("vname", z.filter(r => r.s === 1, cov_select))
@@ -856,7 +915,7 @@ function cov_selection(cov_select_group,reg_panel_width){
     .lower()
   
   cov_select_group.append('text')
-    .text(response_var[0].msg + " ~ Phecode +")
+    .text(gen_display_string())
     .attr('text-anchor', 'middle')
     .attr('x', reg_panel_width/2)
     .attr('y', 30)
@@ -881,12 +940,12 @@ function cov_selection(cov_select_group,reg_panel_width){
     .on('click', function(d) {
       if (run_status === 0){
         let rtype = z.filter(r => r.s ===1, reg_types)
-        let s = z.getCol("vname", z.filter(r => r.s === 1, cov_select))
-        let next_ix = reg_list.length
+        let model_string = gen_model_string(target_var, z.getCol("vname", z.filter(r => r.s === 1, cov_select)));
+        let next_ix = reg_list.length;
         let reg_list_copy = [...reg_list]
-        reg_list_copy.unshift({ cmd:"run_reg", cov:s, rtype:rtype[0].rtype, save_cov:save_covariate_data})
+        reg_list_copy.unshift({ cmd:"run_reg", model_str:model_string, rtype:rtype[0].rtype, save_cov:save_covariate_data})
         $0.value = [...reg_list_copy];
-        $1.value = [{ cmd:"run_reg", cov:s, rtype:rtype[0].rtype, save_cov:save_covariate_data}];
+        $1.value = [{ cmd:"run_reg", model_str:model_string, rtype:rtype[0].rtype, save_cov:save_covariate_data}];
         $2.value = 0;
         $3.value = 1;
       }
@@ -899,33 +958,52 @@ function cov_selection(cov_select_group,reg_panel_width){
     .attr('font-weight','bold')
 
 
-  // Toggle for saving covariate regression info
-  let button_size = 15;
-  let button_color = 'grey';
+  // Toggles for saving covariate regression info & Flipping reg equation
+  let button_size = 11;
+  
+  let cov_button_color = 'grey';
   if (save_covariate_data === 1){
-    button_color = 'yellow';
+    cov_button_color = 'yellow';
   }
-    
   cov_select_group.append('rect')
     .attr('id','Cov_Save_button')
-    .attr('transform', d=> `translate(${button_size},10)`)
+    .attr('transform', d=> `translate(${button_size},5)`)
     .attr('width', button_size)
     .attr('height', button_size)
     .attr('stroke',d3.hcl(0,0,70))
-    .attr('stroke-width', 3)
-    .attr("fill", button_color)
+    .attr('stroke-width', 1)
+    .attr("fill", cov_button_color)
     .attr("opacity", 0.5)
     .on('click', function(d) {
       $4.value = (save_covariate_data + 1) % 2;
-      
     })
   cov_select_group.append('text')
     .text('Save Cov Data')
-    .attr('transform', d=> `translate(${(button_size)*2+5},${button_size+7})`)
+    .attr('transform', d=> `translate(${(button_size)*2+5},${button_size+3})`)
     .attr('font-size', '11px')
     .attr('text-anchor', 'start')
     .attr('font-weight','bold')
 
+  let flip_button_color = 'grey';
+  if (!canonical){
+    flip_button_color = 'yellow';
+  }
+  cov_select_group.append('rect')
+    .attr('id','Flip_button')
+    .attr('transform', d=> `translate(${button_size},${button_size+8})`)
+    .attr('width', button_size)
+    .attr('height', button_size)
+    .attr('stroke',d3.hcl(0,0,70))
+    .attr('stroke-width', 1)
+    .attr("fill", flip_button_color)
+    .attr("opacity", 0.5)
+    .on('click', function(d) { $5.value = !canonical })
+  cov_select_group.append('text')
+    .text('Flip Equation')
+    .attr('transform', d=> `translate(${(button_size)*2+5},${button_size*2 + 5})`)
+    .attr('font-size', '11px')
+    .attr('text-anchor', 'start')
+    .attr('font-weight','bold')
 
   
   // Show selected covariates
@@ -992,13 +1070,10 @@ function cov_selection(cov_select_group,reg_panel_width){
         .attr('stroke', "black")
         .attr('stroke-width',1)
   }
-  
-    
-    
 }
 )}
 
-function _group_legend(var_dist2_size,legend_height,d3,response_var,var_stat_scale){return(
+function _group_legend(var_dist2_size,legend_height,d3,target_var,var_stat_scale){return(
 function group_legend(legend_group){
   
   legend_group.append('rect')
@@ -1036,7 +1111,7 @@ function group_legend(legend_group){
     .align(0.5)
 
   geno_group.append('text')
-    .text(response_var[0].msg)
+    .text(target_var)
     .attr('font-size','12px')
     .attr('font-weight', 'bold')
     .attr("text-anchor", "middle")
@@ -1097,18 +1172,30 @@ function group_legend(legend_group){
 }
 )}
 
-function _makeArr(){return(
-function makeArr(startValue, stopValue, cardinality) {
-  var arr = [];
-  var step = (stopValue - startValue) / (cardinality - 1);
-  for (var i = 0; i < cardinality; i++) {
-    arr.push(startValue + (step * i));
-  }
-  return arr;
+function _gen_display_string(canonical,target_var){return(
+function gen_display_string(){
+  var disp_str;
+  if (canonical) { disp_str = "PheCode ~ " + target_var + " +" }
+  else { disp_str = target_var + " ~ PheCode +" }
+  return disp_str
 }
 )}
 
-function _14(md){return(
+function _gen_model_string(canonical){return(
+function gen_model_string(target, cov_list) {
+  var model_string;
+  if (canonical) { model_string = "PheCode~" + target }
+  else { model_string = target + "~PheCode" }
+  
+  for (var i=0; i < cov_list.length; i++){
+    model_string = model_string + "+" + cov_list[i];
+  }
+  
+  return model_string
+}
+)}
+
+function _15(md){return(
 md `### Regression Panel Functions`
 )}
 
@@ -1129,7 +1216,7 @@ function reg_panel(svg_elem) {
 }
 )}
 
-function _plot_logOdds(z,thresh_value,reg_data,d3,reg_plot_size,low_lim_col,up_lim_col,reg_plot_legend_height,buffer,phe_cat_colors,vol_color,xaxis_name,phe_cat_markers,point_col,OR_type,$0){return(
+function _plot_logOdds(z,thresh_value,reg_data,d3,reg_plot_size,low_lim_col,up_lim_col,reg_plot_legend_height,buffer,phe_cat_colors,vol_color,xaxis_name,phe_cat_markers,point_col,model_type,$0){return(
 function plot_logOdds(main_group)  {
   // NOTE 
   // This is is not necessarily a log odds plot anymore!! There is a toggle to switch between Odds Ratio and Log Odds Ratio.
@@ -1181,7 +1268,7 @@ function plot_logOdds(main_group)  {
   if (reg_data.length == 1 && reg_data[0].msg === "no_data"){
     log_odds_group.append('text')
       .attr('class','placeholder')
-      .text('Log Odds Plot')
+      .text('Effect Size Plot')
       .attr('text-anchor','middle')
       .attr('transform',`translate(${reg_plot_size.width/2},${reg_plot_size.height/3})`)
       .attr('font-size','18px')
@@ -1257,6 +1344,7 @@ function plot_logOdds(main_group)  {
         main_group.selectAll('.phelabel_click').remove()
         main_group.selectAll('.phecode_row').attr("fill","grey")
 
+        console.log(d.Pheno_id)
         // highlight selected point in both plots
         log_odds_group.selectAll('#'+d.Pheno_id)
           .attr('opacity', 1.0)
@@ -1286,40 +1374,39 @@ function plot_logOdds(main_group)  {
           .attr("fill",d => phe_cat_colors(d.category_id))
       })
 
-
-  // Toggle for Odds Ratio display
-  let button_size = 15;
-  let button_color = 'grey';
-  if (xaxis_name === 'Odds Ratio'){
-    button_color = 'yellow';
-  }
     
-  log_odds_group.append('rect')
-    .attr('id','OR_button')
-    .attr('transform', d=> `translate(${margin},${reg_plot_size.height-button_size-5})`)
-    .attr('width', button_size)
-    .attr('height', button_size)
-    .attr('stroke',d3.hcl(0,0,70))
-    .attr('stroke-width', 3)
-    .attr("fill", button_color)
-    .attr("opacity", 0.5)
-    .on('click', function(d) {
-      let curr_select = z.getCol("s", OR_type)
-      let new_select = [0,0];
-      if (curr_select[0] === 1){
-        new_select = [0,1];
-      }
-      else{
-        new_select = [1,0];
-      }
-      $0.value = z.addCol("s",new_select,OR_type)
-    })
-  log_odds_group.append('text')
-    .text('Toggle OR')
-    .attr('transform', d=> `translate(${margin+button_size+5},${reg_plot_size.height-button_size+7})`)
-    .attr('font-size', '11px')
-    .attr('text-anchor', 'start')
-    .attr('font-weight','bold')
+  if (xaxis_name !== "Regression Coefficient"){
+    // Toggle for Odds Ratio display
+    let button_size = 15;
+    let button_color = 'grey';
+    if (xaxis_name === 'Odds Ratio'){
+      button_color = 'yellow';
+    }
+      
+    log_odds_group.append('rect')
+      .attr('id','OR_button')
+      .attr('transform', d=> `translate(${margin},${reg_plot_size.height-button_size-5})`)
+      .attr('width', button_size)
+      .attr('height', button_size)
+      .attr('stroke',d3.hcl(0,0,70))
+      .attr('stroke-width', 3)
+      .attr("fill", button_color)
+      .attr("opacity", 0.5)
+      .on('click', function(d) {
+        if (model_type === 0){
+          $0.value = 1;
+        }
+        else{
+          $0.value = 0;
+        }
+      })
+    log_odds_group.append('text')
+      .text('Toggle OR')
+      .attr('transform', d=> `translate(${margin+button_size+5},${reg_plot_size.height-button_size+7})`)
+      .attr('font-size', '11px')
+      .attr('text-anchor', 'start')
+      .attr('font-weight','bold')
+  }
 
     return beta_group
  }
@@ -1487,10 +1574,10 @@ function plot_volcano(main_group)  {
 }
 )}
 
-function _draw_volcano_legend(cat_legend_width,d3){return(
+function _draw_volcano_legend(reg_plot_legend_height,cat_legend_width,d3){return(
 function draw_volcano_legend(main_group){
   const legend_width = 90
-  const legend_height = 100
+  const legend_height = reg_plot_legend_height
   const entries = [{type:'Bonferroni',color:"gold"},
                    {type:'FDR',color:"blue"},
                    {type:'Insignificant',color:"gray"}]
@@ -1667,7 +1754,7 @@ function thresh_select_panel(main_group){
 }
 )}
 
-function _drawTable(reg_plot_legend_height,reg_plot_size,reg_panel_size,reg_table_height,d3,reg_data,table_data,table_cols,z,phe_cat_colors,vol_color,buffer,start_ix,num_rows,$0){return(
+function _drawTable(reg_plot_legend_height,reg_plot_size,reg_panel_size,reg_table_height,d3,reg_data,model_string,table_data,table_cols,z,point_col,phe_cat_colors,vol_color,buffer,start_ix,num_rows,$0){return(
 function drawTable(main_group) {
   let table_group = main_group.append('g')
     .attr('transform', 
@@ -1692,11 +1779,20 @@ function drawTable(main_group) {
       .attr('font-weight','bold')
   }
   else {
+    // show model string for current regression results
+    table_group.append('text')
+      .text(model_string)
+      .attr('text-anchor','middle')
+      .attr('transform',`translate(${reg_panel_size/2},${20})`)
+      .attr('font-size','18px')
+      .attr('font-style', 'italic')
+      .attr('font-weight','bold')
+      .attr('font-family','serif')
 
-    let mi = 20;
+    let mi = 40;
     let table_width = 0.85*reg_panel_size
     let f_pval = d3.format(".3e") // format pvalues
-    let f_beta = d3.format(".4") // format beta values
+    let f_beta = d3.format(".4f") // format beta values
 
     let rows = d3.set(table_data,d=>d.PheCode).values()
     rows.unshift('header')
@@ -1751,11 +1847,11 @@ function drawTable(main_group) {
       .attr('x', col.offset)
 
     // OR
-    col = z.filter(r => r.name === 'OR',table_cols)[0]
+    col = z.filter(r => r.name === point_col,table_cols)[0]
     data_group.append('text')
       .attr('class','phecode_row_text')
       .attr('id',d => d.Pheno_id)
-      .text(d => f_beta(d.OR))
+      .text(d => f_beta(d[point_col]))
       .attr('font-size','12px')
       .attr('x', col.offset)
 
@@ -1855,12 +1951,12 @@ function drawTable(main_group) {
       })
 
     // scrolling arrows
-    let arrow_panel_width = (reg_panel_size - (table_width + (mi*2) + buffer))
+    let arrow_panel_width = (reg_panel_size - (table_width*1.05))
     let arrow_width = arrow_panel_width*0.4
     let arrow_height = arrow_width*0.6
-    let arrow_offset = arrow_panel_width*0.3
+    let arrow_offset = arrow_panel_width*0.1
     let arrow_group = table_group.append('g')
-      .attr('transform',`translate(${mi+table_width+buffer+arrow_offset},${reg_table_height/2})`)
+      .attr('transform',`translate(${mi+table_width+buffer+arrow_offset},${reg_table_height/2 + buffer})`)
 
     var down_arrow = [{"x":0, "y":0},
                       {"x":arrow_width, "y":0},
@@ -1915,7 +2011,7 @@ function drawTable(main_group) {
 }
 )}
 
-function _22(md){return(
+function _23(md){return(
 md `### Threshold Calculations`
 )}
 
@@ -1977,7 +2073,7 @@ function _thresh_value(z,thresh_types,fdr_thresh,bon_thresh)
 }
 
 
-function _26(md){return(
+function _27(md){return(
 md `### Color Scales`
 )}
 
@@ -2005,16 +2101,16 @@ function _phe_cat_markers(d3){return(
 function phe_cat_markers(category_id) {
   let quotient = Math.floor(category_id / 5);
   if (quotient === 0){
-    return d3.symbol().type(d3.symbolCircle).size(75)();
+    return d3.symbol().type(d3.symbolCircle).size(60)();
   }
   else if (quotient === 1){
-    return d3.symbol().type(d3.symbolDiamond).size(75)();
+    return d3.symbol().type(d3.symbolDiamond).size(60)();
   }
   else if (quotient === 2){
     return d3.symbol().type(d3.symbolSquare).size(75)();
   }
   
-  return d3.symbol().type(d3.symbolTriangle).size(75)();
+  return d3.symbol().type(d3.symbolTriangle).size(60)();
 }
 )}
 
@@ -2039,7 +2135,7 @@ function vol_color(pval) {
 }
 )}
 
-function _31(md){return(
+function _32(md){return(
 md `### Parameters`
 )}
 
@@ -2055,7 +2151,7 @@ function _alpha(){return(
 0.05
 )}
 
-function _35(md){return(
+function _36(md){return(
 md `#### Regression Panel`
 )}
 
@@ -2073,7 +2169,7 @@ function _reg_plot_legend_height(){return(
 )}
 
 function _reg_table_height(){return(
-150
+175
 )}
 
 function _cat_legend_width(reg_panel_size){return(
@@ -2084,35 +2180,32 @@ function _num_rows(){return(
 7
 )}
 
-function _point_col(z,OR_type)
+function _point_col(OR_type,model_type)
 {
-  let selected_data = z.filter(r => r.s===1, OR_type)
-  return selected_data[0].point
+  return OR_type[model_type].point
 }
 
 
-function _up_lim_col(z,OR_type)
+function _up_lim_col(OR_type,model_type)
 {
-  let selected_data = z.filter(r => r.s===1, OR_type)
-  return selected_data[0].up_lim
+  return OR_type[model_type].up_lim
 }
 
 
-function _low_lim_col(z,OR_type)
+function _low_lim_col(z,OR_type,model_type)
 {
   let selected_data = z.filter(r => r.s===1, OR_type)
-  return selected_data[0].low_lim
+  return OR_type[model_type].low_lim
 }
 
 
-function _xaxis_name(z,OR_type)
+function _xaxis_name(OR_type,model_type)
 {
-  let selected_data = z.filter(r => r.s===1, OR_type)
-  return selected_data[0].name
+  return OR_type[model_type].name
 }
 
 
-function _46(md){return(
+function _47(md){return(
 md`#### Group Panel`
 )}
 
@@ -2162,25 +2255,6 @@ function _var2_select(z,var_comp)
 }
 
 
-function _reg_list_strings(reg_list)
-{
-  let list = []
-  let reg_str = ""
-  for (var i=0; i < reg_list.length; i++){
-    if (reg_list[i].rtype === 0){ reg_str = "binary" }
-    else if (reg_list[i].rtype === 1) { reg_str = "count" }
-    else { reg_str = "duration" }
-    if (reg_list[i].cov.length > 0){
-      list[i] = reg_str + ' - ' + reg_list[i].cov.join('+')
-    }
-    else{
-      list[i] = reg_str
-    }
-  }
-  return list
-}
-
-
 function _55(md){return(
 md `## Data`
 )}
@@ -2189,12 +2263,28 @@ function _56(md){return(
 md `### Mutables`
 )}
 
+function _target_var(response_var){return(
+response_var[0].msg
+)}
+
+function _group_vars(z,group_var_init){return(
+z.getCol("msg", group_var_init)
+)}
+
+function _group_data_args(){return(
+[{cmd:"group_data", response: "INIT"}]
+)}
+
+function _hist_args(){return(
+[{cmd:"histograms", response: "INIT"}]
+)}
+
 function _reg_args(){return(
-[{ cmd:"run_reg", cov:[], rtype:-1, save_cov:0}]
+[{ cmd:"run_reg", model_str:"", rtype:-1, save_cov:0}]
 )}
 
 function _reg_list(){return(
-[{ cmd:"run_reg", cov:[], rtype:0}]
+[{ cmd:"run_reg", model_str:"", rtype:0}]
 )}
 
 function _var_comp(group_vars)
@@ -2235,8 +2325,9 @@ function _thresh_types(){return(
 )}
 
 function _OR_type(){return(
-[{name:'Log Odds Ratio',point:'beta',low_lim:'beta_ci_low',up_lim:'beta_ci_up',s:1},
-                   {name:'Odds Ratio',point:'OR',low_lim:'OR_ci_low',up_lim:'OR_ci_up',s:0}]
+[{name:'Log Odds Ratio',point:'LOR',low_lim:'beta_ci_low',up_lim:'beta_ci_up'},
+                   {name:'Odds Ratio',point:'OR',low_lim:'OR_ci_low',up_lim:'OR_ci_up'},
+                   {name:'Regression Coefficient',point:'Beta',low_lim:'beta_ci_low',up_lim:'beta_ci_up'}]
 )}
 
 function _start_ix(){return(
@@ -2251,13 +2342,34 @@ function _save_covariate_data(){return(
 0
 )}
 
-function _67(md){return(
+function _canonical(){return(
+true
+)}
+
+function _model_type(){return(
+0
+)}
+
+function _model_string(reg,$0)
+{
+  let stat_info = reg[reg.length-1]
+  if (stat_info['Pheno_id'] === 'linear') {
+    $0.value = 2;
+  }
+  else {
+    $0.value = 0;
+  }
+  return stat_info['Phenotype']
+}
+
+
+function _74(md){return(
 md `### Import Data`
 )}
 
 async function* _response_var($,Promises)
 {
-  let data_for_server = { cmd:"init", ftype: "response"};
+  let data_for_server = { cmd:"init_response"};
 
     let next_data = await $.ajax({
       url: 'http://127.0.0.1:5000/grab_data',
@@ -2271,9 +2383,25 @@ async function* _response_var($,Promises)
 }
 
 
-async function* _group_data($,Promises)
+async function* _group_var_init($,Promises)
 {
-  let data_for_server = { cmd:"init", ftype: "group"};
+  let data_for_server = { cmd:"init_groupvars"};
+
+    let next_data = await $.ajax({
+      url: 'http://127.0.0.1:5000/grab_data',
+      dataType: 'json',
+      data: JSON.stringify(data_for_server),
+      contentType: 'application/json;charset=UTF-8',
+      type: 'POST'
+    });
+
+    yield Promises.delay(1000, JSON.parse(next_data));
+}
+
+
+async function* _group_data(group_data_args,$,Promises)
+{
+  let data_for_server = group_data_args[0];
 
     let next_data = await $.ajax({
       url: 'http://127.0.0.1:5000/grab_data',
@@ -2298,7 +2426,7 @@ async function* _reg(reg_args,$,Promises)
       contentType: 'application/json;charset=UTF-8',
       type: 'POST'
     });
-
+  
     yield Promises.delay(1000, JSON.parse(next_data));
 }
 
@@ -2307,8 +2435,8 @@ function _reg_data(z,reg)
 {
   // small pvals sometimes get convereted to 0 by jsonify - this fixes them
   const pvals = z.deriveCol((r) => parseFloat(r.pval_str), reg)
-  let reg_data = z.addCol("pval", pvals, reg)
-  return z.sortByCol("category_id", "asc", reg_data)
+  let data = z.addCol("pval", pvals, reg)
+  return z.sortByCol("category_id", "asc", z.filter(r => r.PheCode != "STAT_INFO", data))
 }
 
 
@@ -2333,9 +2461,9 @@ function _phe_categories(){return(
                   {"category":17,"category_string":"symptoms"}]
 )}
 
-async function* _hist_data($,Promises)
+async function* _hist_data(hist_args,$,Promises)
 {
-  let data_for_server = { cmd:"init", ftype: "histograms"};
+  let data_for_server = hist_args[0];
 
     let next_data = await $.ajax({
       url: 'http://127.0.0.1:5000/grab_data',
@@ -2349,13 +2477,9 @@ async function* _hist_data($,Promises)
 }
 
 
-function _group_vars(z,hist_data){return(
-z.unique(z.getCol("var_name",hist_data))
-)}
-
-async function* _jhist_data(var1_select,var2_select,$,Promises)
+async function* _jhist_data(var1_select,var2_select,target_var,$,Promises)
 {
-  let data_for_server = { cmd:"compute_hist2D", var1: var1_select, var2: var2_select};
+  let data_for_server = { cmd:"compute_hist2D", var1: var1_select, var2: var2_select, response:target_var};
 
     let next_data = await $.ajax({
       url: 'http://127.0.0.1:5000/grab_data',
@@ -2369,9 +2493,9 @@ async function* _jhist_data(var1_select,var2_select,$,Promises)
 }
 
 
-async function* _var_comp_stats(var1_select,var2_select,$,Promises)
+async function* _var_comp_stats(var1_select,var2_select,target_var,$,Promises)
 {
-  let data_for_server = { cmd:"independence_tests", var1: var1_select, var2: var2_select};
+  let data_for_server = { cmd:"independence_tests", var1: var1_select, var2: var2_select, response:target_var};
 
     let next_data = await $.ajax({
       url: 'http://127.0.0.1:5000/grab_data',
@@ -2385,12 +2509,12 @@ async function* _var_comp_stats(var1_select,var2_select,$,Promises)
 }
 
 
-function _table_cols(reg_panel_size)
+function _table_cols(reg_panel_size,point_col)
 {
   let base_data = [{name: 'PheCode', width:reg_panel_size*0.07},
                    {name: 'Phenotype', width:reg_panel_size*0.4},
                    {name: 'Count', width:reg_panel_size*0.07},
-                   {name: 'OR', width:reg_panel_size*0.07},
+                   {name:  point_col, width:reg_panel_size*0.07},
                    {name: 'P-value', width:reg_panel_size*0.09},
                    {name: 'Category', width:reg_panel_size*0.15}
                   ]
@@ -2411,7 +2535,7 @@ function _table_data(z,reg_data,start_ix,num_rows)
 }
 
 
-function _79(md){return(
+function _86(md){return(
 md `### Imports`
 )}
 
@@ -2434,47 +2558,48 @@ export default function define(runtime, observer) {
   main.variable(observer()).define(["reg_panel_size","margin","d3","reg_panel"], _3);
   main.variable(observer()).define(["md"], _4);
   main.variable(observer("group_panel")).define("group_panel", ["group_panel_size","margin","var_dist_size","legend_height","plot_groupvar_hists","indep_comp","reg_builder","group_legend","d3","var_dist2_size"], _group_panel);
-  main.variable(observer("plot_groupvar_hists")).define("plot_groupvar_hists", ["d3","group_vars","var_dist_size","z","hist_data","var_stat_scale","group_data","response_var","draw_groupvar_buttons"], _plot_groupvar_hists);
-  main.variable(observer("draw_groupvar_buttons")).define("draw_groupvar_buttons", ["var_comp","d3","z","mutable var_comp","cov_select","mutable cov_select"], _draw_groupvar_buttons);
+  main.variable(observer("plot_groupvar_hists")).define("plot_groupvar_hists", ["d3","group_vars","var_dist_size","z","hist_data","group_data","target_var","mutable target_var","mutable group_data_args","mutable hist_args","cov_select","mutable cov_select","var_comp","mutable var_comp","var_stat_scale","draw_groupvar_buttons"], _plot_groupvar_hists);
+  main.variable(observer("draw_groupvar_buttons")).define("draw_groupvar_buttons", ["var_comp","d3","target_var","z","mutable var_comp","cov_select","mutable cov_select"], _draw_groupvar_buttons);
   main.variable(observer("indep_comp")).define("indep_comp", ["jhist_data","var_dist2_size","z","var1_select","hist_data","var2_select","d3","comp_stats"], _indep_comp);
-  main.variable(observer("comp_stats")).define("comp_stats", ["d3","var_comp_stats","var_dist2_size","var1_select","var2_select","z","var_stat_scale","response_var"], _comp_stats);
-  main.variable(observer("reg_builder")).define("reg_builder", ["group_data","reg_builder_size","var_dist_size","d3","response_var","math","reg_types","mutable reg_types","z","cov_selection"], _reg_builder);
-  main.variable(observer("cov_selection")).define("cov_selection", ["z","cov_select","reg_builder_size","d3","response_var","run_status","reg_types","reg_list","save_covariate_data","mutable reg_list","mutable reg_args","mutable start_ix","mutable run_status","mutable save_covariate_data","hist_data"], _cov_selection);
-  main.variable(observer("group_legend")).define("group_legend", ["var_dist2_size","legend_height","d3","response_var","var_stat_scale"], _group_legend);
-  main.variable(observer("makeArr")).define("makeArr", _makeArr);
-  main.variable(observer()).define(["md"], _14);
+  main.variable(observer("comp_stats")).define("comp_stats", ["d3","var_comp_stats","var_dist2_size","var1_select","var2_select","z","var_stat_scale","target_var"], _comp_stats);
+  main.variable(observer("reg_builder")).define("reg_builder", ["group_data","reg_builder_size","var_dist_size","d3","math","reg_types","mutable reg_types","z","cov_selection"], _reg_builder);
+  main.variable(observer("cov_selection")).define("cov_selection", ["z","cov_select","reg_builder_size","d3","gen_display_string","run_status","reg_types","gen_model_string","target_var","reg_list","save_covariate_data","mutable reg_list","mutable reg_args","mutable start_ix","mutable run_status","mutable save_covariate_data","canonical","mutable canonical","hist_data"], _cov_selection);
+  main.variable(observer("group_legend")).define("group_legend", ["var_dist2_size","legend_height","d3","target_var","var_stat_scale"], _group_legend);
+  main.variable(observer("gen_display_string")).define("gen_display_string", ["canonical","target_var"], _gen_display_string);
+  main.variable(observer("gen_model_string")).define("gen_model_string", ["canonical"], _gen_model_string);
+  main.variable(observer()).define(["md"], _15);
   main.variable(observer("reg_panel")).define("reg_panel", ["draw_cat_legend","draw_volcano_legend","thresh_select_panel","plot_logOdds","plot_volcano","drawTable","mutable run_status"], _reg_panel);
-  main.variable(observer("plot_logOdds")).define("plot_logOdds", ["z","thresh_value","reg_data","d3","reg_plot_size","low_lim_col","up_lim_col","reg_plot_legend_height","buffer","phe_cat_colors","vol_color","xaxis_name","phe_cat_markers","point_col","OR_type","mutable OR_type"], _plot_logOdds);
+  main.variable(observer("plot_logOdds")).define("plot_logOdds", ["z","thresh_value","reg_data","d3","reg_plot_size","low_lim_col","up_lim_col","reg_plot_legend_height","buffer","phe_cat_colors","vol_color","xaxis_name","phe_cat_markers","point_col","model_type","mutable model_type"], _plot_logOdds);
   main.variable(observer("plot_volcano")).define("plot_volcano", ["d3","reg_data","reg_plot_size","point_col","reg_plot_legend_height","buffer","phe_cat_colors","vol_color","xaxis_name"], _plot_volcano);
-  main.variable(observer("draw_volcano_legend")).define("draw_volcano_legend", ["cat_legend_width","d3"], _draw_volcano_legend);
+  main.variable(observer("draw_volcano_legend")).define("draw_volcano_legend", ["reg_plot_legend_height","cat_legend_width","d3"], _draw_volcano_legend);
   main.variable(observer("draw_cat_legend")).define("draw_cat_legend", ["cat_legend_width","reg_plot_legend_height","d3","phe_categories","phe_cat_colors","phe_cat_markers"], _draw_cat_legend);
   main.variable(observer("thresh_select_panel")).define("thresh_select_panel", ["reg_panel_size","cat_legend_width","reg_plot_legend_height","d3","thresh_types","mutable thresh_types","z"], _thresh_select_panel);
-  main.variable(observer("drawTable")).define("drawTable", ["reg_plot_legend_height","reg_plot_size","reg_panel_size","reg_table_height","d3","reg_data","table_data","table_cols","z","phe_cat_colors","vol_color","buffer","start_ix","num_rows","mutable start_ix"], _drawTable);
-  main.variable(observer()).define(["md"], _22);
+  main.variable(observer("drawTable")).define("drawTable", ["reg_plot_legend_height","reg_plot_size","reg_panel_size","reg_table_height","d3","reg_data","model_string","table_data","table_cols","z","point_col","phe_cat_colors","vol_color","buffer","start_ix","num_rows","mutable start_ix"], _drawTable);
+  main.variable(observer()).define(["md"], _23);
   main.variable(observer("fdr_thresh")).define("fdr_thresh", ["z","reg_data","alpha"], _fdr_thresh);
   main.variable(observer("bon_thresh")).define("bon_thresh", ["z","reg_data","alpha"], _bon_thresh);
   main.variable(observer("thresh_value")).define("thresh_value", ["z","thresh_types","fdr_thresh","bon_thresh"], _thresh_value);
-  main.variable(observer()).define(["md"], _26);
+  main.variable(observer()).define(["md"], _27);
   main.variable(observer("phe_cat_colors")).define("phe_cat_colors", _phe_cat_colors);
   main.variable(observer("phe_cat_markers")).define("phe_cat_markers", ["d3"], _phe_cat_markers);
   main.variable(observer("var_stat_scale")).define("var_stat_scale", ["d3"], _var_stat_scale);
   main.variable(observer("vol_color")).define("vol_color", ["bon_thresh","fdr_thresh"], _vol_color);
-  main.variable(observer()).define(["md"], _31);
+  main.variable(observer()).define(["md"], _32);
   main.variable(observer("buffer")).define("buffer", _buffer);
   main.variable(observer("margin")).define("margin", _margin);
   main.variable(observer("alpha")).define("alpha", _alpha);
-  main.variable(observer()).define(["md"], _35);
+  main.variable(observer()).define(["md"], _36);
   main.variable(observer("reg_panel_size")).define("reg_panel_size", _reg_panel_size);
   main.variable(observer("reg_plot_size")).define("reg_plot_size", ["reg_panel_size","reg_plot_legend_height","reg_table_height"], _reg_plot_size);
   main.variable(observer("reg_plot_legend_height")).define("reg_plot_legend_height", _reg_plot_legend_height);
   main.variable(observer("reg_table_height")).define("reg_table_height", _reg_table_height);
   main.variable(observer("cat_legend_width")).define("cat_legend_width", ["reg_panel_size"], _cat_legend_width);
   main.variable(observer("num_rows")).define("num_rows", _num_rows);
-  main.variable(observer("point_col")).define("point_col", ["z","OR_type"], _point_col);
-  main.variable(observer("up_lim_col")).define("up_lim_col", ["z","OR_type"], _up_lim_col);
-  main.variable(observer("low_lim_col")).define("low_lim_col", ["z","OR_type"], _low_lim_col);
-  main.variable(observer("xaxis_name")).define("xaxis_name", ["z","OR_type"], _xaxis_name);
-  main.variable(observer()).define(["md"], _46);
+  main.variable(observer("point_col")).define("point_col", ["OR_type","model_type"], _point_col);
+  main.variable(observer("up_lim_col")).define("up_lim_col", ["OR_type","model_type"], _up_lim_col);
+  main.variable(observer("low_lim_col")).define("low_lim_col", ["z","OR_type","model_type"], _low_lim_col);
+  main.variable(observer("xaxis_name")).define("xaxis_name", ["OR_type","model_type"], _xaxis_name);
+  main.variable(observer()).define(["md"], _47);
   main.variable(observer("legend_height")).define("legend_height", _legend_height);
   main.variable(observer("group_panel_size")).define("group_panel_size", _group_panel_size);
   main.variable(observer("var_dist_size")).define("var_dist_size", ["group_panel_size"], _var_dist_size);
@@ -2482,9 +2607,18 @@ export default function define(runtime, observer) {
   main.variable(observer("reg_builder_size")).define("reg_builder_size", ["group_panel_size"], _reg_builder_size);
   main.variable(observer("var1_select")).define("var1_select", ["z","var_comp"], _var1_select);
   main.variable(observer("var2_select")).define("var2_select", ["z","var_comp"], _var2_select);
-  main.variable(observer("reg_list_strings")).define("reg_list_strings", ["reg_list"], _reg_list_strings);
   main.variable(observer()).define(["md"], _55);
   main.variable(observer()).define(["md"], _56);
+  main.define("initial target_var", ["response_var"], _target_var);
+  main.variable(observer("mutable target_var")).define("mutable target_var", ["Mutable", "initial target_var"], (M, _) => new M(_));
+  main.variable(observer("target_var")).define("target_var", ["mutable target_var"], _ => _.generator);
+  main.variable(observer("group_vars")).define("group_vars", ["z","group_var_init"], _group_vars);
+  main.define("initial group_data_args", _group_data_args);
+  main.variable(observer("mutable group_data_args")).define("mutable group_data_args", ["Mutable", "initial group_data_args"], (M, _) => new M(_));
+  main.variable(observer("group_data_args")).define("group_data_args", ["mutable group_data_args"], _ => _.generator);
+  main.define("initial hist_args", _hist_args);
+  main.variable(observer("mutable hist_args")).define("mutable hist_args", ["Mutable", "initial hist_args"], (M, _) => new M(_));
+  main.variable(observer("hist_args")).define("hist_args", ["mutable hist_args"], _ => _.generator);
   main.define("initial reg_args", _reg_args);
   main.variable(observer("mutable reg_args")).define("mutable reg_args", ["Mutable", "initial reg_args"], (M, _) => new M(_));
   main.variable(observer("reg_args")).define("reg_args", ["mutable reg_args"], _ => _.generator);
@@ -2515,19 +2649,26 @@ export default function define(runtime, observer) {
   main.define("initial save_covariate_data", _save_covariate_data);
   main.variable(observer("mutable save_covariate_data")).define("mutable save_covariate_data", ["Mutable", "initial save_covariate_data"], (M, _) => new M(_));
   main.variable(observer("save_covariate_data")).define("save_covariate_data", ["mutable save_covariate_data"], _ => _.generator);
-  main.variable(observer()).define(["md"], _67);
+  main.define("initial canonical", _canonical);
+  main.variable(observer("mutable canonical")).define("mutable canonical", ["Mutable", "initial canonical"], (M, _) => new M(_));
+  main.variable(observer("canonical")).define("canonical", ["mutable canonical"], _ => _.generator);
+  main.define("initial model_type", _model_type);
+  main.variable(observer("mutable model_type")).define("mutable model_type", ["Mutable", "initial model_type"], (M, _) => new M(_));
+  main.variable(observer("model_type")).define("model_type", ["mutable model_type"], _ => _.generator);
+  main.variable(observer("model_string")).define("model_string", ["reg","mutable model_type"], _model_string);
+  main.variable(observer()).define(["md"], _74);
   main.variable(observer("response_var")).define("response_var", ["$","Promises"], _response_var);
-  main.variable(observer("group_data")).define("group_data", ["$","Promises"], _group_data);
+  main.variable(observer("group_var_init")).define("group_var_init", ["$","Promises"], _group_var_init);
+  main.variable(observer("group_data")).define("group_data", ["group_data_args","$","Promises"], _group_data);
   main.variable(observer("reg")).define("reg", ["reg_args","$","Promises"], _reg);
   main.variable(observer("reg_data")).define("reg_data", ["z","reg"], _reg_data);
   main.variable(observer("phe_categories")).define("phe_categories", _phe_categories);
-  main.variable(observer("hist_data")).define("hist_data", ["$","Promises"], _hist_data);
-  main.variable(observer("group_vars")).define("group_vars", ["z","hist_data"], _group_vars);
-  main.variable(observer("jhist_data")).define("jhist_data", ["var1_select","var2_select","$","Promises"], _jhist_data);
-  main.variable(observer("var_comp_stats")).define("var_comp_stats", ["var1_select","var2_select","$","Promises"], _var_comp_stats);
-  main.variable(observer("table_cols")).define("table_cols", ["reg_panel_size"], _table_cols);
+  main.variable(observer("hist_data")).define("hist_data", ["hist_args","$","Promises"], _hist_data);
+  main.variable(observer("jhist_data")).define("jhist_data", ["var1_select","var2_select","target_var","$","Promises"], _jhist_data);
+  main.variable(observer("var_comp_stats")).define("var_comp_stats", ["var1_select","var2_select","target_var","$","Promises"], _var_comp_stats);
+  main.variable(observer("table_cols")).define("table_cols", ["reg_panel_size","point_col"], _table_cols);
   main.variable(observer("table_data")).define("table_data", ["z","reg_data","start_ix","num_rows"], _table_data);
-  main.variable(observer()).define(["md"], _79);
+  main.variable(observer()).define(["md"], _86);
   main.variable(observer("d3")).define("d3", ["require"], _d3);
   main.variable(observer("z")).define("z", ["require"], _z);
   main.variable(observer("math")).define("math", ["require"], _math);
