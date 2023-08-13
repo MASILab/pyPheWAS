@@ -13,8 +13,8 @@ def parse_args():
     parser.add_argument('--postfix', required=False, default=None, type=str, help='Descriptive postfix for output files (e.g. poster or ages50-60)')
     parser.add_argument('--phewas_cov', required=False, default=None, type=str, help='A PheCode to use as a covariate in pyPhewasModel regression')
     parser.add_argument('--covariates', required=False, default='', type=str, help='Variables to be used as covariates')
-    parser.add_argument('--response', required=False, default='genotype', type=str, help='Variable to predict instead of genotype')
-    parser.add_argument('--canonical', required=False, default="True", type=str, help='Use response as a predictor [True, default] or the dependent variable [False] in the PheWAS equation')
+    parser.add_argument('--target', required=False, default='genotype', type=str, help='Binary variable that indicates case/control groups (default: genotype)')
+    parser.add_argument('--canonical', required=False, default="True", type=str, help='Use target as a predictor [True, default] or the dependent variable [False] in the PheWAS equation')
     parser.add_argument('--reg_thresh', required=False, default=5, type=int, help='Threshold of subjects presenting a PheCode required for running regression (default: 5)')
 
     parser.add_argument('--imbalance', required=False, default="True", type=str, help='Whether or not to show the direction of imbalance in the plot')
@@ -53,7 +53,7 @@ kwargs = {'path': Path(args.path),
           'group': args.group,
           'reg_type': args.reg_type,
           'postfix': args.postfix,
-          'response': args.response,
+          'target': args.target,
           'canonical': args.canonical,
           'reg_thresh':args.reg_thresh,
           'covariates': args.covariates,
@@ -121,8 +121,8 @@ phenotypes = get_icd_codes(path, phenotype, regression_map[reg_type])
 print("Retrieving group data...")
 genotypes = get_group_file(path, group)
 
-# check response variable
-assert response in genotypes.columns, "response %s is not a column in the group file" % response
+# check target variable
+assert target in genotypes.columns, "target %s is not a column in the group file" % target
 
 # check covariates
 if covariates != '':
@@ -159,7 +159,7 @@ pyPhewasModel
 
 print("Running PheWAS regressions...")
 regressions, model_str = run_phewas(fm, genotypes, 'ICD', regression_map[reg_type], 
-                    covariates=covariates, response=response, 
+                    covariates=covariates, target=target, 
                     phe_thresh=reg_thresh, canonical=canonical)
 
 reg_outfile = "regressions_" + postfix + ".csv"

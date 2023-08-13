@@ -440,34 +440,37 @@ def parse_pheno_model(reg, phe_model, note, phe_info, var):
 
 
 
-def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype', phe_thresh=5, canonical=True):
+def run_phewas(fm, demo, code_type, reg_type, covariates='', target='genotype', phe_thresh=5, canonical=True):
 	"""
 	Run mass phenotype regressions
 
 	Iterate over all PheWAS/ProWAS codes in the feature matrix, running a logistic regression of the form:
 
-	:math:`Pr(phenotype\_aggregate) \sim logit(response + covariates)`
+	:math:`Pr(phenotype\_aggregate) \sim logit(target + covariates)`
 
 	or the *reverse* form (`canonical=False`):
 
-	:math:`Pr(response) \sim logit(phenotype\_aggregate + covariates)`
+	:math:`Pr(target) \sim logit(phenotype\_aggregate + covariates)`
+
+	TODO: if reg_type = linear and canonical=False, it will be a linear regression, not a logistic regression
+	TODO: need to update model description
 
 	``fm`` is a 3xNxP matrix, where N = number of subjects and P = number of PheWAS/ProWAS Codes; this should only
 	be consutrcted by ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix`` - otherwise results will be untrustworthy.
 	To use the age feature matrix (``fm[1]``), include 'MaxAgeAtICD' or 'MaxAgeAtCPT' in the ``covariates`` string.
-	Other than 'MaxAgeAtICD' and 'MaxAgeAtCPT', all covariates and the response variable must be included in
-	the group DataFrame.
+	Other than 'MaxAgeAtICD' and 'MaxAgeAtCPT', all covariates and the target variable must be included in
+	the demo DataFrame.
 
 	The returned DataFrame includes the PheWAS/ProWAS code, Phenotype (code description, e.g. 'Pain in joint'),
 	-log\ :sub:`10`\ (p-value), p-value, beta, beta's confidence interval, beta's standard error, and lists of the ICD-9/ICD-10 or
 	CPT codes that map to the phenotype.
 
 	:param fm: phenotype feature matrix derived via ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix``
-	:param demo: group data
+	:param demo: A pandas DataFrame containing model covariate and target variables
 	:param code_type:  type of EMR code ('ICD' or 'CPT')
 	:param reg_type: type of regression (0:binary, 1:count, 2:duration)
 	:param covariates: *[optional]* covariates to include in the regressions separated by '+' (e.g. 'sex+ageAtDx')
-	:param response: *[optional]* response variable in the logisitc model (default: *genotype*)
+	:param target: *[optional]* target variable in the logisitc model (default: *genotype*)
 	:param phe_thresh: *[optional]* threshold for running regression; see note (default: *5*)
 	:param canonical: *[optional]*  if False, use the reverse regression formula. if True [default] use the canonical formula.
 
@@ -476,7 +479,7 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 	:type code_type: str
 	:type reg_type: int
 	:type covariates: str
-	:type response: str
+	:type target: str
 	:type phe_thresh: int
 	:type reverse: bool
 
@@ -501,7 +504,7 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 	assert fm_shape == num_pheno, "Expected %d columns in feature matrix, but found %d. Please check the feature matrix" % (num_pheno, fm_shape)
 	
 	### define model ###############################################################
-	cols = covariates.split('+') + [response]
+	cols = covariates.split('+') + [target]
 
 	age_col = 'MaxAgeAtICD' if (code_type == 'ICD') else 'MaxAgeAtCPT'
 	if age_col in cols:
@@ -517,12 +520,13 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 		covariates += f'+{phe_cov}'
 
 	if canonical:
-		model_str = f"phe~{response}+{covariates}"
+		model_str = f"phe~{target}+{covariates}"
+		result_var = target
 	else:
-		model_str = f"{response}~phe+{covariates}"
+		model_str = f"{target}~phe+{covariates}"
+		result_var = "phe"
 
 	model_type = "linear" if canonical and (reg_type != 0) else "log"
-	res_var = response if canonical else "phe"
 	################################################################################
 
 	regressions = pd.DataFrame(columns=pheno_map[code_type]['reg_cols'])
@@ -534,7 +538,7 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 		if age_col is not None: model_data[age_col] = fm[1][:, index] # MaxAgeAtEvent
 
 		phe_model, note = fit_pheno_model(model_str, model_type, model_data, phe_thresh=phe_thresh)
-		parse_pheno_model(regressions, phe_model, note, phen_info, res_var)
+		parse_pheno_model(regressions, phe_model, note, phen_info, result_var)
 
 		model_data["phe"] = np.nan
 		if age_col is not None: model_data[age_col] = np.nan
@@ -547,7 +551,7 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', response='genotype'
 Result Visualization
 
 """
-
+#TODO check all viz scripts
 
 def get_bon_thresh(p_values, alpha=0.05):
 	"""

@@ -437,9 +437,11 @@ def run_phewas(fm, demo, model_str, reg_type, save_cov=False, outpath=Path('.'))
 	For each phewas code in the feature matrix, run the specified type of regression and save all of the resulting stats.
 
 	:param fm: The phewas feature matrix.
-	:param genotypes: A pandas DataFrame of the genotype file.
-	:param covariates: The covariates that the function is to be run on.
-	:param response: Name of response column
+	:param demo: A pandas DataFrame containing model covariate and target variables
+	:param model_str: a patsy-like regression formula
+	:param reg_type: type of regression (0:binary, 1:count, 2:duration)
+	:param save_cov: whether/not to save the model's covariate variable results
+	:param outpath: path to directory where regression results will be saved
 
 	:returns: A dataframe containing regression data.
 	"""
