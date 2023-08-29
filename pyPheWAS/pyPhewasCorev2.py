@@ -380,7 +380,7 @@ def fit_pheno_model(model_str, model_type, model_data, phe_thresh=5, phe_key="ph
 	note = ''
 
 	if not np.where(model_data[phe_key] > 0)[0].shape[0] > phe_thresh:
-		note = f"ERROR < {phe_thresh} records with phecode"
+		note = f"Less than {phe_thresh} records with phecode"
 		model = None
 	else:
 		try:
@@ -504,7 +504,7 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', target='genotype', 
 	assert fm_shape == num_pheno, "Expected %d columns in feature matrix, but found %d. Please check the feature matrix" % (num_pheno, fm_shape)
 	
 	### define model ###############################################################
-	cols = covariates.split('+') + [target]
+	cols = [target] + (covariates.split('+') if covariates != '' else [])
 
 	age_col = 'MaxAgeAtICD' if (code_type == 'ICD') else 'MaxAgeAtCPT'
 	if age_col in cols:
@@ -520,11 +520,14 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', target='genotype', 
 		covariates += f'+{phe_cov}'
 
 	if canonical:
-		model_str = f"phe~{target}+{covariates}"
+		model_str = f"phe~{target}"
 		result_var = target
 	else:
-		model_str = f"{target}~phe+{covariates}"
+		model_str = f"{target}~phe"
 		result_var = "phe"
+
+	if covariates is not '':
+		model_str += f"+{covariates}"
 
 	model_type = "linear" if canonical and (reg_type != 0) else "log"
 	################################################################################
