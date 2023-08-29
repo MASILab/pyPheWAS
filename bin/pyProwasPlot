@@ -88,6 +88,7 @@ display_kwargs(reg_args)
 
 # Read in the remaining data (the pandas DataFrame)
 regressions = pd.read_csv(ff,dtype={'ProWAS Code':str})
+regressions.dropna(subset=['p-val','"-log(p)"'], inplace=True)
 
 try:
     # make confidence interval numberic instead of a string

@@ -177,6 +177,7 @@ f.close()
 """ 
 pyPhewasPlot 
 """
+regressions.dropna(subset=['p-val','"-log(p)"'], inplace=True)
 
 try:
     # make confidence interval numberic instead of a string
