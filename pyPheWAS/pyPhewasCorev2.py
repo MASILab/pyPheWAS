@@ -638,7 +638,9 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, pl
 
 	# Sort by category if we can
 	if (pheno_map[code_type]['cat_key'] is not None):
-		regressions.sort_values(by=pheno_map[code_type]['cat_key'], inplace=True)
+		regressions.sort_values(by=[pheno_map[code_type]['cat_key'], pheno_map[code_type]['pheno_key']], ascending=[True, False], inplace=True)
+	else:
+		regressions.sort_values(by='"-log(p)"', ascending=False, inplace=True)
 
 	# Plot all points w/ labels
 	e = 1 # x-axis counter
@@ -694,17 +696,19 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, pl
 	return
 
 
-def plot_log_odds_ratio(regressions, thresh, code_type='ICD', save='', save_format='', label_loc="plot"):
+def plot_effect_size(regressions, thresh, model_str, reg_type, code_type='ICD', save='', save_format='', label_loc="plot"):
 	"""
-	Plots significant phenotype data on a Log Odds Plot.
+	Plots significant phenotype data on an Effect Size Plot.
 
-	The log odds value & confidence interval is plotted along the x-axis, with Phenotypes sorted by category
+	The effect size (beta) value & confidence interval is plotted along the x-axis, with Phenotypes sorted by category
 	plotted along the y-axis.
 	If ``save`` is provided, the plot is saved to a file; otherwise, the plot may be displayed with
 	matplotlib.pyplot.show() after this function returns.
 
 	:param regressions: dataframe containing the regression results
 	:param thresh: p-value significance threshold
+	:param model_str: patsy-style string describing model equation
+	:param reg_type: type of regression (log, lin, dur)
 	:param code_type: type of EMR data ('ICD' or 'CPT')
 	:param save: the output file to save to (if empty, display the plot)
 	:param save_format: format of the save file
@@ -715,7 +719,6 @@ def plot_log_odds_ratio(regressions, thresh, code_type='ICD', save='', save_form
 	:type save: str
 	:type save_format: str
 	:type label_loc: str
-
 	"""
 
 	# Initialize figure
@@ -732,7 +735,9 @@ def plot_log_odds_ratio(regressions, thresh, code_type='ICD', save='', save_form
 
 	# Sort by category if we can
 	if (pheno_map[code_type]['cat_key'] is not None):
-		regressions.sort_values(by=pheno_map[code_type]['cat_key'], inplace=True)
+		regressions.sort_values(by=[pheno_map[code_type]['cat_key'], pheno_map[code_type]['pheno_key']], inplace=True)
+	else:
+		regressions.sort_values(by=pheno_map[code_type]['pheno_key'], inplace=True)
 
 	# Plot all points w/ labels
 	e = 1 # vertical index
@@ -742,8 +747,7 @@ def plot_log_odds_ratio(regressions, thresh, code_type='ICD', save='', save_form
 	if label_loc == "axis":
 		phecode_labels = []
 		phecode_locs = []
-	plt.xlabel('Log odds ratio')
-	for ix, data in regressions.iterrows():
+	for _, data in regressions.iterrows():
 		beta_ix = data['beta']
 		if  data['p-val'] < thresh:
 			# Add Phecode label
@@ -765,6 +769,12 @@ def plot_log_odds_ratio(regressions, thresh, code_type='ICD', save='', save_form
 			ax.plot(beta_ix, e, 'o', color=c, fillstyle='full', markeredgewidth=0.0)
 			ax.plot([data['lowlim'], data['uplim']], [e, e], color=c)
 			e += 15
+	
+	dep, _ = model_str.split('~')
+	if (reg_type != 'log') & (dep == 'phe'):
+		plt.xlabel('Regression Coefficient')
+	else:
+		plt.xlabel('Log Odds Ratio')
 
 	# Plot y axis
 	ax.axvline(x=0, color='black')
@@ -797,7 +807,7 @@ def plot_log_odds_ratio(regressions, thresh, code_type='ICD', save='', save_form
 	return
 
 
-def plot_volcano(regressions, code_type='ICD', save='', save_format=''):
+def plot_volcano(regressions, model_str, reg_type, code_type='ICD', save='', save_format=''):
 	"""
 	Plots all phenotype data on a Volcano Plot.
 
@@ -829,12 +839,8 @@ def plot_volcano(regressions, code_type='ICD', save='', save_format=''):
 
 	# Plot all points w/ labels
 	artists = []
-	plt.ylabel('-log10(p)')
-	plt.xlabel('Log Odds Ratio')
-
 	regressions.sort_values(by='p-val', ascending=False, inplace=True)
-
-	for ix,data in regressions.iterrows():
+	for _, data in regressions.iterrows():
 		logp_ix = data['"-log(p)"']
 		beta = data['beta']
 		# determine marker color & label based on thresholds
@@ -851,6 +857,13 @@ def plot_volcano(regressions, code_type='ICD', save='', save_format=''):
 		# Plot PheCode data point & format PheCode label
 		ax.plot(beta, logp_ix, 'o', color=c, fillstyle='full', markeredgewidth=0)
 		artists.append(ax.text(beta, logp_ix, phe, rotation=45, va='bottom', fontsize=4))
+	
+	dep, _ = model_str.split('~')
+	if (reg_type != 'log') & (dep == 'phe'):
+		plt.xlabel('Regression Coefficient')
+	else:
+		plt.xlabel('Log Odds Ratio')
+	plt.ylabel('-log10(p)')
 
 	# Legend
 	line1 = []

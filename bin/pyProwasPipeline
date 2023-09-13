@@ -214,13 +214,13 @@ for t in thresh_type:
     print('%s threshold: %0.5f' % (t, thresh))
     
     savem = path / ('Manhattan_%s_%s.%s' %(t, postfix, plot_format))
-    saveb = path / ('LogOdds_%s_%s.%s' %(t, postfix, plot_format))
+    saveb = path / ('EffectSize_%s_%s.%s' %(t, postfix, plot_format))
 
     plot_manhattan(regressions, thresh, 'CPT', imbalance, plot_all_pts, savem, plot_format)
-    plot_log_odds_ratio(regressions, thresh, 'CPT', saveb, plot_format, prowas_label)
+    plot_effect_size(regressions, thresh, model_str, reg_type, 'CPT', saveb, plot_format, prowas_label)
    
 savev = path / ('Volcano_%s.%s' %(postfix, plot_format))
-plot_volcano(regressions, 'CPT', savev, plot_format)
+plot_volcano(regressions, model_str, reg_type, 'CPT', savev, plot_format)
 
 
 """

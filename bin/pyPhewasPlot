@@ -121,7 +121,7 @@ print('%s threshold: %0.5f'%(thresh_type,thresh))
 if outfile is not None:
     file_name, file_format = osp.splitext(outfile)
     savem = path / (file_name + '_Manhattan' + file_format)
-    saveb = path / (file_name + '_LogOdds' + file_format)
+    saveb = path / (file_name + '_EffectSize' + file_format)
     savev = path / (file_name + '_Volcano' + file_format)
     file_format = file_format[1:] # remove '.' from from first index
 else:
@@ -129,10 +129,10 @@ else:
     saveb = ''
     savev = ''
     file_format = ''
-
+# TODO add warning if model_equation doesn't exist
 plot_manhattan(regressions, thresh, 'ICD', imbalance, plot_all_pts, savem, file_format)
-plot_log_odds_ratio(regressions, thresh, 'ICD', saveb, file_format, phewas_label)
-plot_volcano(regressions, 'ICD', savev, file_format)
+plot_effect_size(regressions, thresh, reg_args['model_equation'], reg_args['reg_type'], 'ICD', saveb, file_format, phewas_label)
+plot_volcano(regressions, reg_args['model_equation'], reg_args['reg_type'], 'ICD', savev, file_format)
 
 if outfile is not None:
     print("Saving plots to %s" % (path))
