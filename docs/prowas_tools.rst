@@ -89,9 +89,9 @@ and estimates a regression of the form:
 
 or the *reverse* form (`canonical=False`):
 
-  :math:`target \sim logit(procode\_aggregate + covariates)`
+  :math:`target \sim procode\_aggregate + covariates`
 
-Linear regression is used if `reg_type=[lin, dur]` and `canonical=True`; otherwise, a logistic regression is used.
+Linear regression is used if ``reg_type=[lin, dur]`` and ``canonical=True``; otherwise, a logistic regression is used.
 
 .. note:: In version 4.2.0 we changed the default regression equation to the canonical form shown above.
   However, the original pyPheWAS regression equation may still be used via `canonical=False`.
@@ -148,20 +148,20 @@ pyProwasPlot
 
 Visualizes the regression results through 3 complementary views:
 
-1. *Manhattan Plot*: This view compares statistical significance across ProCodes.
-  ProCodes are presented across the horizontal axis, with -log\ :sub:`10`\ (p) along
-  the vertical axis. If ``imbalances = True``\ , marker shape indicates whether
-  the effect of each ProCode is positive (+) or negative (-).
-2. *Effect Size Plot*: This view compares effect size across ProCodes. The regression coefficient 
-  (or log odds for logistic regressions)
-  of each ProCode and its confidence interval are plotted on the horizontal axis,
-  with ProCodes presented along the vertical axis. If ``prowas_label = "plot"``\ ,
-  ProCode labels are displayed directly on the plot next to their markers. If ``prowas_label = "axis"``\ ,
-  ProCodes are displayed outside of the axes, along the left edge.
-3. *Volcano Plot*: This view compares statistical significance and effect size
-  across all ProCodes. The effect size of each ProCode is plotted along the
-  horizontal axis, with -log\ :sub:`10`\ (p) along the vertical axis.
-  ProCodes are colored according to significance level (Not significant, FDR, Bonferroni).
+ 1. *Manhattan Plot*: This view compares statistical significance across ProCodes.
+    ProCodes are presented across the horizontal axis, with -log\ :sub:`10`\ (p) along
+    the vertical axis. If ``imbalances = True``\ , marker shape indicates whether
+    the effect of each ProCode is positive (+) or negative (-).
+ 2. *Effect Size Plot*: This view compares effect size across ProCodes. The regression coefficient 
+    (or log odds for logistic regressions)
+    of each ProCode and its confidence interval are plotted on the horizontal axis,
+    with ProCodes presented along the vertical axis. If ``prowas_label = "plot"``\ ,
+    ProCode labels are displayed directly on the plot next to their markers. If ``prowas_label = "axis"``\ ,
+    ProCodes are displayed outside of the axes, along the left edge.
+ 3. *Volcano Plot*: This view compares statistical significance and effect size
+    across all ProCodes. The effect size of each ProCode is plotted along the
+    horizontal axis, with -log\ :sub:`10`\ (p) along the vertical axis.
+    ProCodes are colored according to significance level (Not significant, FDR, Bonferroni).
 
 In both the Manhattan and Effect Size plots only ProCodes which are significant
 after the chosen multiple comparisons correction is applied are included.

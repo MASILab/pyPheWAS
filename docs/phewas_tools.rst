@@ -94,9 +94,9 @@ and estimates a regression of the form:
 
 or the *reverse* form (`canonical=False`):
 
-  :math:`target \sim logit(phecode\_aggregate + covariates)`
+  :math:`target \sim phecode\_aggregate + covariates`
 
-Linear regression is used if `reg_type=[lin, dur]` and `canonical=True`; otherwise, a logistic regression is used.
+Linear regression is used if ``reg_type=[lin, dur]`` and ``canonical=True``; otherwise, a logistic regression is used.
 
 .. note:: In version 4.2.0 we changed the default regression equation to the canonical form shown above.
   However, the original pyPheWAS regression equation may still be used via `canonical=False`.
@@ -153,20 +153,20 @@ pyPhewasPlot
 
 Visualizes the regression results through 3 complementary views:
 
-1. *Manhattan Plot*: This view compares statistical significance across PheCodes.
-  PheCodes are presented across the horizontal axis, with -log\ :sub:`10`\ (p) along
-  the vertical axis. If ``imbalances = True``\ , marker shape indicates whether
-  the effect of each PheCode is positive (+) or negative (-).
-2. *Effect Size Plot*: This view compares effect size across PheCodes. The regression coefficient 
-  (or log odds for logistic regressions)
-  of each PheCode and its confidence interval are plotted on the horizontal axis,
-  with PheCodes presented along the vertical axis. If ``phewas_label = "plot"``\ ,
-  PheCode labels are displayed directly on the plot next to their markers. If ``phewas_label = "axis"``\ ,
-  PheCodes are displayed outside of the axes, along the left edge.
-3. *Volcano Plot*: This view compares statistical significance and effect size
-  across all PheCodes. The effect size of each PheCode is plotted along the
-  horizontal axis, with -log\ :sub:`10`\ (p) along the vertical axis.
-  PheCodes are colored according to significance level (Not significant, FDR, Bonferroni).
+ 1. *Manhattan Plot*: This view compares statistical significance across PheCodes.
+    PheCodes are presented across the horizontal axis, with -log\ :sub:`10`\ (p) along
+    the vertical axis. If ``imbalances = True``\ , marker shape indicates whether
+    the effect of each PheCode is positive (+) or negative (-).
+ 2. *Effect Size Plot*: This view compares effect size across PheCodes. The regression coefficient 
+    (or log odds for logistic regressions)
+    of each PheCode and its confidence interval are plotted on the horizontal axis,
+    with PheCodes presented along the vertical axis. If ``phewas_label = "plot"``\ ,
+    PheCode labels are displayed directly on the plot next to their markers. If ``phewas_label = "axis"``\ ,
+    PheCodes are displayed outside of the axes, along the left edge.
+ 3. *Volcano Plot*: This view compares statistical significance and effect size
+    across all PheCodes. The effect size of each PheCode is plotted along the
+    horizontal axis, with -log\ :sub:`10`\ (p) along the vertical axis.
+    PheCodes are colored according to significance level (Not significant, FDR, Bonferroni).
 
 In both the Manhattan and Effect Size plots:
 
