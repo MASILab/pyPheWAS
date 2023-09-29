@@ -3,7 +3,7 @@ from distutils.core import setup
 setup(
   name = 'pyPheWAS',
   packages = ['pyPheWAS'], # this must be the same as the name above
-  version = '4.1.1',
+  version = '4.2.0',
   description = 'MASI Lab Port of PheWAS into Python',
   author = 'MASI Lab',
   author_email = 'bennett.landman@vanderbilt.edu',
@@ -21,7 +21,7 @@ setup(
                      'pathlib',
                      'biopython',
                      'flask',
-					 'flask_cors',
+                     'flask_cors',
                      ],
   package_data={
     '':['resources/*.csv', 'resources/*.txt','Explorer_GUI/*'],
