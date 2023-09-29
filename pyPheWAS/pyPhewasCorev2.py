@@ -3,15 +3,12 @@
 
 Contains all functions that drive the core PheWAS & ProWAS analysis tools.
 """
-
-from collections import Counter
-import getopt
+import logging
 import math
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
-import statsmodels.discrete.discrete_model as sm
 import statsmodels.formula.api as smf
 import matplotlib.lines as mlines
 from tqdm import tqdm
@@ -60,8 +57,8 @@ def get_codes(filename):
 		phecode_map.dropna(subset=[phecode_col], inplace=True)
 		phecode_map.drop_duplicates(subset=[new_data_col,phecode_col], inplace=True)
 	except Exception as e:
-		print(e.args[0])
-		print('Error loading phecode map : exiting pyPheWAS')
+		log = logging.getLogger(__name__)
+		log.error(f'{e.args[0]}\nError loading phecode map : exiting pyPheWAS')
 		sys.exit()
 
 	return phecode_map
@@ -107,6 +104,7 @@ def get_icd_codes(path, filename, reg_type):
 	:rtype: pandas DataFrame
 
 	"""
+	log = logging.getLogger(__name__)
 
 	wholefname = path / filename
 	icdfile = pd.read_csv(wholefname,dtype={'ICD_CODE':str})
@@ -119,17 +117,17 @@ def get_icd_codes(path, filename, reg_type):
 	
 	# merge with Phecode table, depends on which type(s) of ICD codes are in the icd file
 	if icd_types.shape[0] == 2:
-		print('Found both ICD-9 and ICD-10 codes.')
+		log.info('Found both ICD-9 and ICD-10 codes.')
 		icd9s = icdfile[icdfile['ICD_TYPE'] == 9]
 		icd10s = icdfile[icdfile['ICD_TYPE'] == 10]
 		phenotypes_9 = pd.merge(icd9s, icd9_codes[['ICD_CODE', 'PheCode']],on='ICD_CODE',how='left')
 		phenotypes_10 = pd.merge(icd10s, icd10_codes[['ICD_CODE', 'PheCode']], on='ICD_CODE',how='left')
 		phenotypes = pd.concat([phenotypes_9, phenotypes_10], sort=False, ignore_index=True)
 	elif icd_types[0] == 9:
-		print('Found only ICD-9 codes.')
+		log.info('Found only ICD-9 codes.')
 		phenotypes = pd.merge(icdfile,icd9_codes[['ICD_CODE', 'PheCode']],on='ICD_CODE',how='left')
 	elif icd_types[0] == 10:
-		print('Found only ICD-10 codes.')
+		log.info('Found only ICD-10 codes.')
 		phenotypes = pd.merge(icdfile, icd10_codes[['ICD_CODE', 'PheCode']], on='ICD_CODE',how='left')
 	else:
 		raise Exception('An issue occurred while parsing the ICD_TYPE column - Please check phenotype file.')
@@ -137,12 +135,12 @@ def get_icd_codes(path, filename, reg_type):
 	# check to see if anything was dropped because of incomplete mapping
 	na_mask = phenotypes['PheCode'].isna()
 	if np.any(na_mask):
-		print('WARNING: Some ICD events were dropped during the PheCode mapping process.')
+		log.warn('Some ICD events were dropped during the PheCode mapping process.')
 		num_events = icdfile.shape[0]
 		dropped = phenotypes[na_mask].copy()
 		percent_drop = 100.0 * (float(dropped.shape[0]) / float(num_events))
-		print('\t-- Dropped %d out of %d ICD events (%0.3f%%)' % (dropped.shape[0], num_events, percent_drop))
-		print('\t-- Saving dropped events to %s' % (path/'dropped_events.csv'))
+		log.info('\t-- Dropped %d out of %d ICD events (%0.3f%%)' % (dropped.shape[0], num_events, percent_drop))
+		log.info('\t-- Saving dropped events to %s' % (path/'dropped_events.csv'))
 		dropped.to_csv(path/'dropped_events.csv',index=False)
 		phenotypes.dropna(subset=['PheCode'], inplace=True) # actually remove the events
 
@@ -179,6 +177,7 @@ def get_cpt_codes(path, filename, reg_type):
 	:rtype: pandas DataFrame
 
 	"""
+	log = logging.getLogger(__name__)
 
 	wholefname = path / filename
 	cptfile = pd.read_csv(wholefname,dtype={'CPT_CODE':str})
@@ -188,12 +187,12 @@ def get_cpt_codes(path, filename, reg_type):
 	# check to see if anything was dropped because of incomplete mapping
 	na_mask = phenotypes['prowas_code'].isna()
 	if np.any(na_mask):
-		print('WARNING: Some CPT events were dropped during the ProCode mapping process.')
+		log.warn('Some CPT events were dropped during the ProCode mapping process.')
 		num_events = cptfile.shape[0]
 		dropped = phenotypes[na_mask].copy()
 		percent_drop = 100.0 * (float(dropped.shape[0]) / float(num_events))
-		print('\t-- Dropped %d out of %d CPT events (%0.3f%%)' % (dropped.shape[0], num_events, percent_drop))
-		print('\t-- Saving dropped events to %s' % (path/'dropped_events.csv'))
+		log.info('\t-- Dropped %d out of %d CPT events (%0.3f%%)' % (dropped.shape[0], num_events, percent_drop))
+		log.info('\t-- Saving dropped events to %s' % (path/'dropped_events.csv'))
 		dropped.to_csv(path/'dropped_events.csv',index=False)
 		phenotypes.dropna(subset=['prowas_code'], inplace=True) # actually remove the events
 
@@ -242,11 +241,12 @@ def generate_feature_matrix(genotypes, phenotype, reg_type, code_type, pheno_cov
            correponding phenotype), they are *still included* in the feature matrix.
 
 	"""
+	log = logging.getLogger(__name__)
 
 	# sort genotype and phenotype dataframes by 'id'
-	print('Sorting phenotype data...')
+	log.info('Sorting phenotype data...')
 	phenotype.sort_values(by=['id','AgeAt'+code_type], inplace=True)
-	print('Sorting group data...')
+	log.info('Sorting group data...')
 	genotypes.sort_values(by='id', inplace=True)
 	genotypes.reset_index(inplace=True,drop=True)
 
@@ -272,7 +272,7 @@ def generate_feature_matrix(genotypes, phenotype, reg_type, code_type, pheno_cov
 		curr_id = event['id']
 		if not curr_id in genotypes_dict:
 			if not curr_id in exclude:
-				print('%s has records in phenotype file but is not in group file - excluding from study' % curr_id)
+				log.warn('%s has records in phenotype file but is not in group file - excluding from study' % curr_id)
 				exclude.append(curr_id)
 			continue
 		# check id to see if a new subject has been found
@@ -336,7 +336,7 @@ def get_phenotype_info(p_index, code_type):
 	code_map = pheno_map[code_type]['codes']
 
 	p_code = code_map.loc[p_index, pheno_map[code_type]['map_key']]
-	p_name = code_map.loc[p_index, pheno_map[code_type]['map_name']]
+	p_name = code_map.loc[p_index, pheno_map[code_type]['map_name']].replace(',','.').replace(';','.')
 	p_cat = code_map.loc[p_index, pheno_map[code_type]['cat_name']]
 
 	if code_type == 'ICD':
@@ -422,7 +422,7 @@ def parse_pheno_model(reg, phe_model, note, phe_info, var):
 		try: log_p = -math.log10(p)
 		except:
 			log_p = np.nan
-			note += "[WARNING p==0.0; PheCode will be excluded from result plots]"
+			note += "[WARNING p==0.0 PheCode will be excluded from result plots]"
 
 		beta = phe_model.params[var]
 		conf = phe_model.conf_int()
@@ -444,16 +444,15 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', target='genotype', 
 	"""
 	Run mass phenotype regressions
 
-	Iterate over all PheWAS/ProWAS codes in the feature matrix, running a logistic regression of the form:
+	Iterate over all PheWAS/ProWAS codes in the feature matrix, running a regression of the form:
 
-	:math:`Pr(phenotype\_aggregate) \sim logit(target + covariates)`
+	:math:`phenotype\_aggregate \sim target + covariates`
 
 	or the *reverse* form (`canonical=False`):
 
-	:math:`Pr(target) \sim logit(phenotype\_aggregate + covariates)`
+	:math:`target \sim logit(phenotype\_aggregate + covariates)`
 
-	TODO: if reg_type = linear and canonical=False, it will be a linear regression, not a logistic regression
-	TODO: need to update model description
+	Linear regression is used if `reg_type=[1, 2]` and `canonical=True`; otherwise, a logistic regression is used.
 
 	``fm`` is a 3xNxP matrix, where N = number of subjects and P = number of PheWAS/ProWAS Codes; this should only
 	be consutrcted by ``pyPheWAS.pyPhewasCorev2.generate_feature_matrix`` - otherwise results will be untrustworthy.
@@ -491,9 +490,10 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', target='genotype', 
 		  phenotypes which present for greater than ``phe_thresh`` subjects in the cohort.
 
 	"""
+	log = logging.getLogger(__name__)
 
 	# sort group data by id
-	print('Sorting group data...')
+	log.info('Sorting group data...')
 	demo.sort_values(by='id', inplace=True)
 	demo.reset_index(inplace=True, drop=True)
 
@@ -504,7 +504,8 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', target='genotype', 
 	assert fm_shape == num_pheno, "Expected %d columns in feature matrix, but found %d. Please check the feature matrix" % (num_pheno, fm_shape)
 	
 	### define model ###############################################################
-	cols = [target] + (covariates.split('+') if covariates != '' else [])
+	independents = covariates.split('+') if covariates != '' else []
+	cols = [target] + independents
 
 	age_col = 'MaxAgeAtICD' if (code_type == 'ICD') else 'MaxAgeAtCPT'
 	if age_col in cols:
@@ -517,20 +518,25 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', target='genotype', 
 	phe_cov = 'phewas_cov' if (code_type == 'ICD') else 'prowas_cov'
 	if fm[2].any(): # phewas_cov feature matrix
 		model_data[phe_cov] = fm[2][:,0] # all columns are the same in this one
-		covariates += f'+{phe_cov}'
+		independents.append(phe_cov)
 
 	if canonical:
-		model_str = f"phe~{target}"
-		result_var = target
+		independents.insert(0,target)
+		dependent = "phe"
 	else:
-		model_str = f"{target}~phe"
-		result_var = "phe"
+		independents.insert(0,"phe")
+		dependent = target
 
-	if covariates is not '':
-		model_str += f"+{covariates}"
-
+	model_str = dependent + '~' + "+".join(independents)
 	model_type = "linear" if canonical and (reg_type != 0) else "log"
 	################################################################################
+
+	if code_type == 'ICD':
+		docs_link = 'https://pyphewas.readthedocs.io/en/latest/phewas_tools.html#pyphewasmodel'
+	else:
+		docs_link = 'https://pyphewas.readthedocs.io/en/latest/prowas_tools.html#pyprowasmodel'
+
+	log.warn(f'Default regression behavior changed in version 4.2; see docs for details {docs_link}')
 
 	regressions = pd.DataFrame(columns=pheno_map[code_type]['reg_cols'])
 
@@ -541,7 +547,7 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', target='genotype', 
 		if age_col is not None: model_data[age_col] = fm[1][:, index] # MaxAgeAtEvent
 
 		phe_model, note = fit_pheno_model(model_str, model_type, model_data, phe_thresh=phe_thresh)
-		parse_pheno_model(regressions, phe_model, note, phen_info, result_var)
+		parse_pheno_model(regressions, phe_model, note, phen_info, independents[0])
 
 		model_data["phe"] = np.nan
 		if age_col is not None: model_data[age_col] = np.nan
@@ -554,7 +560,6 @@ def run_phewas(fm, demo, code_type, reg_type, covariates='', target='genotype', 
 Result Visualization
 
 """
-#TODO check all viz scripts
 
 def get_bon_thresh(p_values, alpha=0.05):
 	"""
@@ -598,7 +603,7 @@ def get_fdr_thresh(p_values, alpha=0.05):
 	return sn[i]
 
 
-def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, plot_all_pts=True, save='', save_format=''):
+def plot_manhattan(regressions, *, thresh, show_imbalance=True, plot_all_pts=True, old_plot_style=True, code_type='ICD', save='', save_format=''):
 	"""
 	Plots significant phenotype data on a Manhattan Plot.
 
@@ -613,12 +618,15 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, pl
 	:param code_type: type of EMR data ('ICD' or 'CPT')
 	:param show_imbalance: boolean variable that determines whether or not to show imbalances on the plot (default True)
 	:param plot_all_pts: plot all points regardless of significance (default True)
+	:param old_plot_style: Use old plot style (no gridlines, all spines shown)
 	:param save: the output file to save to (if empty, display the plot)
 	:param save_format: format of the save file
 	:type regressions: pandas DataFrame
 	:type thresh: float
 	:type code_type: str
-	:type show_imbalance: boolean
+	:type show_imbalance: bool
+	:type plot_all_pts: bool
+	:type old_plot_style: bool
 	:type save: str
 	:type save_format: str
 
@@ -687,6 +695,10 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, pl
 	# Plot x axis
 	ax.axhline(y=0, color='black')
 	frame1.axes.get_xaxis().set_visible(False)
+	if not old_plot_style:
+		ax.spines['top'].set_visible(False) # makes reading lables easier
+		ax.spines['right'].set_visible(False) # makes reading lables easier
+		plt.grid(visible=True, axis='y')
 
 	# Save the plot
 	if save:
@@ -696,11 +708,11 @@ def plot_manhattan(regressions, thresh, code_type='ICD', show_imbalance=True, pl
 	return
 
 
-def plot_effect_size(regressions, thresh, model_str, reg_type, code_type='ICD', save='', save_format='', label_loc="plot"):
+def plot_effect_size(regressions, *, thresh, model_str, reg_type, label_loc="plot", old_plot_style=True, code_type='ICD', save='', save_format=''):
 	"""
 	Plots significant phenotype data on an Effect Size Plot.
 
-	The effect size (beta) value & confidence interval is plotted along the x-axis, with Phenotypes sorted by category
+	The effect size (regression coefficient or log odds ratio) value & confidence interval is plotted along the x-axis, with Phenotypes sorted by category
 	plotted along the y-axis.
 	If ``save`` is provided, the plot is saved to a file; otherwise, the plot may be displayed with
 	matplotlib.pyplot.show() after this function returns.
@@ -709,17 +721,23 @@ def plot_effect_size(regressions, thresh, model_str, reg_type, code_type='ICD', 
 	:param thresh: p-value significance threshold
 	:param model_str: patsy-style string describing model equation
 	:param reg_type: type of regression (log, lin, dur)
+	:param label_loc: where to plot Phenotype labels ["plot" (defulat) or "axis"]
+	:param old_plot_style: Use old plot style (no gridlines, all spines shown)
 	:param code_type: type of EMR data ('ICD' or 'CPT')
 	:param save: the output file to save to (if empty, display the plot)
 	:param save_format: format of the save file
-	:param label_loc: where to plot Phenotype labels ["plot" (defulat) or "axis"]
 	:type regressions: pandas DataFrame
 	:type thresh: float
+	:type model_str: Optional str
+	:type reg_type: Optional str
+	:type label_loc: str
+	:type old_plot_style: bool
 	:type code_type: str
 	:type save: str
 	:type save_format: str
-	:type label_loc: str
+	
 	"""
+	log = logging.getLogger(__name__)
 
 	# Initialize figure
 	fig = plt.figure(2)
@@ -770,14 +788,21 @@ def plot_effect_size(regressions, thresh, model_str, reg_type, code_type='ICD', 
 			ax.plot([data['lowlim'], data['uplim']], [e, e], color=c)
 			e += 15
 	
-	dep, _ = model_str.split('~')
-	if (reg_type != 'log') & (dep == 'phe'):
-		plt.xlabel('Regression Coefficient')
+	xlabel = 'Log Odds Ratio'
+	if (model_str is not None) & (reg_type is not None):
+		dep, _ = model_str.split('~')
+		if (reg_type != 'log') & (dep == 'phe'):
+			xlabel = 'Regression Coefficient'
 	else:
-		plt.xlabel('Log Odds Ratio')
+		log.warn('model_str and reg_type not provided - x-axis label may be incorrect')
+	plt.xlabel(xlabel)
 
 	# Plot y axis
 	ax.axvline(x=0, color='black')
+	if not old_plot_style:
+		ax.spines['left'].set_visible(False) # makes reading lables easier
+		ax.spines['right'].set_visible(False) # makes reading lables easier
+		plt.grid(visible=True, axis='x')
 
 	if label_loc == "axis":
 		plt.yticks(phecode_locs,phecode_labels, ha='right',fontsize=text_size)
@@ -807,26 +832,33 @@ def plot_effect_size(regressions, thresh, model_str, reg_type, code_type='ICD', 
 	return
 
 
-def plot_volcano(regressions, model_str, reg_type, code_type='ICD', save='', save_format=''):
+def plot_volcano(regressions, *, model_str=None, reg_type=None, old_plot_style=True, code_type='ICD', save='', save_format=''):
 	"""
 	Plots all phenotype data on a Volcano Plot.
 
 	The significance of each phenotype (represented by :math:`-log_{10}(p)`\ ) is plotted along the
-	y-axis, with log odds value (effect size) plotted along the x-axis. To improve plot legibility, only those
+	y-axis, with the effect size (regression coefficient or log odds ratio) plotted along the x-axis. To improve plot legibility, only those
 	phenotypes which surpass the FDR/Bonferroni significance thresholds have labels displayed.
 	If ``save`` is provided, the plot is saved to a file; otherwise, the plot may be displayed with
 	matplotlib.pyplot.show() after this function returns.
 
 	:param regressions: dataframe containing the regression results
+	:param model_str: patsy-style string describing model equation
+	:param reg_type: type of regression (log, lin, dur)
+	:param old_plot_style: Use old plot style (no gridlines, all spines shown)
 	:param code_type: type of EMR data ('ICD' or 'CPT')
 	:param save: the output file to save to (if empty, display the plot)
 	:param save_format: format of the save file
 	:type regressions: pandas DataFrame
+	:type model_str: Optional str
+	:type reg_type: Optional str
+	:type old_plot_style: bool
 	:type code_type: str
 	:type save: str
 	:type save_format: str
 
 	"""
+	log = logging.getLogger(__name__)
 
 	# get thresh values
 	bon = get_bon_thresh(regressions["p-val"].values, 0.05)
@@ -858,17 +890,24 @@ def plot_volcano(regressions, model_str, reg_type, code_type='ICD', save='', sav
 		ax.plot(beta, logp_ix, 'o', color=c, fillstyle='full', markeredgewidth=0)
 		artists.append(ax.text(beta, logp_ix, phe, rotation=45, va='bottom', fontsize=4))
 	
-	dep, _ = model_str.split('~')
-	if (reg_type != 'log') & (dep == 'phe'):
-		plt.xlabel('Regression Coefficient')
+	xlabel = 'Log Odds Ratio'
+	if (model_str is not None) & (reg_type is not None):
+		dep, _ = model_str.split('~')
+		if (reg_type != 'log') & (dep == 'phe'):
+			xlabel = 'Regression Coefficient'
 	else:
-		plt.xlabel('Log Odds Ratio')
+		log.warn('model_str and reg_type not provided - x-axis label may be incorrect')
+	plt.xlabel(xlabel)
 	plt.ylabel('-log10(p)')
 
 	# Legend
 	line1 = []
 	box = ax.get_position()
 	ax.set_position([box.x0, box.y0 + box.height * 0.05, box.width, box.height * 0.95])
+	if not old_plot_style:
+		ax.spines['top'].set_visible(False) # makes reading lables easier
+		ax.spines['right'].set_visible(False) # makes reading lables easier
+		plt.grid(visible=True, axis='both')
 
 	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="gold", label="BonFerroni"))
 	line1.append(mlines.Line2D(range(1), range(1), color="white", marker='o', markerfacecolor="midnightblue", label="FDR"))
@@ -922,30 +961,6 @@ cat_colors = {'other': 'gold',
 			  'sense organs': 'darkviolet',
 			  'symptoms': 'aqua'}
 
-old_plot_colors = {'-': 'gold',
-			   'circulatory system': 'red',
-			   'congenital anomalies': 'mediumspringgreen',
-			   'dermatologic': 'maroon',
-			   'digestive': 'green',
-			   'endocrine/metabolic': 'darkred',
-			   'genitourinary': 'black',
-			   'hematopoietic': 'orange',
-			   'infectious diseases': 'blue',
-			   'injuries & poisonings': 'slategray',
-			   'mental disorders': 'fuchsia',
-			   'musculoskeletal': 'darkgreen',
-			   'neoplasms': 'teal',
-			   'neurological': 'midnightblue',
-			   'pregnancy complications': 'gold',
-			   'respiratory': 'brown',
-			   'sense organs': 'darkviolet',
-			   'symptoms': 'darkviolet'}
-
-imbalance_colors = {
-	0: 'white',
-	1: 'deepskyblue',
-	-1: 'red'
-}
 regression_map = {
 	'log': 0,
 	'lin': 1,
@@ -961,8 +976,9 @@ threshold_map = {
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
-
-RESERVED_COL_NAMES = ['MaxAgeAtICD', 'MaxAgeAtCPT', 'phe', 'phewas_cov', 'prowas_cov']
+MAX_AGE_AT_ICD = 'MaxAgeAtICD'
+MAX_AGE_AT_CPT = 'MaxAgeAtCPT'
+RESERVED_COL_NAMES = [MAX_AGE_AT_ICD, MAX_AGE_AT_CPT, 'phe', 'phewas_cov', 'prowas_cov']
 
 #----------------------------------------------------------
 # load ICD maps (pyPheWAS)
