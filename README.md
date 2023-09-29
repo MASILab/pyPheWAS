@@ -1,10 +1,10 @@
-## PyPheWAS
+## pyPheWAS
 
 Repository for the pyPheWAS project.
 Full documentation at https://pyphewas.readthedocs.io/en/latest/
 
 ### Developers
-Cailey Kerley, PhD Candidate
+Cailey Kerley, PhD
 
 Shikha Chaganti, PhD
 
@@ -13,11 +13,18 @@ Bennett Landman, PhD
 ## Cite pyPheWAS
 Kerley, C.I., Chaganti, S., Nguyen, T.Q. et al. pyPheWAS: A Phenome-Disease Association Tool for Electronic Medical Record Analysis. *Neuroinform* (2022). https://doi.org/10.1007/s12021-021-09553-4
 
+Kerley, C.I., Nguyen T.Q., Ramadass, K, et al. pyPheWAS Explorer: a visualization tool for exploratory analysis of phenome-disease associations. *JAMIA Open* (2023). https://doi.org/10.1093/jamiaopen/ooad018
 
-## Latest Release: pyPheWAS 4.1
+## Latest Release: pyPheWAS 4.2
+
+### 4.2.0
+- Default regression equation modified to allow for both canonical and reversed PheWAS equations
+- Updated plot styling to improve legibility
+- Bug fix: can now run pyPhewasModel/pyProwasModel without covariates
+- Other minor bug fixes
 
 ### 4.1.1
-- Minor Bug Fixes
+- Minor bug fixes
 
 #### 4.1.0
 - pyPheWAS Explorer updates

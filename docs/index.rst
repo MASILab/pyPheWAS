@@ -6,6 +6,7 @@ line tools. If this tools contributes to a scientific publication, please cite u
 
 Kerley, C.I., Chaganti, S., Nguyen, T.Q. et al. pyPheWAS: A Phenome-Disease Association Tool for Electronic Medical Record Analysis. *Neuroinformatics* (2022). https://doi.org/10.1007/s12021-021-09553-4
 
+Kerley, C.I., Nguyen T.Q., Ramadass, K, et al. pyPheWAS Explorer: a visualization tool for exploratory analysis of phenome-disease associations. *JAMIA Open* (2023). https://doi.org/10.1093/jamiaopen/ooad018
 
 Features
 --------
@@ -14,18 +15,18 @@ Features
 * Compute mass logistic regressions on patient data
 * Visualize results
 * Examine relative novelty of disease-PheCode associations
-* **New!** pyPheWAS Explorer: Interactive visualization of PheDAS experiments
-* **New!** Sample synthetic `EMR dataset <https://github.com/MASILab/pyPheWAS/tree/master/synthetic_data>`_
+* pyPheWAS Explorer: Interactive visualization of PheDAS experiments
+* Sample synthetic `EMR dataset <https://github.com/MASILab/pyPheWAS/tree/master/synthetic_data>`_
 
-Latest Release: pyPheWAS 4.0.3
+Latest Release: pyPheWAS 4.2.0
 ------------------------------
 
 This release includes:
 
-* **Novelty Analysis**: examine the relative literary novelty of disease-phecode pairings
-* **pyPheWAS Explorer**: an interactive visualization of PheDAS experiments
-* createGenotypeFile updated - now called createPhenotypeFile
-* Minor bug fixes
+- Default regression equation modified to allow for both canonical and reversed PheWAS equations
+- Updated plot styling to improve legibility
+- Bug fix: can now run pyPhewasModel/pyProwasModel without covariates
+- Other minor bug fixes
 
 Support
 -------

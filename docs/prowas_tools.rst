@@ -63,11 +63,11 @@ Output:
 
 **Example** Generate a feature matrix for a duration regression::
 
-		pyProwasLookup  --reg_type="dur" --phenotype="cpt_data.csv" --group="group.csv" --outfile="fm_dur.csv" --path="/Users/me/Documents/EMRdata/"
+		pyProwasLookup  --reg_type dur --phenotype cpt_data.csv --group group.csv --outfile fm_dur.csv --path /Users/me/Documents/EMRdata/
 
 **Example** Generate a feature matrix for a linear regression with ProCode 67.8 (Laparoscopy) in a covarying feature matrix::
 
-		pyProwasLookup  --reg_type="lin" --prowas_cov="67.8" --phenotype="cpt_data.csv" --group="group.csv" --outfile="fm_lin.csv" --path="/Users/me/Documents/EMRdata/"
+		pyProwasLookup  --reg_type lin --prowas_cov 67.8 --phenotype cpt_data.csv --group group.csv --outfile fm_lin.csv --path /Users/me/Documents/EMRdata/
 
 
 .. note:: The ``outfile`` argument provides a base name for saving the feature matrix files.
@@ -83,24 +83,33 @@ pyProwasModel
 Perform a mass logistic regression
 
 Iterates over all ProCodes in the feature matrix produced by **pyProwasLookup**
-and estimates a logistic regression of the form:
+and estimates a regression of the form:
 
-    :math:`Pr(response) \sim logit(ProCode\_aggregate + covariates)`
+  :math:`procode\_aggregate \sim target + covariates`
 
-By default, the response variable is 'genotype'; if an alternate variable is specified
-by the ``response`` argument, the variable must be a column in the group file.
+or the *reverse* form (`canonical=False`):
+
+  :math:`target \sim logit(procode\_aggregate + covariates)`
+
+Linear regression is used if `reg_type=[lin, dur]` and `canonical=True`; otherwise, a logistic regression is used.
+
+.. note:: In version 4.2.0 we changed the default regression equation to the canonical form shown above.
+  However, the original pyPheWAS regression equation may still be used via `canonical=False`.
+
+By default, the target variable is 'genotype'; if an alternate variable is specified
+by the ``target`` argument, the variable must be a column in the group file.
 
 To use the **cpt_age** feature matrix as a covariate, include 'MaxAgeAtCPT' in
 the covariate list. To use the **prowas_cov** feature matrix as a covariate,
-specify the ``prowas_cov`` parameter. With the exception of these two feature
-matrices, all covariates must be included as columns in the group file.
+specify the ``prowas_cov`` argument. With the exception of these two feature
+matrices, all covariates must be columns in the group file.
 
 The saved regression data for each ProCode includes the p-value, -log\ :sub:`10`\ (p-value), beta,
 beta's confidence interval, and beta's standard error for the *ProCode_aggregate*
-term in the logit model. Additionally, lists of the CPT
+term in the regression model. Additionally, lists of the CPT
 codes that map to each ProCode are included.
 
-Logistic regressions are estimated using the [Statsmodels]_ package.
+Regressions are estimated using the [Statsmodels]_ package.
 
 Required Arguments:
  * ``--feature_matrix``: Base name of the feature matrix files
@@ -110,8 +119,10 @@ Required Arguments:
 Optional Arguments [default value]:
  * ``--path``:			Path to all input files and destination of output files [current directory]
  * ``--outfile``:		Name of the output regression data file ["regressions _\ ``group``"]
- * ``--response``:	    Variable to predict ['genotype']
+ * ``--target``:	    Binary variable that indicates case/control groups (default: genotype)
  * ``--covariates``:	Variables to be used as covariates separated by '+' (e.g. "SEX" or "BMI+MaxAgeAtCPT")
+ * ``--canonical``:  Use target as a predictor [True, default] or the dependent variable [False] in the regression equation
+ * ``--reg_thresh``: Threshold of subjects presenting a ProCode required for running regression (default: 5)
  * ``--prowas_cov``:	A ProCode to use as covariate
 
 Output:
@@ -119,29 +130,18 @@ Output:
 
 **Example** Compute a duration regression with sex as a covariate::
 
-		pyProwasModel --reg_type="dur" --covariates="sex" --feature_matrix="fm_dur.csv" --group="group.csv" --outfile="regressions_dur.csv" --path="/Users/me/Documents/EMRdata/"
+		pyProwasModel --reg_type dur --covariates sex --feature_matrix fm_dur.csv --group group.csv --outfile regressions_dur.csv --path /Users/me/Documents/EMRdata/
 
-**Example** Compute a binary regression with sex and the cpt_age feature matrix as covariates::
+**Example** Compute a binary regression with Dx as the target and sex + cpt_age feature matrix as covariates::
 
-		pyProwasModel --reg_type="log" --covariates="sex+MaxAgeAtCPT" --feature_matrix="my_fm_log.csv" --group="my_group.csv" --outfile="reg_log.csv"
+		pyProwasModel --reg_type log --target Dx --covariates sex+MaxAgeAtCPT --feature_matrix my_fm_log.csv --group my_group.csv --outfile reg_log.csv
 
-**Example** Compute a linear regression with the prowas_cov feature matrix for ProCode 67.8 (Laparoscopy) as a covariate::
+**Example** Compute a linear regression using the reverse regression equation with the prowas_cov feature matrix for ProCode 67.8 (Laparoscopy) as a covariate::
 
-		pyProwasModel --reg_type="lin" --prowas_cov="67.8" --feature_matrix="fm_lin.csv" --group="my_group.csv" --outfile="reg_lin_pro678.csv"
+		pyProwasModel --reg_type lin --prowas_cov 67.8 --canonical False --feature_matrix fm_lin.csv --group my_group.csv --outfile reg_lin_pro678.csv
 
 
-.. note:: To prevent false positives & improve statistical power, regressions
-          are only computed for ProCodes which present in greater than 5
-          subjects. ProCodes which do not meet this criteria are
-          not included in the output regression file.
-
-.. note:: For phenotypes that present in both the case (``response`` = 1) and
-          control (``response`` = 0) groups, maximum likelihood optimization is
-          used to compute the logistic regression. For phenotypes that only
-          present in one of those groups, regularized maximum likelihood
-          optimization is used.
-
-----------
+-----------
 
 pyProwasPlot
 ------------
@@ -149,20 +149,21 @@ pyProwasPlot
 Visualizes the regression results through 3 complementary views:
 
 1. *Manhattan Plot*: This view compares statistical significance across ProCodes.
-   ProCodes are presented across the horizontal axis, with -log\ :sub:`10`\ (p) along
-   the vertical axis. If ``imbalances = True``\ , marker shape indicates whether
-   the effect of each ProCode is positive (+) or negative (-).
-2. *Log Odds Plot*: This view compares effect size across ProCodes. The log odds
-   of each ProCode and its confidence interval are plotted on the horizontal axis,
-   with ProCodes presented along the vertical axis. If ``prowas_label = "plot"``\ ,
-   ProCode labels are displayed directly on the plot next to their markers. If ``prowas_label = "axis"``\ ,
-   ProCodes are displayed outside of the axes, along the left edge.
+  ProCodes are presented across the horizontal axis, with -log\ :sub:`10`\ (p) along
+  the vertical axis. If ``imbalances = True``\ , marker shape indicates whether
+  the effect of each ProCode is positive (+) or negative (-).
+2. *Effect Size Plot*: This view compares effect size across ProCodes. The regression coefficient 
+  (or log odds for logistic regressions)
+  of each ProCode and its confidence interval are plotted on the horizontal axis,
+  with ProCodes presented along the vertical axis. If ``prowas_label = "plot"``\ ,
+  ProCode labels are displayed directly on the plot next to their markers. If ``prowas_label = "axis"``\ ,
+  ProCodes are displayed outside of the axes, along the left edge.
 3. *Volcano Plot*: This view compares statistical significance and effect size
-   across all ProCodes. The log odds of each ProCode is plotted along the
-   horizontal axis, with -log\ :sub:`10`\ (p) along the vertical axis.
-   ProCodes are colored according to significance level (Not significant, FDR, Bonferroni).
+  across all ProCodes. The effect size of each ProCode is plotted along the
+  horizontal axis, with -log\ :sub:`10`\ (p) along the vertical axis.
+  ProCodes are colored according to significance level (Not significant, FDR, Bonferroni).
 
-In both the Manhattan and Log Odds plots only ProCodes which are significant
+In both the Manhattan and Effect Size plots only ProCodes which are significant
 after the chosen multiple comparisons correction is applied are included.
 
 All plots are created using [Matplotlib]_.
@@ -174,8 +175,10 @@ Required Arguments:
 Optional Arguments [default value]:
  * ``--path``:          Path to all input files and destination of output files [current directory]
  * ``--outfile``:       Base name of output plot files [don't save; show interactive plot]
- * ``--imbalance``:		Show the direction of imbalance on the Manhattan plot ([True] or False)
- * ``--prowas_label``:  Location of the ProCode labels on the Log Odds plot (["plot"] or "axis")
+ * ``--imbalance``:     Show the direction of imbalance on the Manhattan plot ([True] or False)
+ * ``--plot_all_pts``:  Show all points regardless of significance in the Manhattan plot [True (default) or False]
+ * ``--prowas_label``:  Location of the ProCode labels on the Effect Size plot (["plot"] or "axis")
+ * ``--old_style``:     Use old plot style (no gridlines, all spines shown)
  * ``--custom_thresh``: Custom threshold value, required if ``thresh_type = "custom"`` (float between 0 and 1)
 
 Threshold Types:
@@ -185,15 +188,15 @@ Threshold Types:
 
 **Example** Plot regression results from the current directory with Bonferroni correction (display results interactively)::
 
-		pyProwasPlot --thresh_type="bon" --statfile="regressions.csv"
+		pyProwasPlot --thresh_type bon --statfile regressions.csv
 
 **Example** Plot regression results with FDR correction and the Log Odds labels displayed on the y-axis (save results)::
 
-		pyProwasPlot --thresh_type="fdr" --prowas_label="axis" --outfile="my_FDR_plot.eps" --statfile="regressions.csv" --path="/Users/me/Documents/EMRdata/"
+		pyProwasPlot --thresh_type fdr --prowas_label axis --outfile my_FDR_plot.eps --statfile regressions.csv --path /Users/me/Documents/EMRdata/
 
 **Example** Plot regression results with a custom threshold and no imbalance on the Manhattan plot (save results)::
 
-		pyProwasPlot --thresh_type="custom" --custom_thresh=0.001 --imbalance=False --outfile="my_custom_plot.png" --statfile="regressions.csv" --path="/Users/me/Documents/EMRdata/"
+		pyProwasPlot --thresh_type custom --custom_thresh 0.001 --imbalance False --outfile my_custom_plot.png --statfile regressions.csv --path /Users/me/Documents/EMRdata/
 
 
 .. note:: **If outfile is not specified, the plots will not be saved automatically**.
@@ -213,7 +216,7 @@ pyProwasPipeline
 **pyProwasPipeline** is a streamlined combination of **pyProwasLookup**, **pyProwasModel**,
 and **pyProwasPlot**. If using all default values for optional arguments,
 it takes a group file, phenotype file, and regression type and (1) creates the feature
-matrix, (2) runs the regressions, and (3) saves Manhattan, Log Odds, and Volcano plots with
+matrix, (2) runs the regressions, and (3) saves Manhattan, Effect Size, and Volcano plots with
 both Bonferroni and False Discovery Rate thresholds. All intermediate files
 are saved with the ``postfix`` argument appended to the file name.
 
@@ -226,20 +229,24 @@ Required Arguments:
 Optional Arguments [default value]:
  * ``--path``:		    Path to all input files and destination of output files [current directory]
  * ``--postfix``:       Descriptive postfix for output files ["_\ ``covariates``\ _\ ``group``"]
- * ``--response``:	    Variable to predict ['genotype']
+ * ``--target``:	    Binary variable that indicates case/control groups (default: genotype)
  * ``--covariates``:	Variables to be used as covariates separated by '+' (e.g. "SEX" or "BMI+MaxAgeAtCPT")
  * ``--prowas_cov``:    A ProCode to use as covariate
+ * ``--canonical``: Use target as a predictor [True, default] or the dependent variable [False] in the regression equation
+ * ``--reg_thresh``: Threshold of subjects presenting a ProCode required for running regression (default: 5)
  * ``--thresh_type``:	Type of multiple comparisons correction threshold ("bon", "fdr", "custom")
- * ``--imbalance``:		Show the direction of imbalance on the Manhattan plot ([True] or False)
- * ``--prowas_label``:  Location of the ProCode labels on the Log Odds plot (["plot"] or "axis")
  * ``--custom_thresh``: Custom threshold value, required if ``thresh_type = "custom"`` (float between 0 and 1)
+ * ``--imbalance``:		Show the direction of imbalance on the Manhattan plot ([True] or False)
+ * ``--plot_all_pts``: Show all points regardless of significance in the Manhattan plot [True (default) or False]
+ * ``--prowas_label``:  Location of the ProCode labels on the Effect Size plot (["plot"] or "axis")
+ * ``--old_style``: Use old plot style (no gridlines, all spines shown)
  * ``--plot_format``:   Format for plot files ["png"]
 
 
 **Example** Run a duration experiment with all default arguments::
 
-		pyProwasPipeline --reg_type="dur" --phenotype="cpt_data.csv" --group="group.csv"
+		pyProwasPipeline --reg_type dur --phenotype cpt_data.csv --group group.csv
 
 **Example** Run a binary experiment with covariates sex and race, plotting the results with FDR correction, and saving all files with the postfix "binary_prelim"::
 
-		pyProwasPipeline --reg_type="log" --covariates="sex+race" --thresh_type="fdr" --postfix="binary_prelim" --phenotype="cpt_data.csv" --group="group.csv"
+		pyProwasPipeline --reg_type log --covariates sex+race --thresh_type fdr --postfix binary_prelim --phenotype cpt_data.csv --group group.csv

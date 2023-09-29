@@ -68,11 +68,11 @@ Output:
 
 **Example** Generate a feature matrix for a duration regression::
 
-		pyPhewasLookup  --reg_type="dur" --phenotype="icd_data.csv" --group="group.csv" --outfile="fm_dur.csv" --path="/Users/me/Documents/EMRdata/"
+		pyPhewasLookup  --reg_type dur --phenotype icd_data.csv --group group.csv --outfile fm_dur.csv --path /Users/me/Documents/EMRdata/
 
 **Example** Generate a feature matrix for a linear regression with PheCode 495 (Asthma) in a covarying feature matrix::
 
-		pyPhewasLookup  --reg_type="lin" --phewas_cov="495" --phenotype="icd_data.csv" --group="group.csv" --outfile="fm_lin.csv" --path="/Users/me/Documents/EMRdata/"
+		pyPhewasLookup  --reg_type lin --phewas_cov 495 --phenotype icd_data.csv --group group.csv --outfile fm_lin.csv --path /Users/me/Documents/EMRdata/
 
 
 .. note:: The ``outfile`` argument provides a base name for saving the feature matrix files.
@@ -88,65 +88,65 @@ pyPhewasModel
 Perform a mass logistic regression
 
 Iterates over all PheCodes in the feature matrix produced by **pyPhewasLookup**
-and estimates a logistic regression of the form:
+and estimates a regression of the form:
 
-    :math:`Pr(response) \sim logit(PheCode\_aggregate + covariates)`
+  :math:`phecode\_aggregate \sim target + covariates`
 
-By default, the response variable is 'genotype'; if an alternate variable is specified
-by the ``response`` argument, the variable must be a column in the group file.
+or the *reverse* form (`canonical=False`):
+
+  :math:`target \sim logit(phecode\_aggregate + covariates)`
+
+Linear regression is used if `reg_type=[lin, dur]` and `canonical=True`; otherwise, a logistic regression is used.
+
+.. note:: In version 4.2.0 we changed the default regression equation to the canonical form shown above.
+  However, the original pyPheWAS regression equation may still be used via `canonical=False`.
+
+By default, the target variable is 'genotype'; if an alternate variable is specified
+by the ``target`` argument, the variable must be a column in the group file.
 
 To use the **icd_age** feature matrix as a covariate, include 'MaxAgeAtICD' in
 the covariate list. To use the **phewas_cov** feature matrix as a covariate,
-specify the ``phewas_cov`` parameter. With the exception of these two feature
-matrices, all covariates must be included as columns in the group file.
+specify the ``phewas_cov`` argument. With the exception of these two feature
+matrices, all covariates must be columns in the group file.
 
 The saved regression data for each PheCode includes the p-value, -log\ :sub:`10`\ (p-value), beta,
 beta's confidence interval, and beta's standard error for the *PheCode_aggregate*
-term in the logit model. Additionally, lists of the ICD-9/ICD-10
+term in the regression model. Additionally, lists of the ICD-9/ICD-10
 codes that map to each PheCode are included.
 
-Logistic regressions are estimated using the [Statsmodels]_ package.
+Regressions are estimated using the [Statsmodels]_ package.
 
 Required Arguments:
  * ``--feature_matrix``: Base name of the feature matrix files
- * ``--group``:			Name of the group file
- * ``--reg_type``:		Type of regression to use ("log", "lin", or "dur")
+ * ``--group``:          Name of the group file
+ * ``--reg_type``:       Type of regression to use ("log", "lin", or "dur")
 
 Optional Arguments [default value]:
- * ``--path``:			Path to all input files and destination of output files [current directory]
- * ``--outfile``:		Name of the output regression data file ["regressions _\ ``group``"]
- * ``--response``:	    Variable to predict ['genotype']
- * ``--covariates``:	Variables to be used as covariates separated by '+' (e.g. "SEX" or "BMI+MaxAgeAtICD")
- * ``--phewas_cov``:	A PheCode to use as covariate
+ * ``--path``:       Path to all input files and destination of output files [current directory]
+ * ``--outfile``:    Name of the output regression data file ["regressions _\ ``group``"]
+ * ``--target``:     Binary variable that indicates case/control groups (default: genotype)
+ * ``--covariates``: Variables to be used as covariates separated by '+' (e.g. "SEX" or "BMI+MaxAgeAtICD")
+ * ``--canonical``:  Use target as a predictor [True, default] or the dependent variable [False] in the regression equation
+ * ``--reg_thresh``: Threshold of subjects presenting a PheCode required for running regression (default: 5)
+ * ``--phewas_cov``: A PheCode to use as covariate
 
 Output:
  Regression results for each PheCode saved to the provided ``outfile``
 
 **Example** Compute a duration regression with sex as a covariate::
 
-		pyPhewasModel --reg_type="dur" --covariates="sex" --feature_matrix="fm_dur.csv" --group="group.csv" --outfile="regressions_dur.csv" --path="/Users/me/Documents/EMRdata/"
+		pyPhewasModel --reg_type dur --covariates sex --feature_matrix fm_dur.csv --group group.csv --outfile regressions_dur.csv --path /Users/me/Documents/EMRdata/
 
-**Example** Compute a binary regression with sex and the icd_age feature matrix as covariates::
+**Example** Compute a binary regression with Dx as the target and sex + icd_age feature matrix as covariates::
 
-		pyPhewasModel --reg_type="log" --covariates="sex+MaxAgeAtICD" --feature_matrix="my_fm_log.csv" --group="my_group.csv" --outfile="reg_log.csv"
+		pyPhewasModel --reg_type log --target Dx --covariates sex+MaxAgeAtICD --feature_matrix my_fm_log.csv  --group my_group.csv --outfile reg_log.csv
 
-**Example** Compute a linear regression with the phewas_cov feature matrix for PheCode 495 (Asthma) as a covariate::
+**Example** Compute a linear regression using the reverse regression equation with the phewas_cov feature matrix for PheCode 495 (Asthma) as a covariate::
 
-		pyPhewasModel --reg_type="lin" --phewas_cov="495" --feature_matrix="fm_lin.csv" --group="my_group.csv" --outfile="reg_lin_phe495.csv"
+		pyPhewasModel --reg_type lin --phewas_cov 495 --canonical False --feature_matrix fm_lin.csv --group my_group.csv --outfile reg_lin_phe495.csv
 
 
-.. note:: To prevent false positives & improve statistical power, regressions
-          are only computed for PheCodes which present in greater than 5
-          subjects. PheCodes which do not meet this criteria are
-          not included in the output regression file.
-
-.. note:: For phenotypes that present in both the case (``response`` = 1) and
-          control (``response`` = 0) groups, maximum likelihood optimization is
-          used to compute the logistic regression. For phenotypes that only
-          present in one of those groups, regularized maximum likelihood
-          optimization is used.
-
-----------
+-----------
 
 pyPhewasPlot
 ------------
@@ -154,20 +154,21 @@ pyPhewasPlot
 Visualizes the regression results through 3 complementary views:
 
 1. *Manhattan Plot*: This view compares statistical significance across PheCodes.
-   PheCodes are presented across the horizontal axis, with -log\ :sub:`10`\ (p) along
-   the vertical axis. If ``imbalances = True``\ , marker shape indicates whether
-   the effect of each PheCode is positive (+) or negative (-).
-2. *Log Odds Plot*: This view compares effect size across PheCodes. The log odds
-   of each PheCode and its confidence interval are plotted on the horizontal axis,
-   with PheCodes presented along the vertical axis. If ``phewas_label = "plot"``\ ,
-   PheCode labels are displayed directly on the plot next to their markers. If ``phewas_label = "axis"``\ ,
-   PheCodes are displayed outside of the axes, along the left edge.
+  PheCodes are presented across the horizontal axis, with -log\ :sub:`10`\ (p) along
+  the vertical axis. If ``imbalances = True``\ , marker shape indicates whether
+  the effect of each PheCode is positive (+) or negative (-).
+2. *Effect Size Plot*: This view compares effect size across PheCodes. The regression coefficient 
+  (or log odds for logistic regressions)
+  of each PheCode and its confidence interval are plotted on the horizontal axis,
+  with PheCodes presented along the vertical axis. If ``phewas_label = "plot"``\ ,
+  PheCode labels are displayed directly on the plot next to their markers. If ``phewas_label = "axis"``\ ,
+  PheCodes are displayed outside of the axes, along the left edge.
 3. *Volcano Plot*: This view compares statistical significance and effect size
-   across all PheCodes. The log odds of each PheCode is plotted along the
-   horizontal axis, with -log\ :sub:`10`\ (p) along the vertical axis.
-   PheCodes are colored according to significance level (Not significant, FDR, Bonferroni).
+  across all PheCodes. The effect size of each PheCode is plotted along the
+  horizontal axis, with -log\ :sub:`10`\ (p) along the vertical axis.
+  PheCodes are colored according to significance level (Not significant, FDR, Bonferroni).
 
-In both the Manhattan and Log Odds plots:
+In both the Manhattan and Effect Size plots:
 
 * PheCode markers are colored and sorted according to 18 general categories
   (mostly organ systems and disease groups, e.g. “circulatory system” and
@@ -184,8 +185,10 @@ Required Arguments:
 Optional Arguments [default value]:
  * ``--path``:          Path to all input files and destination of output files [current directory]
  * ``--outfile``:       Base name of output plot files [don't save; show interactive plot]
- * ``--imbalance``:		Show the direction of imbalance on the Manhattan plot ([True] or False)
- * ``--phewas_label``:  Location of the PheCode labels on the Log Odds plot (["plot"] or "axis")
+ * ``--imbalance``:     Show the direction of imbalance on the Manhattan plot ([True] or False)
+ * ``--plot_all_pts``:  Show all points regardless of significance in the Manhattan plot [True (default) or False]
+ * ``--phewas_label``:  Location of the PheCode labels on the Effect Size plot (["plot"] or "axis")
+ * ``--old_style``:     Use old plot style (no gridlines, all spines shown)
  * ``--custom_thresh``: Custom threshold value, required if ``thresh_type = "custom"`` (float between 0 and 1)
 
 Threshold Types:
@@ -195,15 +198,15 @@ Threshold Types:
 
 **Example** Plot regression results from the current directory with Bonferroni correction (display results interactively)::
 
-		pyPhewasPlot --thresh_type="bon" --statfile="regressions.csv"
+		pyPhewasPlot --thresh_type bon --statfile regressions.csv
 
 **Example** Plot regression results with FDR correction and the Log Odds labels displayed on the y-axis (save results)::
 
-		pyPhewasPlot --thresh_type="fdr" --phewas_label="axis" --outfile="my_FDR_plot.eps" --statfile="regressions.csv" --path="/Users/me/Documents/EMRdata/"
+		pyPhewasPlot --thresh_type fdr --phewas_label axis --outfile my_FDR_plot.eps --statfile regressions.csv--path /Users/me/Documents/EMRdata/
 
 **Example** Plot regression results with a custom threshold and no imbalance on the Manhattan plot (save results)::
 
-		pyPhewasPlot --thresh_type="custom" --custom_thresh=0.001 --imbalance=False --outfile="my_custom_plot.png" --statfile="regressions.csv" --path="/Users/me/Documents/EMRdata/"
+		pyPhewasPlot --thresh_type custom --custom_thresh 0.001 --imbalance False --outfile my_custom_plot.png --statfile regressions.csv --path /Users/me/Documents/EMRdata/
 
 
 .. note:: **If outfile is not specified, the plots will not be saved automatically**.
@@ -223,33 +226,37 @@ pyPhewasPipeline
 **pyPhewasPipeline** is a streamlined combination of **pyPhewasLookup**, **pyPhewasModel**,
 and **pyPhewasPlot**. If using all default values for optional arguments,
 it takes a group file, phenotype file, and regression type and (1) creates the feature
-matrix, (2) runs the regressions, and (3) saves Manhattan, Log Odds, and Volcano plots with
+matrix, (2) runs the regressions, and (3) saves Manhattan, Effect Size, and Volcano plots with
 both Bonferroni and False Discovery Rate thresholds. All intermediate files
 are saved with the ``postfix`` argument appended to the file name.
 
 
 Required Arguments:
- * ``--phenotype``: 	Name of the phenotype file
- * ``--group``:		    Name of the group file
- * ``--reg_type``:      Type of regression to use ("log", "lin", or "dur")
+ * ``--phenotype``: Name of the phenotype file
+ * ``--group``:     Name of the group file
+ * ``--reg_type``:  Type of regression to use ("log", "lin", or "dur")
 
 Optional Arguments [default value]:
- * ``--path``:		    Path to all input files and destination of output files [current directory]
- * ``--postfix``:       Descriptive postfix for output files ["_\ ``covariates``\ _\ ``group``"]
- * ``--response``:	    Variable to predict ['genotype']
- * ``--covariates``:	Variables to be used as covariates separated by '+' (e.g. "SEX" or "BMI+MaxAgeAtICD")
- * ``--phewas_cov``:    A PheCode to use as covariate
- * ``--thresh_type``:	Type of multiple comparisons correction threshold ("bon", "fdr", "custom")
- * ``--imbalance``:		Show the direction of imbalance on the Manhattan plot ([True] or False)
- * ``--phewas_label``:  Location of the PheCode labels on the Log Odds plot (["plot"] or "axis")
+ * ``--path``: Path to all input files and destination of output files [current directory]
+ * ``--postfix``: Descriptive postfix for output files ["_\ ``covariates``\ _\ ``group``"]
+ * ``--target``: Binary variable that indicates case/control groups (default: genotype)
+ * ``--covariates``: Variables to be used as covariates separated by '+' (e.g. "SEX" or "BMI+MaxAgeAtICD")
+ * ``--phewas_cov``: A PheCode to use as covariate
+ * ``--canonical``: Use target as a predictor [True, default] or the dependent variable [False] in the regression equation
+ * ``--reg_thresh``: Threshold of subjects presenting a PheCode required for running regression (default: 5)
+ * ``--thresh_type``: Type of multiple comparisons correction threshold ("bon", "fdr", "custom")
  * ``--custom_thresh``: Custom threshold value, required if ``thresh_type = "custom"`` (float between 0 and 1)
- * ``--plot_format``:   Format for plot files ["png"]
+ * ``--imbalance``: Show the direction of imbalance on the Manhattan plot ([True] or False)
+ * ``--plot_all_pts``: Show all points regardless of significance in the Manhattan plot [True (default) or False]
+ * ``--phewas_label``: Location of the PheCode labels on the Effect Size plot (["plot"] or "axis")
+ * ``--old_style``: Use old plot style (no gridlines, all spines shown)
+ * ``--plot_format``: Format for plot files ["png"]
 
 
 **Example** Run a duration experiment with all default arguments::
 
-		pyPhewasPipeline --reg_type="dur" --phenotype="icd_data.csv" --group="group.csv"
+		pyPhewasPipeline --reg_type dur --phenotype icd_data.csv --group group.csv
 
 **Example** Run a binary experiment with covariates sex and race, plotting the results with FDR correction, and saving all files with the postfix "binary_prelim"::
 
-		pyPhewasPipeline --reg_type="log" --covariates="sex+race" --thresh_type="fdr" --postfix="binary_prelim" --phenotype="icd_data.csv" --group="group.csv"
+		pyPhewasPipeline --reg_type log --covariates sex+race --thresh_type fdr --postfix binary_prelim --phenotype icd_data.csv --group group.csv
