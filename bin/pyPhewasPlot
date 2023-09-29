@@ -10,6 +10,7 @@ def parse_args():
     parser.add_argument('--custom_thresh', required=False, default=None, type=float, help='Custom threshold value (float between 0 and 1)')
     parser.add_argument('--imbalance', required=False, default="True", help = 'Show the direction of imbalance in the Manhattan plot [True (default) or False]')
     parser.add_argument('--plot_all_pts', required=False, default="True", help='Show all points regardless of significance in the Manhattan plot [True (default) or False]')
+    parser.add_argument('--old_style', required=False, default="False", help = 'Use old plot style (no gridlines, all spines shown)')
     parser.add_argument('--phewas_label', required=False, default="plot", type=str, help='Location of PheCode labels on Log Odds plot [plot (default) or axis]')
     parser.add_argument('--path', required=False, default='.', type=str, help='Path to all input files and destination of output files')
     parser.add_argument('--outfile', required=False, default=None, type=str, help='Name of the output file for the plot')
@@ -46,6 +47,7 @@ kwargs = {'path': Path(args.path),
           'thresh_type': args.thresh_type,
           'imbalance': args.imbalance,
           'plot_all_pts': args.plot_all_pts,
+          'old_style': args.old_style,
           'custom_thresh':args.custom_thresh,
           'phewas_label': args.phewas_label,
           'outfile':args.outfile,
@@ -63,10 +65,10 @@ assert osp.exists(kwargs['path'] / kwargs['statfile']), "%s does not exist" %(kw
 
 assert kwargs['phewas_label'] in ["plot","axis"], "%s is not a valid PheCode label location" % (kwargs['phewas_label'])
 
-assert kwargs['imbalance'] in ["True", "False"], "%s is not a valid imbalance value (\"True\" or \"False\")" % kwargs['imbalance']
-kwargs['imbalance'] = eval(kwargs['imbalance'])
-assert kwargs['plot_all_pts'] in ["True", "False"], "%s is not a valid plot_all_pts value (\"True\" or \"False\")" % kwargs['plot_all_pts']
-kwargs['plot_all_pts'] = eval(kwargs['plot_all_pts'])
+for bool_arg in ['imbalance','plot_all_pts','old_style']:
+    assert kwargs[bool_arg] in ["True", "False"], "%s is not a valid imbalance value (\"True\" or \"False\")" % kwargs[bool_arg]
+    kwargs[bool_arg] = eval(kwargs[bool_arg])
+
 
 # Print Arguments
 display_kwargs(kwargs)
@@ -129,10 +131,39 @@ else:
     saveb = ''
     savev = ''
     file_format = ''
-# TODO add warning if model_equation doesn't exist
-plot_manhattan(regressions, thresh, 'ICD', imbalance, plot_all_pts, savem, file_format)
-plot_effect_size(regressions, thresh, reg_args['model_equation'], reg_args['reg_type'], 'ICD', saveb, file_format, phewas_label)
-plot_volcano(regressions, reg_args['model_equation'], reg_args['reg_type'], 'ICD', savev, file_format)
+
+plot_manhattan(
+    regressions,
+    thresh=thresh,
+    show_imbalance=imbalance,
+    plot_all_pts=plot_all_pts,
+    old_plot_style=old_style,
+    code_type='ICD',
+    save=savem,
+    save_format=file_format,
+    )
+
+plot_effect_size(
+    regressions,
+    thresh=thresh,
+    model_str=reg_args.get('model_equation', None),
+    reg_type=reg_args.get('reg_type', None),
+    label_loc=phewas_label,
+    old_plot_style=old_style,
+    code_type='ICD',
+    save=saveb,
+    save_format=file_format,
+    )
+
+plot_volcano(
+    regressions,
+    model_str=reg_args.get('model_equation', None),
+    reg_type=reg_args.get('reg_type', None),
+    old_plot_style=old_style,
+    code_type='ICD',
+    save=savev,
+    save_format=file_format
+    )
 
 if outfile is not None:
     print("Saving plots to %s" % (path))

@@ -19,6 +19,7 @@ def parse_args():
 
     parser.add_argument('--imbalance', required=False, default="True", type=str, help='Whether or not to show the direction of imbalance in the plot')
     parser.add_argument('--plot_all_pts', required=False, default="True", help='Show all points regardless of significance in the Manhattan plot [True (default) or False]')
+    parser.add_argument('--old_style', required=False, default="False", help = 'Use old plot style (no gridlines, all spines shown)')
     parser.add_argument('--phewas_label', required=False, default="plot", type=str, help='Where to put PheCode labels - plot (default) or axis')
     parser.add_argument('--thresh_type', required=False, default=None, type=str, help='Type of threshold to be used in the plot (fdr, bon, or custom)')
     parser.add_argument('--custom_thresh', required=False, default=None, type=float, help='Custom threshold value (float between 0 and 1)')
@@ -61,6 +62,7 @@ kwargs = {'path': Path(args.path),
           'thresh_type': args.thresh_type,
           'imbalance': args.imbalance,
           'plot_all_pts': args.plot_all_pts,
+          'old_style': args.old_style,
           'custom_thresh': args.custom_thresh,
           'phewas_label': args.phewas_label,
           'plot_format': args.plot_format
@@ -75,7 +77,7 @@ assert osp.exists(kwargs['path'] / kwargs['group']), "%s does not exist" %(kwarg
 
 # Assert that valid regression & threshold types were used
 assert kwargs['reg_type'] in regression_map.keys(), "%s is not a valid regression type" % kwargs['reg_type']
-assert (kwargs['phewas_cov'] is None) or (kwargs['phewas_cov'] in phewas_codes['PheCode']), "phewas_cov input (%s) is not a valid PheCode" % kwargs['phewas_cov']
+assert (kwargs['phewas_cov'] is None) or (kwargs['phewas_cov'] in phewas_codes['PheCode'].values), "phewas_cov input (%s) is not a valid PheCode" % kwargs['phewas_cov']
 
 if kwargs['thresh_type'] is None:
     kwargs['thresh_type'] = ['fdr','bon']
@@ -97,12 +99,9 @@ else:
 
 assert kwargs['phewas_label'] in ["plot","axis"], "%s is not a valid PheCode label location" % (kwargs['phewas_label'])
 
-assert kwargs['canonical'] in ["True", "False"], "%s is not a valid canonical value (True or False)" % kwargs['canonical']
-kwargs['canonical'] = eval(kwargs['canonical'])
-assert kwargs['imbalance'] in ["True", "False"], "%s is not a valid imbalance value (True or False)" % kwargs['imbalance']
-kwargs['imbalance'] = eval(kwargs['imbalance'])
-assert kwargs['plot_all_pts'] in ["True", "False"], "%s is not a valid plot_all_pts value (\"True\" or \"False\")" % kwargs['plot_all_pts']
-kwargs['plot_all_pts'] = eval(kwargs['plot_all_pts'])
+for bool_arg in ['canonical','imbalance','plot_all_pts','old_style']:
+    assert kwargs[bool_arg] in ["True", "False"], "%s is not a valid imbalance value (\"True\" or \"False\")" % kwargs[bool_arg]
+    kwargs[bool_arg] = eval(kwargs[bool_arg])
 
 # Print Arguments
 display_kwargs(kwargs)
@@ -127,8 +126,10 @@ assert target in genotypes.columns, "target %s is not a column in the group file
 # check covariates
 if covariates != '':
     for cov in covariates.replace(" ", "").split('+'):
-        if cov in RESERVED_COL_NAMES:
-            assert cov not in genotypes.columns, "%s is a reserved covariate name [%s]; please remove or rename this column in the group file" % (cov, ','.join(RESERVED_COL_NAMES))
+        if cov == MAX_AGE_AT_ICD:
+            assert cov not in genotypes.columns, "%s is a reserved covariate name; please rename this column in the group file" % cov
+        elif cov in RESERVED_COL_NAMES:
+            assert False, "%s is a reserved covariate name [%s]; please remove from the covariate list and/or rename this column in the group file" % (cov, ','.join(RESERVED_COL_NAMES))
         else:
             assert cov in genotypes.columns, "covariate %s is not a column in the group file" % cov
 
@@ -166,7 +167,7 @@ reg_outfile = "regressions_" + postfix + ".csv"
 print("Saving regression data to %s" % (path / reg_outfile))
 
 if phewas_cov is not None:
-    model_str = model_str.replace('phewas_cov', phewas_cov)
+    model_str = model_str.replace('phewas_cov', f'phewas_cov_{phewas_cov}')
 h = ['model_equation', model_str, 'group', group, 'feature_matrix', fm_outfile, 'reg_type', reg_type, 'code_type', 'ICD']
 header = ','.join(h) + '\n'
 f = open(path / reg_outfile, 'w')
@@ -209,11 +210,39 @@ for t in thresh_type:
     savem = path / ('Manhattan_%s_%s.%s' %(t, postfix, plot_format))
     saveb = path / ('EffectSize_%s_%s.%s' %(t, postfix, plot_format))
 
-    plot_manhattan(regressions, thresh, 'ICD', imbalance, plot_all_pts, savem, plot_format)
-    plot_effect_size(regressions, thresh, model_str, reg_type,  'ICD', saveb, plot_format, phewas_label)
+    plot_manhattan(
+        regressions,
+        thresh=thresh,
+        show_imbalance=imbalance,
+        plot_all_pts=plot_all_pts,
+        old_plot_style=old_style,
+        code_type='ICD',
+        save=savem,
+        save_format=plot_format,
+        )
+
+    plot_effect_size(
+        regressions,
+        thresh=thresh,
+        model_str=model_str,
+        reg_type=reg_type,
+        label_loc=phewas_label,
+        old_plot_style=old_style,
+        code_type='ICD',
+        save=saveb,
+        save_format=plot_format,
+        )
    
 savev = path / ('Volcano_%s.%s' %(postfix, plot_format))
-plot_volcano(regressions, model_str, reg_type, 'ICD', savev, plot_format)
+plot_volcano(
+    regressions,
+    model_str=model_str,
+    reg_type=reg_type,
+    old_plot_style=old_style,
+    code_type='ICD',
+    save=savev,
+    save_format=plot_format
+    )
 
 
 """
